@@ -21,7 +21,7 @@ This file is the source of truth for implementation.
 | Camera           | Fixed orthographic quarter view, whole map always visible                                 |
 | Controls         | WASD = move (camera-relative), Space = jump, R = restart                                  |
 | Movement         | Free (continuous) movement with `CharacterController`, not tile-by-tile stepping           |
-| Input            | Unity Input System package (Input Actions asset)                                          |
+| Input            | Input System project-wide actions: `Input/PlayerControls.inputactions`, `Player` map only  |
 | Lose condition   | Player falls below the kill plane (`y < -5`)                                              |
 | Win condition    | All items collected                                                                       |
 | Restart          | Reload the scene; items are re-randomized on load                                         |
@@ -195,7 +195,10 @@ row 0:  S  0  0  .
 ## 6. Player
 
 - `PlayerController` (requires `CharacterController`):
-  - Reads `Move` (Vector2) and `Jump` (button) actions.
+  - Reads `Player/Move` (Vector2) and `Player/Jump` (button) from `InputSystem.actions`,
+    caching the `InputAction`s on enable. `Player/Restart` is read by `GameManager`.
+  - Bindings: Move = WASD + arrow keys, Jump = Space, Restart = R. No UI map in the asset,
+    so UI input falls back to the Input System's default UI actions.
   - Converts input to camera-relative direction on the XZ plane (W = screen-up).
   - Rotates the model to face movement direction (smooth turn).
   - Coyote time 0.1 s and jump buffer 0.1 s.

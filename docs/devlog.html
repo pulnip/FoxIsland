@@ -103,6 +103,30 @@
 -->
     <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
+      <h2>PlayerControls 입력 설정</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>템플릿의 <code>InputSystem_Actions.inputactions</code>를 <code>.meta</code>째로 <code>Input/PlayerControls.inputactions</code>로 옮기고 내용 교체 → GUID가 유지돼서 프로젝트 전체 입력(project-wide actions) 설정이 그대로 이 파일을 가리킴</li>
+        <li><code>Player</code> 맵 하나에 액션 3개: <code>Move</code> (WASD + 방향키), <code>Jump</code> (Space), <code>Restart</code> (R)</li>
+        <li>컨트롤 스킴은 <code>Keyboard</code> 하나만. 게임패드 · 터치 · XR · UI 맵은 전부 뺌</li>
+        <li>액션 · 바인딩 ID 15개는 새로 랜덤 생성</li>
+        <li>임시 에디터 스크립트로 배치 모드 검증: <code>InputSystem.actions</code>가 새 파일을 가리키고, 세 액션과 바인딩이 모두 정상 → 확인 후 임시 스크립트 삭제</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Input/PlayerControls.inputactions</code> — 템플릿 파일을 옮겨서 교체</li>
+        <li><code>docs/plan.md</code> — 입력 방식(§1), 액션 읽는 방법 · 바인딩(§6)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>UI 맵이 없으면 Input System이 경고 없이 기본 UI 입력을 씀 (패키지 소스에서 확인) → 재시작 버튼 클릭은 그걸로 동작</li>
+        <li>코드에서는 <code>InputSystem.actions.FindAction("Player/Move")</code>로 꺼내 쓰는 방식. C# 래퍼 클래스는 안 만듦 (래퍼는 별도 복사본을 만들어서 프로젝트 전체 설정과 따로 놂)</li>
+        <li>M1 완료! 다음: M2 <code>MapLayout</code> ScriptableObject</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
       <h2>.editorconfig 추가</h2>
       <h3>한 일</h3>
       <ul>

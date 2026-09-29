@@ -21,7 +21,7 @@ Work top to bottom unless the user says otherwise.
 - [x] Add `.editorconfig`: formatting and .NET naming rules
 - [x] Create folder structure under `Unity/Assets/` per `plan.md` §2
 - [x] Set up `Main` scene: directional light and orthographic quarter-view camera (§7)
-- [ ] Create `PlayerControls.inputactions` with `Move` (WASD), `Jump` (Space), `Restart` (R)
+- [x] Create `PlayerControls.inputactions` with `Move` (WASD), `Jump` (Space), `Restart` (R)
   (template's `InputSystem_Actions.inputactions` can be replaced)
 
 ## M2. Flat map + capsule movement
