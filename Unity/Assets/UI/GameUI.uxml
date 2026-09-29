@@ -1,22 +1,98 @@
-<ui:UXML xmlns:ui="UnityEngine.UIElements">
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:game="MyGame.UI">
     <Style src="GameUI.uss" />
     <ui:VisualElement name="root" class="root" picking-mode="Ignore">
         <ui:VisualElement name="hud" class="hud" picking-mode="Ignore">
-            <ui:VisualElement class="hud__gem" picking-mode="Ignore" />
-            <ui:Label name="hud-items" text="0 / 0" class="hud__label" picking-mode="Ignore" />
-        </ui:VisualElement>
-        <ui:VisualElement name="game-over-panel" class="overlay hidden">
-            <ui:VisualElement class="card card--danger">
-                <ui:Label text="Game Over" class="card__title" />
-                <ui:Label text="You fell off the map." class="card__body" />
-                <ui:Button name="game-over-restart" text="Restart (R)" class="card__button" />
+            <ui:VisualElement name="hud-items" class="pill hud__items" picking-mode="Ignore">
+                <game:GameIcon kind="Gem" class="icon pill__icon" picking-mode="Ignore" />
+                <ui:Label name="hud-items-label" text="0 / 0" class="pill__label" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement class="pill hud__time" picking-mode="Ignore">
+                <ui:Label name="hud-time" text="0:00" class="pill__label" picking-mode="Ignore" />
+            </ui:VisualElement>
+            <ui:VisualElement name="hud-hints" class="hints" picking-mode="Ignore">
+                <ui:VisualElement class="hint" picking-mode="Ignore">
+                    <game:GameIcon name="hud-mode-icon" kind="Run" class="icon hint__icon" picking-mode="Ignore" />
+                    <game:GameIcon kind="FoxMark" class="icon hint__icon" picking-mode="Ignore" />
+                    <ui:Label name="hud-mode" text="RUNNING" class="hint__label hint__label--mode" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement class="hints__separator" picking-mode="Ignore" />
+                <ui:VisualElement class="hint" picking-mode="Ignore">
+                    <ui:Label text="Ctrl" class="key" picking-mode="Ignore" />
+                    <ui:Label text="Walk / Run" class="hint__label" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement class="hints__separator" picking-mode="Ignore" />
+                <ui:VisualElement class="hint" picking-mode="Ignore">
+                    <ui:Label text="R" class="key" picking-mode="Ignore" />
+                    <ui:Label text="Restart" class="hint__label" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:VisualElement class="hints__separator" picking-mode="Ignore" />
+                <ui:VisualElement class="hint" picking-mode="Ignore">
+                    <ui:Label text="Esc" class="key" picking-mode="Ignore" />
+                    <ui:Label text="Pause" class="hint__label" picking-mode="Ignore" />
+                </ui:VisualElement>
             </ui:VisualElement>
         </ui:VisualElement>
+
+        <ui:VisualElement name="title-panel" class="overlay overlay--title hidden">
+            <ui:VisualElement class="title">
+                <game:GameIcon kind="FoxMark" class="icon title__mark" picking-mode="Ignore" />
+                <ui:Label text="FOX ISLAND" class="title__logo" picking-mode="Ignore" />
+                <ui:Button name="title-start" class="button button--wide">
+                    <game:GameIcon kind="Play" class="icon button__icon" picking-mode="Ignore" />
+                    <ui:Label text="Press Start" class="button__label" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:VisualElement class="hint title__hint" picking-mode="Ignore">
+                    <ui:Label text="Space" class="key" picking-mode="Ignore" />
+                    <ui:Label text="to start" class="hint__label" picking-mode="Ignore" />
+                </ui:VisualElement>
+                <ui:Button name="title-quit" class="button button--quiet">
+                    <ui:Label text="Quit" class="button__label" picking-mode="Ignore" />
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="pause-panel" class="overlay hidden">
+            <ui:VisualElement class="card">
+                <ui:Label text="Paused" class="card__title" />
+                <ui:Button name="pause-resume" class="button">
+                    <game:GameIcon kind="Play" class="icon button__icon" picking-mode="Ignore" />
+                    <ui:Label text="Resume" class="button__label" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:Button name="pause-restart" class="button">
+                    <game:GameIcon kind="Restart" class="icon button__icon" picking-mode="Ignore" />
+                    <ui:Label text="Restart" class="button__label" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:Button name="pause-quit" class="button">
+                    <game:GameIcon kind="Quit" class="icon button__icon" picking-mode="Ignore" />
+                    <ui:Label text="Quit to Title" class="button__label" picking-mode="Ignore" />
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="game-over-panel" class="overlay hidden">
+            <ui:VisualElement class="card">
+                <ui:Label text="Game Over" class="card__title" />
+                <ui:Button name="game-over-restart" class="button">
+                    <game:GameIcon kind="Restart" class="icon button__icon" picking-mode="Ignore" />
+                    <ui:Label text="Restart (R)" class="button__label" picking-mode="Ignore" />
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
         <ui:VisualElement name="clear-panel" class="overlay hidden">
-            <ui:VisualElement class="card card--success">
+            <ui:VisualElement class="card">
                 <ui:Label text="Clear!" class="card__title" />
-                <ui:Label name="clear-time" text="Time 0.0 s" class="card__body" />
-                <ui:Button name="clear-restart" text="Play Again (R)" class="card__button" />
+                <ui:VisualElement class="card__divider" />
+                <ui:VisualElement class="stats">
+                    <game:GameIcon kind="Clock" class="icon stats__icon" picking-mode="Ignore" />
+                    <ui:Label name="clear-time" text="0:00.0" class="stats__value" />
+                    <game:GameIcon kind="Gem" class="icon stats__icon stats__icon--gap" picking-mode="Ignore" />
+                    <ui:Label name="clear-items" text="0 / 0" class="stats__value" />
+                </ui:VisualElement>
+                <ui:Button name="clear-restart" class="button">
+                    <game:GameIcon kind="Play" class="icon button__icon" picking-mode="Ignore" />
+                    <ui:Label text="Play Again (R)" class="button__label" picking-mode="Ignore" />
+                </ui:Button>
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

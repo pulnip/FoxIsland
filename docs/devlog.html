@@ -107,6 +107,142 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M9</span></div>
+      <h2>앱 아이콘 확정, 게임 이름 Fox Island</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>아이콘 후보 중 "가운데 구도 d"(파란 배경에 보석 · 점프하는 여우 · 모래 타일 세로 한 줄, 주변에 낮은 잔디 타일)로 확정해서 <code>Assets/Art/Icons/AppIcon.png</code>에 넣음</li>
+        <li>새 builder <code>PlayerSettingsBuilder</code>(Build All에 포함): 제품 이름 <code>Fox Island</code>, 아이콘 임포트 설정(압축 없음, 밉맵 없음, 최대 1024), Player Settings 기본 아이콘. 값이 다를 때만 저장해서 Build All 두 번 돌려도 결과 동일</li>
+        <li>게임 이름 <b>Fox Island</b>로 결정 (<code>productName</code>이 템플릿 기본값 "Unity"였던 것도 바뀜). 타이틀 화면의 <code>FOX ISLAND</code>는 로고 표기라 그대로</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m9-icon-center-d.png" alt="확정한 앱 아이콘"><figcaption>확정한 앱 아이콘</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Art/Icons/AppIcon.png</code> — 앱 아이콘 원본 (1254×1254)</li>
+        <li><code>Unity/Assets/Editor/PlayerSettingsBuilder.cs</code> (새 파일), <code>MainSceneSetup.cs</code> — Build All에 추가</li>
+        <li><code>Unity/ProjectSettings/ProjectSettings.asset</code> — 제품 이름, 기본 아이콘</li>
+        <li><code>docs/plan.md</code> — §1 제목, §2 폴더, §2.1 builder 표 / <code>CLAUDE.md</code> 제목</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>회사 이름(<code>companyName</code>)은 아직 <code>DefaultCompany</code>. 스토어 게시자 정보와 같이 정하면 됨</li>
+        <li>다음: 스토어 패키징 방식(MSIX 등)을 정하고, 그에 맞는 크기별 스토어 로고를 이 아이콘에서 만들기</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M9</span></div>
+      <h2>미니멀 플랫 UI: HUD, 타이틀, 일시정지, 게임 오버, 클리어</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>시안 중 미니멀 플랫으로 결정해서 UI 전체를 새로 만듦. 어두운 반투명 남색 패널, 얇은 흰 테두리, Inter 글꼴, 금색은 보석에만</li>
+        <li><b>HUD</b>: 왼쪽 위 보석 <code>2 / 4</code>(먹을 때 살짝 커짐), 오른쪽 위 시간 <code>m:ss</code>, 왼쪽 아래 안내 줄 <code>» 🦊 RUNNING | [Ctrl] Walk / Run | [R] Restart | [Esc] Pause</code>. 걷기 모드로 바꾸면 <code>› WALKING</code>으로 바뀜</li>
+        <li><b>타이틀</b>: 첫 실행 때 살아 있는 맵 위에 여우 마크, <code>FOX ISLAND</code>(임시 이름), Press Start 버튼, Space 안내, Quit 버튼. Space나 버튼으로 시작</li>
+        <li><b>일시정지</b>: Esc로 켜고 끔. 시간이 멈추고(<code>Time.timeScale = 0</code>) Resume / Restart / Quit to Title</li>
+        <li><b>게임 오버</b>, <b>클리어</b>(시계 + <code>0:42.3</code>, 보석 + <code>4 / 4</code>, Play Again) 카드</li>
+        <li>재시작(R, 버튼)은 타이틀을 건너뛰고 바로 플레이, Quit to Title은 타이틀로 돌아감. 도메인 리로드가 꺼진 프로젝트라 "타이틀로 열지" 정적 값은 플레이 시작 때마다 초기화</li>
+        <li>아이콘은 이미지 없이 <code>Painter2D</code>로 그리는 <code>GameIcon</code> 요소로 만듦 (보석, 시계, 재생, 재시작, 나가기, 걷기 ›, 달리기 », 여우 마크). 여우 마크는 아이콘 후보 중 여우 마크 이미지의 윤곽을 따서 씀</li>
+        <li>타이틀을 나가는 Space가 같은 프레임에 점프로도 읽히지 않게 <code>GameManager</code>를 <code>PlayerController</code> 다음에 실행</li>
+        <li>숨겨진 버튼에 키보드 포커스가 남아 있으면 Space(점프)가 그 버튼을 눌러버릴 수 있어서, 버튼은 자기 화면 상태일 때만 동작하고 상태가 바뀔 때마다 포커스를 해제</li>
+        <li>배치 모드에서 플레이 모드로 들어가 UI를 텍스처에 그리고 카메라 화면 위에 합성해서 5개 화면을 캡처로 확인. Build All 두 번 돌려 결과 동일 확인</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m9-ui-title.png" alt="타이틀 화면"><figcaption>타이틀</figcaption></figure>
+        <figure><img src="images/m9-ui-hud.png" alt="플레이 중 HUD"><figcaption>HUD (보석, 시간, 달리기 모드, 키 안내)</figcaption></figure>
+        <figure><img src="images/m9-ui-pause.png" alt="일시정지"><figcaption>일시정지</figcaption></figure>
+        <figure><img src="images/m9-ui-clear.png" alt="클리어"><figcaption>클리어 (캡처용으로 보석을 바로 먹게 해서 시간이 짧음)</figcaption></figure>
+        <figure><img src="images/m9-ui-gameover.png" alt="게임 오버"><figcaption>게임 오버</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/UI/GameUI.uxml</code>, <code>GameUI.uss</code> — 새 레이아웃과 스타일</li>
+        <li><code>Unity/Assets/UI/Fonts/Inter-Regular.ttf</code>, <code>Inter-LICENSE.txt</code> — Unity 에디터에 들어 있는 Inter(SIL OFL 1.1)와 라이선스</li>
+        <li><code>Unity/Assets/Scripts/UI/GameIcon.cs</code> — 벡터 아이콘 요소 (새 파일)</li>
+        <li><code>Unity/Assets/Scripts/UI/GameUI.cs</code> — 상태별 화면, 타이머, 모드 표시</li>
+        <li><code>Unity/Assets/Scripts/Core/GameState.cs</code> — <code>Title</code>, <code>Paused</code> 추가</li>
+        <li><code>Unity/Assets/Scripts/Core/GameManager.cs</code> — 타이틀, 일시정지, 타이틀로 나가기, 앱 종료</li>
+        <li><code>Unity/Assets/Scripts/Player/PlayerController.cs</code> — <code>RunningChanged</code> 이벤트</li>
+        <li><code>Unity/Assets/Input/PlayerControls.inputactions</code> — <code>Pause</code>(Esc)</li>
+        <li><code>Unity/Assets/Editor/MainSceneSetup.cs</code>, <code>Main.unity</code> — UI에 플레이어 연결</li>
+        <li><code>docs/plan.md</code> — §1, §2, §6, §8 전면 수정, 새 §8.1 UI / <code>CLAUDE.md</code> — UI 캡처 방법</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>UI Toolkit에는 배경 흐림 효과가 없어서 시안의 유리 느낌은 반투명 패널로 대신함</li>
+        <li>게임 이름이 정해지면 <code>GameUI.uxml</code>의 <code>FOX ISLAND</code>만 바꾸면 됨</li>
+        <li>다음: 플레이테스트, 앱 아이콘과 게임 이름 결정</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M9</span></div>
+      <h2>앱 아이콘 후보 4종 (Codex)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>MS Store에 올릴 앱 아이콘 후보를 Codex 이미지 생성으로 4장 뽑음. 게임 캡처와 고른 UI 시안을 참고 이미지로 넘기고, 글자 없이 44px에서도 알아볼 수 있는 단순한 1:1 정사각형으로 요청</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m9-icon-fox-head.png" alt="복셀 여우 얼굴"><figcaption>복셀 여우 얼굴</figcaption></figure>
+        <figure><img src="images/m9-icon-island-tile.png" alt="섬 타일 위 여우"><figcaption>물 위 타일 한 칸 + 여우 + 보석</figcaption></figure>
+        <figure><img src="images/m9-icon-fox-mark.png" alt="여우 마크"><figcaption>흰 여우 마크 + 금색 보석 (UI 여우 마크의 원본)</figcaption></figure>
+        <figure><img src="images/m9-icon-fox-gem.png" alt="보석을 올려다보는 여우"><figcaption>보석을 올려다보는 여우</figcaption></figure>
+      </div>
+      <ul>
+        <li>추가 요청: "섬 타일" 방향으로, 모래 타일에서 모래 아닌 타일로 점프하는 장면 + 위에 동전을 둔 변형 4장. 마인크래프트처럼 보이지 않게 흘러내리는 잔디와 픽셀 질감은 빼고 게임처럼 평평한 윗면으로 요청</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m9-icon-jump-a.png" alt="점프 변형 a"><figcaption>a: 가까이, 모래 → 잔디</figcaption></figure>
+        <figure><img src="images/m9-icon-jump-b.png" alt="점프 변형 b"><figcaption>b: 낮은 각도, 물보라</figcaption></figure>
+        <figure><img src="images/m9-icon-jump-c.png" alt="점프 변형 c"><figcaption>c: 미니멀, 빛나는 동전</figcaption></figure>
+        <figure><img src="images/m9-icon-jump-d.png" alt="점프 변형 d"><figcaption>d: 타일 세 개 계단</figcaption></figure>
+      </div>
+      <ul>
+        <li>추가 요청 2: 아이콘으로 쓰기 좋게 보석 · 여우 · 모래 타일을 가운데 세로 한 줄로, 잔디 블록은 모래 주변을 둘러싸게, 동전은 게임과 같은 금색 보석 큐브로 바꾼 4장</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m9-icon-center-a.png" alt="가운데 구도 a"><figcaption>a: 위로 점프 (가장자리가 흘러내리는 질감이 다시 나옴)</figcaption></figure>
+        <figure><img src="images/m9-icon-center-b.png" alt="가운데 구도 b"><figcaption>b: 앉아서 올려다봄 (흘러내리는 질감)</figcaption></figure>
+        <figure><img src="images/m9-icon-center-c.png" alt="가운데 구도 c"><figcaption>c: 3×3 섬, 여우가 가운데에서 살짝 벗어남</figcaption></figure>
+        <figure><img src="images/m9-icon-center-d.png" alt="가운데 구도 d"><figcaption>d: 미니멀, 세로 한 줄이 가장 또렷함</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>docs/images/m9-icon-*.png</code> — 후보 이미지 (1254×1254)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>"섬 타일" 후보는 잔디가 흘러내리는 흙 블록이 마인크래프트 잔디 블록과 많이 닮아서, 스토어에 쓰려면 다듬는 게 안전함</li>
+        <li>하나를 고르면 스토어와 Windows에 필요한 크기별 아이콘으로 만들고 Unity Player Settings에 넣는 작업이 남음</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M9</span></div>
+      <h2>UI 시안 3종 (Codex 이미지 생성)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>바로 만들기 전에 방향부터 고르려고 Codex CLI(Codex 데스크톱 앱에 들어 있는 <code>codex.exe</code>)로 UI 시안을 생성. 스타일마다 HUD 한 장 + 타이틀·일시정지·게임 오버·클리어를 모은 한 장</li>
+        <li>스타일: 복셀·블록, 부드러운 캐주얼, 미니멀 플랫 → <b>미니멀 플랫</b>으로 결정</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m9-mockup-voxel.png" alt="복셀 시안"><figcaption>복셀·블록</figcaption></figure>
+        <figure><img src="images/m9-mockup-casual.png" alt="캐주얼 시안"><figcaption>부드러운 캐주얼</figcaption></figure>
+        <figure><img src="images/m9-mockup-minimal.png" alt="미니멀 시안"><figcaption>미니멀 플랫 (채택)</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>docs/images/m9-mockup-*.png</code> — 시안 이미지</li>
+        <li><code>CLAUDE.md</code> — Codex CLI 위치와 찾는 방법</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>Codex는 PATH에 없고 앱 업데이트마다 경로가 바뀌어서 <code>Get-AppxPackage</code>로 찾음</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
       <h2>호수: 구멍과 맵 바깥을 물로, 물 셰이더와 물보라</h2>
       <h3>한 일</h3>

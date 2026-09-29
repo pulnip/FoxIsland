@@ -33,6 +33,15 @@
                     "initialStateCheck": false
                 },
                 {
+                    "name": "Pause",
+                    "type": "Button",
+                    "id": "5f0b8e2a-3c61-4d7e-9a24-6b1e8d2f4c93",
+                    "expectedControlType": "Button",
+                    "processors": "",
+                    "interactions": "",
+                    "initialStateCheck": false
+                },
+                {
                     "name": "ToggleWalk",
                     "type": "Button",
                     "id": "8de60872-37b1-4d44-87ec-16f08e8024cd",
@@ -172,6 +181,17 @@
                     "processors": "",
                     "groups": "Keyboard",
                     "action": "ToggleWalk",
+                    "isComposite": false,
+                    "isPartOfComposite": false
+                },
+                {
+                    "name": "",
+                    "id": "c2d7a9e4-8b13-4f6a-b5e0-3a9f1c7d2e68",
+                    "path": "<Keyboard>/escape",
+                    "interactions": "",
+                    "processors": "",
+                    "groups": "Keyboard",
+                    "action": "Pause",
                     "isComposite": false,
                     "isPartOfComposite": false
                 }

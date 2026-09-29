@@ -32,6 +32,8 @@ namespace MyGame.Player
 
         public event Action Jumped;
 
+        public event Action<bool> RunningChanged;
+
         /// <summary>
         /// When false, move and jump input are ignored; gravity still applies.
         /// </summary>
@@ -100,6 +102,7 @@ namespace MyGame.Player
             if (InputEnabled && _toggleWalkAction.WasPressedThisFrame())
             {
                 IsRunning = !IsRunning;
+                RunningChanged?.Invoke(IsRunning);
             }
 
             var horizontal = ToWorldDirection(input) * (IsRunning ? _runSpeed : _walkSpeed);

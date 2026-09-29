@@ -29,6 +29,7 @@ namespace MyGame.EditorTools
             PlayerAssetBuilder.Run();
             ItemAssetBuilder.Run();
             UIAssetBuilder.Run();
+            PlayerSettingsBuilder.Run();
             Run();
         }
 
@@ -50,7 +51,7 @@ namespace MyGame.EditorTools
             SetupCamera(layout, player);
             var itemSpawner = SetupItems(mapBuilder);
             var gameManager = SetupGameManager(player, itemSpawner);
-            SetupUI(gameManager);
+            SetupUI(gameManager, player);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             Debug.Log($"[MainSceneSetup] {ScenePath} set up.");
@@ -208,7 +209,7 @@ namespace MyGame.EditorTools
             return gameManager;
         }
 
-        private static void SetupUI(GameManager gameManager)
+        private static void SetupUI(GameManager gameManager, PlayerController player)
         {
             var gameUI = Object.FindObjectsByType<GameUI>().FirstOrDefault();
             if (gameUI == null)
@@ -220,6 +221,7 @@ namespace MyGame.EditorTools
             document.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(UIAssetBuilder.PanelSettingsPath);
             document.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UIAssetBuilder.GameUIPath);
             EditorAssetUtility.SetReference(gameUI, "_gameManager", gameManager);
+            EditorAssetUtility.SetReference(gameUI, "_player", player);
         }
     }
 }

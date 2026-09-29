@@ -1,4 +1,4 @@
-# MyGame — Voxel Animal Platformer
+# MyGame — Fox Island, a voxel animal platformer
 
 Unity 6 3D game: a voxel animal (built with Blender Python) walks and jumps on a 4×4 tile map
 standing in a lake, under a fixed quarter-view camera, collecting random items.
@@ -67,6 +67,11 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
 - Visual check without the editor: a temporary editor script can build the map in edit mode,
   `camera.Render()` into a RenderTexture, and save a PNG to the scratchpad. Render **twice**;
   in batch mode the first render uses stale material data. Delete the script afterwards.
+  `camera.Render()` does not include UI Toolkit. To capture the UI, run a temporary script
+  without `-quit`: open the scene, `EditorApplication.EnterPlaymode()`, drive it from
+  `EditorApplication.update`, give the `UIDocument` a copy of its `PanelSettings` with a
+  `targetTexture` (clear to transparent), composite that over a camera render, then
+  `EditorApplication.Exit(0)`.
 
 ## Environment
 
@@ -83,6 +88,10 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
 - `.gitattributes` forces LF for all text files and routes binary assets (models, images,
   audio, fonts, `LightingData.asset`) through Git LFS. When adding a new binary file type,
   add its LFS pattern there before the first commit of such a file.
+- Codex CLI (image generation available, logged in with ChatGPT): not on PATH; it ships inside
+  the Codex desktop app at `C:\Program Files\WindowsApps\OpenAI.Codex_<version>_x64__2p2nqsd0c76g0\app\resources\codex.exe`.
+  The version changes with app updates; find it with
+  `(Get-AppxPackage | Where-Object Name -like '*Codex*').InstallLocation`.
 - Blender 5.2 LTS: `C:\Program Files\Blender Foundation\Blender 5.2\blender.exe`. Regenerate the
   character (from the repo root, Git Bash):
   `blender --background --factory-startup --python Tools/Blender/generate_character.py -- --animal fox --out Unity/Assets/Art/Character/Fox.fbx --preview <scratch dir>`

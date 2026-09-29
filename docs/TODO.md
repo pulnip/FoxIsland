@@ -107,3 +107,14 @@ Work top to bottom unless the user says otherwise.
 - [x] Grass recovers in 0.6 s instead of 1.2 s
 - [x] Lake: water in the holes and around the grid, wave and foam shader, touching water = game over, splashes
 - [ ] Playtest: water look (colors, foam, waves), game over on touching water, splashes — **user**
+
+## M9. UI and release
+
+- [x] UI mockups in three styles (voxel, soft casual, minimal flat) generated with Codex — minimal flat chosen
+- [x] Minimal flat UI: HUD (gems, timer, walk/run mode, key hints), title, pause (Esc), game over, clear
+- [x] App icon candidates generated with Codex (fox head, island tile, fox mark, fox and gem)
+- [ ] Playtest: title → play → pause → quit to title, restart skips the title, HUD mode and timer — **user**
+- [x] App icon variants: fox leaping between tiles with a coin, then centered gem / fox / sand column — **user** picked the minimal centered one
+- [x] Set the chosen icon as the default app icon (`PlayerSettingsBuilder`)
+- [x] Game name: Fox Island (`productName` and the title screen)
+- [ ] Store packaging: Windows build, MSIX / Store listing assets from `AppIcon.png`

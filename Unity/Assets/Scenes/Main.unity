@@ -150,6 +150,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.UI.GameUI
   _gameManager: {fileID: 1676309841}
+  _player: {fileID: 1162758536}
 --- !u!114 &323380408
 MonoBehaviour:
   m_ObjectHideFlags: 0
