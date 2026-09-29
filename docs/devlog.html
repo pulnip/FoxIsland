@@ -103,6 +103,31 @@
 -->
     <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
+      <h2>.editorconfig 추가</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>공통: UTF-8, LF, 파일 끝 줄바꿈, 줄 끝 공백 제거, 4칸 들여쓰기</li>
+        <li>C#: Allman 중괄호, <code>var</code> 선호, <code>this.</code> 생략, 접근 제한자 필수, .NET 이름 규칙(<code>_camelCase</code> private 필드, PascalCase 타입·메서드·프로퍼티·상수, <code>I</code>/<code>T</code> 접두사)</li>
+        <li>Unity 6가 C# 9까지라 file-scoped namespace 대신 block-scoped로 고정</li>
+        <li>Unity 오브젝트엔 <code>??</code>, <code>?.</code>가 위험하니까 IDE가 그걸 권하지 않도록 끔</li>
+        <li>Unity가 저장하는 YAML(<code>.unity</code>, <code>.prefab</code>, <code>.meta</code> 등)은 포맷 규칙 해제, Python은 PEP 8(79자), JSON은 Unity 형식에 맞춤(<code>Packages/</code>만 2칸)</li>
+        <li>기존 코드 점검: <code>QuarterViewCamera</code>의 지역 상수 <code>clipMargin</code> → <code>ClipMargin</code></li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>.editorconfig</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Scripts/CameraRig/QuarterViewCamera.cs</code> — 상수 이름</li>
+        <li><code>CLAUDE.md</code> — C# 9 제한, Unity null 규칙</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>Unity 에디터는 <code>.editorconfig</code>를 포맷에 안 씀 — Rider / Visual Studio에서 효과 있음</li>
+        <li>다음: <code>PlayerControls.inputactions</code> (WASD / Space / R)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
       <h2>Git LFS · 줄바꿈 설정 (.gitattributes)</h2>
       <h3>한 일</h3>
       <ul>

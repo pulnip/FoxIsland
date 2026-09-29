@@ -34,6 +34,10 @@ Project knowledge that must persist across sessions goes in this file, not in Cl
 ## Conventions
 
 - C# (Unity): standard .NET conventions. The C++ rules in the global CLAUDE.md do not apply.
+  `.editorconfig` owns layout and naming; follow it.
+- Unity 6 compiles C# 9: no file-scoped namespaces, `record struct`, or other C# 10+ features.
+- Never use `??`, `?.`, or `is null` on `UnityEngine.Object`; Unity overrides `==` for
+  destroyed objects. Use `TryGetComponent` instead of `GetComponent() ?? AddComponent()`.
 - Python (Blender scripts): PEP 8.
 - Scripts live under `Unity/Assets/Scripts/<Area>/` as laid out in `plan.md` §2.
 - Never hand-write `.meta` GUIDs; let Unity generate them.

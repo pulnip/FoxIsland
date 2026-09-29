@@ -63,13 +63,13 @@ namespace MyGame.CameraRig
                 halfHeight = Mathf.Max(halfHeight, Mathf.Abs(viewCorner.y));
             }
 
-            const float clipMargin = 10f;
+            const float ClipMargin = 10f;
             var camera = Camera;
             var radius = extents.magnitude;
             camera.orthographic = true;
             camera.orthographicSize = Mathf.Max(halfHeight, halfWidth / camera.aspect) / _screenFill;
-            camera.nearClipPlane = Mathf.Max(0.01f, _distance - radius - clipMargin);
-            camera.farClipPlane = _distance + radius + clipMargin;
+            camera.nearClipPlane = Mathf.Max(0.01f, _distance - radius - ClipMargin);
+            camera.farClipPlane = _distance + radius + ClipMargin;
 
             _appliedAspect = camera.aspect;
             _isDirty = false;
