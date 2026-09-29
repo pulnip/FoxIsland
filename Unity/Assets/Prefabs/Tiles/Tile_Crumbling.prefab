@@ -28,10 +28,10 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.075, z: 0}
-  m_LocalScale: {x: 0.96, y: 0.15, z: 0.96}
+  m_LocalScale: {x: 1.46, y: 0.15, z: 1.46}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 9124985873378319856}
+  m_Father: {fileID: 2897808603126199208}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &2359358536883395151
 MeshFilter:
@@ -118,10 +118,10 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: -0.325, z: 0}
-  m_LocalScale: {x: 0.96, y: 0.35, z: 0.96}
+  m_LocalScale: {x: 1.46, y: 0.35, z: 1.46}
   m_ConstrainProportionsScale: 0
   m_Children: []
-  m_Father: {fileID: 9124985873378319856}
+  m_Father: {fileID: 2897808603126199208}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!33 &8236121620994429851
 MeshFilter:
@@ -180,6 +180,39 @@ MeshRenderer:
   m_SortingOrder: 0
   m_MaskInteraction: 0
   m_AdditionalVertexStreams: {fileID: 0}
+--- !u!1 &6330926938654837738
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2897808603126199208}
+  m_Layer: 0
+  m_Name: Visual
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2897808603126199208
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6330926938654837738}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 3266435937779801645}
+  - {fileID: 6527293433660941755}
+  m_Father: {fileID: 9124985873378319856}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &9041442148150859462
 GameObject:
   m_ObjectHideFlags: 0
@@ -191,6 +224,7 @@ GameObject:
   - component: {fileID: 9124985873378319856}
   - component: {fileID: 817448793874611731}
   - component: {fileID: 4146322969919159193}
+  - component: {fileID: 8253668903932134648}
   m_Layer: 0
   m_Name: Tile_Crumbling
   m_TagString: Untagged
@@ -211,8 +245,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 3266435937779801645}
-  - {fileID: 6527293433660941755}
+  - {fileID: 2897808603126199208}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!65 &817448793874611731
@@ -234,7 +267,7 @@ BoxCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 3
-  m_Size: {x: 1, y: 0.5, z: 1}
+  m_Size: {x: 1.5, y: 0.5, z: 1.5}
   m_Center: {x: 0, y: -0.25, z: 0}
 --- !u!114 &4146322969919159193
 MonoBehaviour:
@@ -250,3 +283,22 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.Tile
   _top: {fileID: 3266435937779801645}
   _body: {fileID: 6527293433660941755}
+--- !u!114 &8253668903932134648
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9041442148150859462}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: af8e25dfa7b4ab5498148e1661db3337, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.CrumblingTile
+  _visual: {fileID: 2897808603126199208}
+  _shakeDuration: 0.8
+  _shakeAmplitude: 0.04
+  _fallDuration: 0.6
+  _fallDistance: 3
+  _respawnDelay: 3
+  _respawnPopDuration: 0.2

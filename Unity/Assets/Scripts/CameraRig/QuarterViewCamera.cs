@@ -12,8 +12,8 @@ namespace MyGame.CameraRig
         [SerializeField] private float _pitch = 30f;
         [SerializeField] private float _yaw = 45f;
         [SerializeField] private float _distance = 20f;
-        [SerializeField, Range(0.1f, 1f)] private float _screenFill = 0.7f;
-        [SerializeField] private Bounds _framedBounds = new(new Vector3(1.5f, 0.85f, 1.5f), new Vector3(4f, 2.7f, 4f));
+        [SerializeField, Range(0.1f, 1f)] private float _screenFill = 0.85f;
+        [SerializeField] private Bounds _framedBounds = new(Vector3.zero, Vector3.one);
 
         private Camera _camera;
         private bool _isDirty = true;

@@ -1,3 +1,4 @@
+using MyGame.Map;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -92,6 +93,14 @@ namespace MyGame.Player
 
             HorizontalSpeed = horizontal.magnitude;
             FaceTowards(horizontal);
+        }
+
+        private void OnControllerColliderHit(ControllerColliderHit hit)
+        {
+            if (hit.normal.y > 0.5f && hit.collider.TryGetComponent<CrumblingTile>(out var tile))
+            {
+                tile.NotifyStoodOn();
+            }
         }
 
         private Vector3 ToWorldDirection(Vector2 input)

@@ -35,10 +35,10 @@ namespace MyGame.EditorTools
             }
 
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            SetupCamera();
             SetupLight();
             var layout = SetupMap();
             var player = SetupPlayer(layout);
+            SetupCamera(layout, player);
             var gameManager = SetupGameManager(player);
             SetupUI(gameManager);
             EditorSceneManager.MarkSceneDirty(scene);
@@ -46,7 +46,10 @@ namespace MyGame.EditorTools
             Debug.Log($"[MainSceneSetup] {ScenePath} set up.");
         }
 
-        private static void SetupCamera()
+        /// <summary>
+        /// Frames the whole grid plus the player's jump height above the highest level.
+        /// </summary>
+        private static void SetupCamera(MapLayout layout, PlayerController player)
         {
             var cameraObject = GameObject.FindWithTag("MainCamera");
             if (cameraObject == null)
@@ -59,7 +62,14 @@ namespace MyGame.EditorTools
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.62f, 0.78f, 0.90f);
 
-            EditorAssetUtility.GetOrAddComponent<QuarterViewCamera>(cameraObject).Apply();
+            var jumpHeight = new SerializedObject(player).FindProperty("_jumpHeight").floatValue;
+            var bounds = MapMetrics.GridBounds(layout.Width, layout.Depth);
+            bounds.SetMinMax(bounds.min, bounds.max + Vector3.up * jumpHeight);
+
+            var quarterView = EditorAssetUtility.GetOrAddComponent<QuarterViewCamera>(cameraObject);
+            EditorAssetUtility.SetFloat(quarterView, "_screenFill", 0.85f);
+            quarterView.FramedBounds = bounds;
+            quarterView.Apply();
         }
 
         private static void SetupLight()

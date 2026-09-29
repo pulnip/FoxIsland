@@ -7,7 +7,7 @@ namespace MyGame.Map
     /// </summary>
     public static class MapMetrics
     {
-        public const float TileSize = 1f;
+        public const float TileSize = 1.5f;
         public const float LevelHeight = 0.5f;
         public const float TileBottom = -0.5f;
 
@@ -15,5 +15,19 @@ namespace MyGame.Map
 
         public static Vector3 TopCenter(Vector2Int coordinates, int level) =>
             new(coordinates.x * TileSize, TopY(level), coordinates.y * TileSize);
+
+        /// <summary>
+        /// Space a <paramref name="width"/> × <paramref name="depth"/> grid can occupy, from the tile
+        /// bottoms up to the top of the highest possible level.
+        /// </summary>
+        public static Bounds GridBounds(int width, int depth)
+        {
+            var half = TileSize * 0.5f;
+            var bounds = new Bounds();
+            bounds.SetMinMax(
+                new Vector3(-half, TileBottom, -half),
+                new Vector3((width - 1) * TileSize + half, TopY(TileSpec.MaxLevel), (depth - 1) * TileSize + half));
+            return bounds;
+        }
     }
 }

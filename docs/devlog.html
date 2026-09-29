@@ -103,6 +103,131 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M4</span></div>
+      <h2>타일 크기 1.5배 · 카메라 범위 자동 계산</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>타일 가로 · 세로를 1 → 1.5로 키움 (<code>MapMetrics.TileSize</code>). 높이(레벨당 0.5)는 그대로</li>
+        <li>카메라가 비추는 범위가 4×4 · 1칸 기준으로 코드에 박혀 있던 걸 없애고, 씬 세팅이 레이아웃 크기 × 타일 크기 + 플레이어 점프 높이로 직접 계산하도록 바꿈 (<code>MapMetrics.GridBounds</code>)</li>
+        <li>점프 높이는 플레이어의 설정값을 그대로 읽어서, 같은 숫자를 두 군데에 적지 않음</li>
+      </ul>
+      <img src="images/m4-tile-size-1.5.png" alt="타일이 1.5배 넓어진 맵" width="1280" height="720">
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/MapMetrics.cs</code>, <code>Unity/Assets/Scripts/CameraRig/QuarterViewCamera.cs</code></li>
+        <li><code>Unity/Assets/Editor/MainSceneSetup.cs</code>, <code>Unity/Assets/Scenes/Main.unity</code></li>
+        <li><code>docs/plan.md</code> — §1, §4.4, §4.5, §7</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>앞으로 타일 크기나 맵 크기를 바꿔도 카메라가 알아서 맞춰짐</li>
+        <li>구멍 한 칸이 1.5로 넓어졌지만 점프 거리(약 1.86)로 여전히 건널 수 있음. 대신 맵이 넓어진 만큼 걷기 속도 3이 느리게 느껴질 수 있음 → 플레이테스트로 확인</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M2</span></div>
+      <h2>카메라 구도 조정</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>높이가 생긴 맵으로 다시 보니 여백이 너무 많아서(폭 37%, 높이 55%) 채움 비율을 0.7 → 0.85로 올림</li>
+        <li>씬에 저장된 값은 코드 기본값을 바꿔도 안 바뀌니까, 씬 세팅이 이 값을 직접 넣도록 함</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/CameraRig/QuarterViewCamera.cs</code>, <code>Unity/Assets/Editor/MainSceneSetup.cs</code>, <code>EditorAssetUtility.cs</code></li>
+        <li><code>docs/plan.md</code> — §7</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>맵이 화면 높이의 2/3 정도를 채우고 위쪽에 점프 공간이 남음</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M4</span></div>
+      <h2>기획서 초기 레이아웃 적용</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>MapLayout_Main</code>에 §4.2 레이아웃 적용 (빌더는 이 에셋을 안 덮어쓰니까 한 번 쓰고 지우는 임시 스크립트로)</li>
+        <li><code>MapLayout</code> 기본값도 같은 레이아웃으로 → 새로 만들어도 기획서와 같음</li>
+        <li>화면 캡처로 배치 확인: 시작 타일, 무너지는 타일 3개, 1 · 2칸 기둥, 구멍 3개가 모두 제자리</li>
+      </ul>
+      <img src="images/m4-layout.png" alt="기획서 초기 레이아웃: 높이가 다른 타일, 구멍, 무너지는 모래색 타일" width="1280" height="720">
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/ScriptableObjects/MapLayout_Main.asset</code>, <code>Unity/Assets/Scripts/Map/MapLayout.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>2칸 기둥으로 가는 길: 무너지는 타일(3,2)에서 +1.0 점프(아슬아슬) 또는 1칸 타일(3,1)에서 무너지는 타일을 건너뛰기</li>
+        <li>문제: 빌드할 때마다 머티리얼의 <code>_Color</code>가 <code>0.55</code> ↔ <code>0.54999995</code>로 흔들림 → URP가 이 값을 변환해서 다시 씀. 값이 이미 맞으면 머티리얼을 아예 안 건드리도록 고침, 세 번 연속 빌드해서 변경 0 확인</li>
+        <li>점프 손맛 · 무너지는 타이밍은 직접 플레이테스트 필요</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M4</span></div>
+      <h2>무너지는 타일 (CrumblingTile)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>처음 밟는 순간 시작: 0.8초 흔들림(경고) → 충돌 끄고 0.6초 동안 가속하며 떨어짐 → 숨김 → 떨어지기 시작한 뒤 3초에 복구</li>
+        <li>복구할 자리에 플레이어가 있으면 비킬 때까지 기다림 (플레이어가 타일 속에 갇히지 않게)</li>
+        <li>복구할 땐 살짝 작게 나타났다 원래 크기로 커지는 연출</li>
+        <li>타일 프리팹 구조를 <code>Root → Visual → Top, Body</code>로 바꿔서, 흔들리고 떨어지는 건 <code>Visual</code>만 · 충돌 박스는 제자리</li>
+        <li>플레이어가 <code>OnControllerColliderHit</code>에서 위를 향한 면에 닿으면 타일에 알림</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/CrumblingTile.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Scripts/Player/PlayerController.cs</code>, <code>Unity/Assets/Editor/MapAssetBuilder.cs</code></li>
+        <li><code>Unity/Assets/Prefabs/Tiles/*.prefab</code> — Visual 묶음 추가</li>
+        <li><code>docs/plan.md</code> — §4.1 동작, §4.4 프리팹 구조 · <code>docs/plan.html</code> — 설명</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>기획서의 "0.8초 서 있으면 흔들리다 떨어짐"을 "밟으면 0.8초 흔들리다 떨어짐"으로 정리 (고전 플랫포머 방식, 흔들림이 곧 경고)</li>
+        <li>파티클 · 소리 같은 연출은 M8에서</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M4</span></div>
+      <h2>구멍</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>M2에서 만든 <code>MapBuilder</code>가 이미 <code>.</code>을 건너뛰도록 되어 있어서 코드 변경 없음</li>
+        <li>초기 레이아웃 캡처로 구멍 3곳이 비어 있는 것 확인</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li>없음</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>구멍으로 떨어지면 M3의 추락 판정으로 게임 오버</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M4</span></div>
+      <h2>높이 레벨 0~2</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>M2의 <code>Tile.ApplyLevel</code>이 이미 레벨만큼 몸통을 늘리도록 되어 있어서 코드 변경 없음</li>
+        <li>초기 레이아웃 캡처로 1칸(0.5) · 2칸(1.0) 기둥이 제 높이로 나오는 것 확인</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li>없음</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>계단 오르기 높이가 0.1이라 한 칸 높은 타일도 점프해야 올라감</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M3</span></div>
       <h2>게임 상태에 따라 플레이어 입력 끄기</h2>
       <h3>한 일</h3>

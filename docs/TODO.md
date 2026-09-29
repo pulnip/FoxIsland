@@ -33,7 +33,7 @@ Work top to bottom unless the user says otherwise.
 - [x] `PlayerController`: camera-relative WASD movement and facing
 - [x] `PlayerController`: jump with gravity, coyote time, jump buffer (§4.5 tuning targets)
 - [x] Playtest in the editor: movement direction, turn, jump feel — **user**
-- [ ] Tune camera framing: the flat map fills only ~45% of the screen (revisit after M4 heights)
+- [x] Tune camera framing: the flat map fills only ~45% of the screen (revisit after M4 heights)
 
 ## M3. Falling + restart
 
@@ -46,10 +46,12 @@ Work top to bottom unless the user says otherwise.
 
 ## M4. Heights + crumbling tiles
 
-- [ ] Height levels 0–2 (0.5 units per level) in `MapBuilder`
-- [ ] Holes (`.`) in layout
-- [ ] `CrumblingTile`: 0.8 s stand → shake → drop → respawn after 3 s
-- [ ] Author the initial layout from `plan.md` §4.2 and playtest jump tuning
+- [x] Height levels 0–2 (0.5 units per level) in `MapBuilder`
+- [x] Holes (`.`) in layout
+- [x] `CrumblingTile`: 0.8 s stand → shake → drop → respawn after 3 s
+- [x] Author the initial layout from `plan.md` §4.2
+- [x] Widen tiles to 1.5 × 1.5; derive camera bounds from the grid size
+- [x] Playtest: jump tuning on heights and holes, crumbling timing — **user**
 
 ## M5. Items + clear
 

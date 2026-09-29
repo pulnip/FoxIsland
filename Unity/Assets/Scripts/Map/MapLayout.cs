@@ -9,10 +9,10 @@ namespace MyGame.Map
                  ". hole, 0-2 solid level, C crumbling, S start.")]
         [SerializeField] private string[] _rows =
         {
-            "0 0 0 0",
-            "0 0 0 0",
-            "0 0 0 0",
-            "S 0 0 0",
+            "1 . 2 2",
+            "C 1 . C",
+            "0 . C 1",
+            "S 0 0 .",
         };
 
         private TileSpec[,] _tiles;

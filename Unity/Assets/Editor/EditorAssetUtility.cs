@@ -22,6 +22,8 @@ namespace MyGame.EditorTools
 
         /// <summary>
         /// Loads the material at <paramref name="path"/> or creates it, keeping its GUID either way.
+        /// An existing material that already matches is left untouched: URP rewrites the legacy
+        /// <c>_Color</c> with float round-off, so re-saving it would churn the file on every build.
         /// </summary>
         public static Material GetOrCreateLitMaterial(string path, Color color, float smoothness = 0.1f)
         {
@@ -33,16 +35,29 @@ namespace MyGame.EditorTools
                 material = new Material(shader);
                 AssetDatabase.CreateAsset(material, path);
             }
-            else
+            else if (material.shader == shader
+                     && IsApproximately(material.GetColor("_BaseColor"), color)
+                     && IsApproximately(material.GetColor("_Color"), color)
+                     && Mathf.Approximately(material.GetFloat("_Smoothness"), smoothness))
             {
-                material.shader = shader;
+                return material;
             }
 
+            material.shader = shader;
             material.SetColor("_BaseColor", color);
             material.SetColor("_Color", color);
             material.SetFloat("_Smoothness", smoothness);
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static bool IsApproximately(Color a, Color b)
+        {
+            const float Tolerance = 1e-4f;
+            return Mathf.Abs(a.r - b.r) < Tolerance
+                   && Mathf.Abs(a.g - b.g) < Tolerance
+                   && Mathf.Abs(a.b - b.b) < Tolerance
+                   && Mathf.Abs(a.a - b.a) < Tolerance;
         }
 
         public static GameObject CreateVisual(PrimitiveType type, string name, Transform parent, Material material)
@@ -69,6 +84,13 @@ namespace MyGame.EditorTools
 
         public static T GetOrAddComponent<T>(GameObject gameObject) where T : Component =>
             gameObject.TryGetComponent<T>(out var component) ? component : gameObject.AddComponent<T>();
+
+        public static void SetFloat(Object target, string propertyName, float value)
+        {
+            var serializedObject = new SerializedObject(target);
+            serializedObject.FindProperty(propertyName).floatValue = value;
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+        }
 
         public static void SetReference(Object target, string propertyName, Object value)
         {

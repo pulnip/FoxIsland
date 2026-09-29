@@ -22,24 +22,38 @@ namespace MyGame.EditorTools
             var crumbling = EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Crumbling.mat", new Color(0.86f, 0.70f, 0.45f));
             var start = EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Start.mat", new Color(0.42f, 0.62f, 0.86f));
 
-            BuildTilePrefab(SolidPrefabPath, grass, dirt);
-            BuildTilePrefab(CrumblingPrefabPath, crumbling, dirt);
-            BuildTilePrefab(StartPrefabPath, start, dirt);
+            BuildTilePrefab(SolidPrefabPath, grass, dirt, isCrumbling: false);
+            BuildTilePrefab(CrumblingPrefabPath, crumbling, dirt, isCrumbling: true);
+            BuildTilePrefab(StartPrefabPath, start, dirt, isCrumbling: false);
             EnsureLayout();
 
             AssetDatabase.SaveAssets();
             Debug.Log("[MapAssetBuilder] Map assets built.");
         }
 
-        private static void BuildTilePrefab(string path, Material topMaterial, Material bodyMaterial)
+        /// <summary>
+        /// Builds <c>Root (Tile, BoxCollider) → Visual → Top, Body</c>. The Visual container lets a
+        /// crumbling tile shake and fall without moving its collider.
+        /// </summary>
+        private static void BuildTilePrefab(string path, Material topMaterial, Material bodyMaterial, bool isCrumbling)
         {
             var root = new GameObject(Path.GetFileNameWithoutExtension(path));
             var tile = root.AddComponent<Tile>();
-            var top = EditorAssetUtility.CreateVisual(PrimitiveType.Cube, "Top", root.transform, topMaterial);
-            var body = EditorAssetUtility.CreateVisual(PrimitiveType.Cube, "Body", root.transform, bodyMaterial);
+            var visual = new GameObject("Visual").transform;
+            visual.SetParent(root.transform, false);
+
+            var top = EditorAssetUtility.CreateVisual(PrimitiveType.Cube, "Top", visual, topMaterial);
+            var body = EditorAssetUtility.CreateVisual(PrimitiveType.Cube, "Body", visual, bodyMaterial);
             EditorAssetUtility.SetReference(tile, "_top", top.transform);
             EditorAssetUtility.SetReference(tile, "_body", body.transform);
             tile.ApplyLevel(0);
+
+            if (isCrumbling)
+            {
+                var crumblingTile = root.AddComponent<CrumblingTile>();
+                EditorAssetUtility.SetReference(crumblingTile, "_visual", visual);
+            }
+
             EditorAssetUtility.SavePrefab(root, path);
         }
 
