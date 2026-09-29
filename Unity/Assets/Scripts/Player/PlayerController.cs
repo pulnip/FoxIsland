@@ -26,6 +26,11 @@ namespace MyGame.Player
         private float _lastGroundedTime = float.NegativeInfinity;
         private float _lastJumpPressedTime = float.NegativeInfinity;
 
+        /// <summary>
+        /// When false, move and jump input are ignored; gravity still applies.
+        /// </summary>
+        public bool InputEnabled { get; set; } = true;
+
         public bool IsGrounded => _controller.isGrounded;
 
         public float VerticalSpeed => _verticalSpeed;
@@ -63,7 +68,7 @@ namespace MyGame.Player
                 }
             }
 
-            if (_jumpAction.WasPressedThisFrame())
+            if (InputEnabled && _jumpAction.WasPressedThisFrame())
             {
                 _lastJumpPressedTime = now;
             }
@@ -77,7 +82,8 @@ namespace MyGame.Player
 
             _verticalSpeed += _gravity * Time.deltaTime;
 
-            var horizontal = ToWorldDirection(_moveAction.ReadValue<Vector2>()) * _walkSpeed;
+            var input = InputEnabled ? _moveAction.ReadValue<Vector2>() : Vector2.zero;
+            var horizontal = ToWorldDirection(input) * _walkSpeed;
             var flags = _controller.Move((horizontal + Vector3.up * _verticalSpeed) * Time.deltaTime);
             if ((flags & CollisionFlags.Above) != 0 && _verticalSpeed > 0f)
             {

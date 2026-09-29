@@ -64,13 +64,14 @@ MyGame/
         ├── Prefabs/               # Player.prefab, Tiles/Tile_{Solid,Crumbling,Start}.prefab, Item
         ├── Scenes/Main.unity
         ├── ScriptableObjects/     # MapLayout_Main, GameConfig
+        ├── UI/                    # GameUI.uxml/.uss, GameTheme.tss, GamePanelSettings
         └── Scripts/
             ├── Core/              # GameManager, GameState
             ├── Map/               # MapBuilder, MapLayout, MapMetrics, Tile, TileSpec, TileType, CrumblingTile
             ├── Player/            # PlayerController, PlayerAnimator
             ├── Items/             # Item, ItemSpawner
             ├── CameraRig/         # QuarterViewCamera
-            └── UI/                # HUD, GameOverPanel, ClearPanel
+            └── UI/                # GameUI (drives the panels in GameUI.uxml)
 ```
 
 ### 2.1 Asset builders
@@ -81,7 +82,8 @@ Generated assets are rebuilt from code, never hand-edited. `Tools/MyGame/Build A
 | ------------------------ | -------------------- | --------------------------------------------------------------- |
 | Build Map Assets         | `MapAssetBuilder`    | tile materials, tile prefabs, `MapLayout_Main` (only if missing) |
 | Build Player Prefab      | `PlayerAssetBuilder` | player materials, `Player.prefab`                               |
-| Setup Main Scene         | `MainSceneSetup`     | camera, light, `Map` object, player instance on the start tile  |
+| Build UI Assets          | `UIAssetBuilder`     | `GamePanelSettings`                                             |
+| Setup Main Scene         | `MainSceneSetup`     | camera, light, `Map`, player on the start tile, `GameManager`, `UI` |
 
 Builders overwrite assets in place, so GUIDs and references survive a rebuild.
 `MapLayout_Main` is the exception: it is created once and then tuned by hand.
@@ -256,8 +258,17 @@ Playing ──(all items collected)──▶ Cleared
 Cleared / GameOver ──(R key or Restart button)──▶ reload scene ──▶ Playing
 ```
 
-- `GameManager` (single instance in the scene) owns the state, remaining item count,
-  and exposes events: `StateChanged`, `ItemCollected`.
+- `GameManager` (single instance in the scene, `GameManager` object) owns the state,
+  remaining item count, and exposes events: `StateChanged`, `ItemCollected`.
+  - Holds a reference to the scene's `PlayerController` (no singleton); sets
+    `PlayerController.InputEnabled` from the state. Gravity keeps applying while disabled.
+  - Reads `Player/Restart`; `Restart()` reloads the active scene by build index.
+  - Kill plane `_killPlaneY = -5`.
+- UI is UI Toolkit: `Assets/UI/GameUI.uxml` + `GameUI.uss` (hand-written text),
+  `GameTheme.tss` (imports the default runtime theme), `GamePanelSettings.asset`
+  (built by `UIAssetBuilder`; scale with screen size, 1920×1080 reference).
+  `GameUI` (on the `UI` object with a `UIDocument`) toggles panels via the `hidden` class.
+  No `EventSystem` is needed; UI input comes from the Input System's default UI actions.
 - HUD: items collected `n / total`.
 - GameOver panel: "Game Over" + Restart button.
 - Cleared panel: "Clear!" + elapsed time + Restart button.

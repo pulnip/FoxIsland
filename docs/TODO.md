@@ -32,16 +32,17 @@ Work top to bottom unless the user says otherwise.
 - [x] Player prefab: capsule + `CharacterController`
 - [x] `PlayerController`: camera-relative WASD movement and facing
 - [x] `PlayerController`: jump with gravity, coyote time, jump buffer (§4.5 tuning targets)
-- [ ] Playtest in the editor: movement direction, turn, jump feel — **user**
+- [x] Playtest in the editor: movement direction, turn, jump feel — **user**
 - [ ] Tune camera framing: the flat map fills only ~45% of the screen (revisit after M4 heights)
 
 ## M3. Falling + restart
 
-- [ ] `GameState` enum and `GameManager` with `StateChanged` event
-- [ ] Kill plane: `y < -5` → `GameOver`
-- [ ] Restart: R key reloads the scene
-- [ ] GameOver panel with Restart button
-- [ ] Disable player input when state is not `Playing`
+- [x] `GameState` enum and `GameManager` with `StateChanged` event
+- [x] Kill plane: `y < -5` → `GameOver`
+- [x] Restart: R key reloads the scene
+- [x] GameOver panel with Restart button
+- [x] Disable player input when state is not `Playing`
+- [x] Playtest in the editor: fall → Game Over panel, R and button restart — **user**
 
 ## M4. Heights + crumbling tiles
 

@@ -49,7 +49,7 @@ Project knowledge that must persist across sessions goes in this file, not in Cl
 
 The user may keep the editor open while Claude works. Check with `Get-Process Unity`.
 
-- Text assets (C# scripts, `.inputactions` JSON, shaders): edit the files directly.
+- Text assets (C# scripts, `.inputactions` JSON, UXML/USS/TSS, shaders): edit the files directly.
   The editor reimports them when it regains focus.
 - Scenes, prefabs, ScriptableObjects, materials: build them with an editor script in
   `Unity/Assets/Editor/` exposed as a menu item under `Tools/MyGame/`, so the setup is
@@ -58,6 +58,7 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
 - `Tools/MyGame/Build All` (`MainSceneSetup.BuildAll`) rebuilds every generated asset and the
   scene (plan.md §2.1). To change a generated prefab or material, change its builder and rerun;
   hand edits are lost on the next build. `MapLayout_Main` is never overwritten.
+  Builders must be deterministic: running Build All twice must leave `git status` clean.
 - Never hand-edit `.unity`/`.prefab` YAML; an open editor would overwrite it on save.
 - Batch mode fails while the project is open in the editor (project lock).
 - Visual check without the editor: a temporary editor script can build the map in edit mode,
@@ -65,6 +66,11 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
   in batch mode the first render uses stale material data. Delete the script afterwards.
 
 ## Environment
+
+- Windows PowerShell 5.1 reads BOM-less UTF-8 as the ANSI code page (CP949) and corrupts
+  non-ASCII text (`§`, `×`, `—`, `→`, Korean). Never round-trip project text files through
+  `Get-Content`/`Set-Content`/`Out-File`; use the Edit tool, Git Bash, or
+  `[IO.File]::ReadAllText`/`WriteAllText` with `UTF8Encoding($false)`.
 
 - Unity editor: `C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Unity.exe`.
   The project at `Unity/` was created in batch mode from the bundled

@@ -1,0 +1,12 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+    <Style src="GameUI.uss" />
+    <ui:VisualElement name="root" class="root" picking-mode="Ignore">
+        <ui:VisualElement name="game-over-panel" class="overlay hidden">
+            <ui:VisualElement class="card">
+                <ui:Label text="Game Over" class="card__title" />
+                <ui:Label text="You fell off the map." class="card__body" />
+                <ui:Button name="game-over-restart" text="Restart (R)" class="card__button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

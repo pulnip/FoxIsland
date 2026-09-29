@@ -1,11 +1,14 @@
 using System.Linq;
 using MyGame.CameraRig;
+using MyGame.Core;
 using MyGame.Map;
 using MyGame.Player;
+using MyGame.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.UIElements;
 
 namespace MyGame.EditorTools
 {
@@ -19,6 +22,7 @@ namespace MyGame.EditorTools
         {
             MapAssetBuilder.Run();
             PlayerAssetBuilder.Run();
+            UIAssetBuilder.Run();
             Run();
         }
 
@@ -34,7 +38,9 @@ namespace MyGame.EditorTools
             SetupCamera();
             SetupLight();
             var layout = SetupMap();
-            SetupPlayer(layout);
+            var player = SetupPlayer(layout);
+            var gameManager = SetupGameManager(player);
+            SetupUI(gameManager);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             Debug.Log($"[MainSceneSetup] {ScenePath} set up.");
@@ -93,7 +99,7 @@ namespace MyGame.EditorTools
             return layout;
         }
 
-        private static void SetupPlayer(MapLayout layout)
+        private static PlayerController SetupPlayer(MapLayout layout)
         {
             var player = Object.FindObjectsByType<PlayerController>().FirstOrDefault();
             if (player == null)
@@ -105,6 +111,33 @@ namespace MyGame.EditorTools
             var start = layout != null && layout.TryGetStart(out var coordinates) ? coordinates : Vector2Int.zero;
             var position = MapMetrics.TopCenter(start, 0) + Vector3.up * SpawnClearance;
             player.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, 45f, 0f));
+            return player;
+        }
+
+        private static GameManager SetupGameManager(PlayerController player)
+        {
+            var gameManager = Object.FindObjectsByType<GameManager>().FirstOrDefault();
+            if (gameManager == null)
+            {
+                gameManager = new GameObject("GameManager").AddComponent<GameManager>();
+            }
+
+            EditorAssetUtility.SetReference(gameManager, "_player", player);
+            return gameManager;
+        }
+
+        private static void SetupUI(GameManager gameManager)
+        {
+            var gameUI = Object.FindObjectsByType<GameUI>().FirstOrDefault();
+            if (gameUI == null)
+            {
+                gameUI = new GameObject("UI").AddComponent<GameUI>();
+            }
+
+            var document = gameUI.GetComponent<UIDocument>();
+            document.panelSettings = AssetDatabase.LoadAssetAtPath<PanelSettings>(UIAssetBuilder.PanelSettingsPath);
+            document.visualTreeAsset = AssetDatabase.LoadAssetAtPath<VisualTreeAsset>(UIAssetBuilder.GameUIPath);
+            EditorAssetUtility.SetReference(gameUI, "_gameManager", gameManager);
         }
     }
 }

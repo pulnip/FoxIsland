@@ -39,6 +39,7 @@ namespace MyGame.EditorTools
             }
 
             material.SetColor("_BaseColor", color);
+            material.SetColor("_Color", color);
             material.SetFloat("_Smoothness", smoothness);
             EditorUtility.SetDirty(material);
             return material;

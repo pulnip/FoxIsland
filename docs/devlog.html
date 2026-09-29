@@ -103,6 +103,107 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M3</span></div>
+      <h2>게임 상태에 따라 플레이어 입력 끄기</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>PlayerController.InputEnabled</code> 추가: 꺼지면 이동 · 점프 입력은 무시하고 중력은 계속 적용 → 게임 오버 뒤엔 조작 없이 그대로 떨어짐</li>
+        <li><code>GameManager</code>가 상태가 바뀔 때마다 <code>Playing</code>일 때만 켜지도록 설정</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Player/PlayerController.cs</code></li>
+        <li><code>Unity/Assets/Scripts/Core/GameManager.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>M3 구현 끝! 다음: 직접 플레이테스트 후 M4 (높이 차 · 무너지는 타일)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M3</span></div>
+      <h2>게임 오버 패널 (UI Toolkit)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>UI는 UI Toolkit으로 결정: 화면 구성(<code>GameUI.uxml</code>)과 스타일(<code>GameUI.uss</code>)이 텍스트라 바로 읽고 고치기 쉬움</li>
+        <li>게임 오버 패널: 반투명 어두운 배경 위 카드에 "Game Over", 안내 문구, 주황색 "Restart (R)" 버튼</li>
+        <li><code>GameUI</code> 컴포넌트가 <code>StateChanged</code>를 구독해서 <code>hidden</code> 클래스로 패널 표시 · 숨김, 버튼은 <code>GameManager.Restart</code>에 연결</li>
+        <li><code>Tools/MyGame/Build UI Assets</code>: <code>GamePanelSettings</code> 생성 (1920×1080 기준으로 화면에 맞춰 확대 · 축소), Build All에 포함</li>
+        <li>씬 세팅에 <code>UI</code> 오브젝트(<code>UIDocument</code> + <code>GameUI</code>) 추가</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/UI/GameUI.uxml</code>, <code>GameUI.uss</code>, <code>GameTheme.tss</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Scripts/UI/GameUI.cs</code>, <code>Unity/Assets/Editor/UIAssetBuilder.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Editor/MainSceneSetup.cs</code>, <code>Unity/Assets/Scenes/Main.unity</code></li>
+        <li><code>docs/plan.md</code> — UI 구조(§2, §8)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li><code>EventSystem</code> 없이도 UI Toolkit이 Input System 기본 UI 입력으로 클릭을 받음</li>
+        <li>UI Toolkit 화면은 카메라 렌더 캡처에 안 찍혀서 배치 모드로는 눈으로 확인 못 함 → 플레이테스트로 확인 필요</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M3</span></div>
+      <h2>R 키로 재시작</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>GameManager</code>가 <code>Player/Restart</code> 액션을 읽어서 언제든(플레이 중에도) 현재 씬을 다시 불러옴</li>
+        <li>씬을 다시 불러오니까 맵 · 플레이어 · 상태가 전부 처음으로 돌아감 (M5의 아이템 랜덤 배치도 자연스럽게 새로 섞임)</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Core/GameManager.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>재시작 버튼도 같은 <code>Restart()</code>를 호출</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M3</span></div>
+      <h2>추락 판정 (y &lt; -5 → 게임 오버)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>GameManager</code>가 매 프레임 플레이어 높이를 확인해서 <code>-5</code> 아래로 떨어지면 <code>GameOver</code>로 전환</li>
+        <li>판정 높이는 인스펙터에서 조절 가능 (<code>_killPlaneY</code>)</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Core/GameManager.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>타일 바닥이 -0.5라서 -5면 떨어지는 모습이 잠깐 보인 뒤 게임 오버가 됨</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M3</span></div>
+      <h2>GameState · GameManager</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>GameState</code>: <code>Playing</code> · <code>GameOver</code> · <code>Cleared</code></li>
+        <li><code>GameManager</code>: 상태 보관, 바뀌면 <code>StateChanged</code> 이벤트. 싱글턴 대신 씬의 플레이어를 직접 참조</li>
+        <li>씬 세팅에 <code>GameManager</code> 오브젝트 추가, 플레이어 연결</li>
+        <li>M2 플레이테스트 완료 체크</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Core/GameState.cs</code>, <code>GameManager.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Editor/MainSceneSetup.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>문제: Build All을 다시 돌렸더니 <code>Tile_Crumbling.mat</code>이 괜히 바뀜 → URP가 옛 속성 <code>_Color</code>를 <code>_BaseColor</code>에 맞추는 게 들쭉날쭉해서. 빌더가 둘 다 같은 값으로 넣도록 고치고, 두 번 연속 빌드해도 변경이 없는 것 확인 (<code>CLAUDE.md</code>에 "빌더는 결정적이어야 함" 규칙 추가)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M2</span></div>
       <h2>PlayerController: 점프 · 코요테 타임 · 점프 버퍼</h2>
       <h3>한 일</h3>
