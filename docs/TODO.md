@@ -55,12 +55,13 @@ Work top to bottom unless the user says otherwise.
 
 ## M5. Items + clear
 
-- [ ] Item prefab: rotating/bobbing voxel gem with trigger collider
-- [ ] `ItemSpawner`: random placement on valid Solid tiles, ground/air height 50/50
-- [ ] `GameConfig` ScriptableObject (`itemCount`, default 4)
-- [ ] `GameManager`: `ItemCollected` event, all collected → `Cleared`
-- [ ] HUD: `n / total` item counter
-- [ ] Clear panel with elapsed time and Restart button
+- [x] Item prefab: rotating/bobbing voxel gem with trigger collider
+- [x] `ItemSpawner`: random placement on valid Solid tiles, ground/air height 50/50
+- [x] `GameConfig` ScriptableObject (`itemCount`, default 4)
+- [x] `GameManager`: `ItemCollected` event, all collected → `Cleared`
+- [x] HUD: `n / total` item counter
+- [x] Clear panel with elapsed time and Restart button
+- [x] Playtest: pickups (ground and air), HUD count, clear panel and time, restart reshuffles — **user**
 
 ## M6. Blender character
 

@@ -1,11 +1,22 @@
 <ui:UXML xmlns:ui="UnityEngine.UIElements">
     <Style src="GameUI.uss" />
     <ui:VisualElement name="root" class="root" picking-mode="Ignore">
+        <ui:VisualElement name="hud" class="hud" picking-mode="Ignore">
+            <ui:VisualElement class="hud__gem" picking-mode="Ignore" />
+            <ui:Label name="hud-items" text="0 / 0" class="hud__label" picking-mode="Ignore" />
+        </ui:VisualElement>
         <ui:VisualElement name="game-over-panel" class="overlay hidden">
             <ui:VisualElement class="card">
                 <ui:Label text="Game Over" class="card__title" />
                 <ui:Label text="You fell off the map." class="card__body" />
                 <ui:Button name="game-over-restart" text="Restart (R)" class="card__button" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="clear-panel" class="overlay hidden">
+            <ui:VisualElement class="card">
+                <ui:Label text="Clear!" class="card__title" />
+                <ui:Label name="clear-time" text="Time 0.0 s" class="card__body" />
+                <ui:Button name="clear-restart" text="Play Again (R)" class="card__button" />
             </ui:VisualElement>
         </ui:VisualElement>
     </ui:VisualElement>

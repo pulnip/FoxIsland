@@ -1,6 +1,7 @@
 using System.Linq;
 using MyGame.CameraRig;
 using MyGame.Core;
+using MyGame.Items;
 using MyGame.Map;
 using MyGame.Player;
 using MyGame.UI;
@@ -22,6 +23,7 @@ namespace MyGame.EditorTools
         {
             MapAssetBuilder.Run();
             PlayerAssetBuilder.Run();
+            ItemAssetBuilder.Run();
             UIAssetBuilder.Run();
             Run();
         }
@@ -36,10 +38,12 @@ namespace MyGame.EditorTools
 
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             SetupLight();
-            var layout = SetupMap();
+            var mapBuilder = SetupMap();
+            var layout = mapBuilder.Layout;
             var player = SetupPlayer(layout);
             SetupCamera(layout, player);
-            var gameManager = SetupGameManager(player);
+            var itemSpawner = SetupItems(mapBuilder);
+            var gameManager = SetupGameManager(player, itemSpawner);
             SetupUI(gameManager);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -92,7 +96,7 @@ namespace MyGame.EditorTools
             RenderSettings.ambientGroundColor = new Color(0.35f, 0.32f, 0.30f);
         }
 
-        private static MapLayout SetupMap()
+        private static MapBuilder SetupMap()
         {
             var builder = Object.FindObjectsByType<MapBuilder>().FirstOrDefault();
             if (builder == null)
@@ -106,7 +110,7 @@ namespace MyGame.EditorTools
             EditorAssetUtility.SetReference(builder, "_solidPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.SolidPrefabPath));
             EditorAssetUtility.SetReference(builder, "_crumblingPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.CrumblingPrefabPath));
             EditorAssetUtility.SetReference(builder, "_startPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.StartPrefabPath));
-            return layout;
+            return builder;
         }
 
         private static PlayerController SetupPlayer(MapLayout layout)
@@ -124,7 +128,21 @@ namespace MyGame.EditorTools
             return player;
         }
 
-        private static GameManager SetupGameManager(PlayerController player)
+        private static ItemSpawner SetupItems(MapBuilder mapBuilder)
+        {
+            var spawner = Object.FindObjectsByType<ItemSpawner>().FirstOrDefault();
+            if (spawner == null)
+            {
+                spawner = new GameObject("Items").AddComponent<ItemSpawner>();
+            }
+
+            spawner.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            EditorAssetUtility.SetReference(spawner, "_mapBuilder", mapBuilder);
+            EditorAssetUtility.SetReference(spawner, "_itemPrefab", AssetDatabase.LoadAssetAtPath<Item>(ItemAssetBuilder.ItemPrefabPath));
+            return spawner;
+        }
+
+        private static GameManager SetupGameManager(PlayerController player, ItemSpawner itemSpawner)
         {
             var gameManager = Object.FindObjectsByType<GameManager>().FirstOrDefault();
             if (gameManager == null)
@@ -132,7 +150,9 @@ namespace MyGame.EditorTools
                 gameManager = new GameObject("GameManager").AddComponent<GameManager>();
             }
 
+            EditorAssetUtility.SetReference(gameManager, "_config", AssetDatabase.LoadAssetAtPath<GameConfig>(ItemAssetBuilder.GameConfigPath));
             EditorAssetUtility.SetReference(gameManager, "_player", player);
+            EditorAssetUtility.SetReference(gameManager, "_itemSpawner", itemSpawner);
             return gameManager;
         }
 

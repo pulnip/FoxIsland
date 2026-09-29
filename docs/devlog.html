@@ -103,6 +103,124 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M5</span></div>
+      <h2>클리어 패널 · 걸린 시간</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>게임 오버 패널과 같은 카드 모양으로 "Clear!", 걸린 시간(<code>Time 12.3 s</code>), "Play Again (R)" 버튼</li>
+        <li><code>GameManager.ElapsedTime</code>: 시작부터 재되, 클리어 · 게임 오버 순간에 멈춤</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/UI/GameUI.uxml</code>, <code>Unity/Assets/Scripts/UI/GameUI.cs</code>, <code>Unity/Assets/Scripts/Core/GameManager.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>M5 구현 끝! 다음: 직접 플레이테스트 후 M6 (Blender 캐릭터)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M5</span></div>
+      <h2>HUD 아이템 카운터</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>왼쪽 위에 반투명 알약 모양 HUD: 작은 금색 보석 아이콘 + <code>n / 전체</code></li>
+        <li>보석 아이콘은 USS만으로 만듦 (네모를 45° 돌림)</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/UI/GameUI.uxml</code>, <code>GameUI.uss</code>, <code>Unity/Assets/Scripts/UI/GameUI.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>HUD는 클릭을 가로채지 않도록 <code>picking-mode="Ignore"</code></li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M5</span></div>
+      <h2>아이템 개수 세기 · 다 모으면 클리어</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>GameManager</code>가 시작할 때 아이템을 뿌리고, 각 아이템의 <code>Collected</code>를 구독</li>
+        <li>먹을 때마다 <code>CollectedCount</code> 증가 + <code>ItemCountChanged</code> 이벤트, 마지막 하나를 먹으면 <code>Cleared</code></li>
+        <li>게임 오버 뒤에 먹은 아이템은 세지 않음</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Core/GameManager.cs</code>, <code>Unity/Assets/Editor/MainSceneSetup.cs</code></li>
+        <li><code>docs/plan.md</code> — §5, §8</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>기획서의 <code>ItemCollected</code> 이벤트를 <code>ItemCountChanged</code>로 바꿈: 스폰 직후에도 한 번 알려야 HUD가 처음부터 <code>0 / 4</code>를 보여줄 수 있어서</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M5</span></div>
+      <h2>GameConfig</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>GameConfig</code> ScriptableObject: 아이템 개수(기본 4, 최소 1)</li>
+        <li>빌더는 에셋이 없을 때만 만듦 → 인스펙터에서 고친 값은 안 덮어씀</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Core/GameConfig.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/ScriptableObjects/GameConfig.asset</code> — 생성됨</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>일반 타일(8개)보다 많이 요청하면 경고를 띄우고 있는 만큼만 뿌림</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M5</span></div>
+      <h2>ItemSpawner: 랜덤 배치</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>일반 타일만 후보(시작 · 무너지는 · 구멍 제외) → 섞어서 앞에서부터 개수만큼</li>
+        <li>각각 50% 확률로 바닥 높이(+0.4) 또는 점프 높이(+1.0)</li>
+        <li>씬이 다시 로드될 때마다 새로 섞임 → 재시작하면 배치가 바뀜</li>
+        <li>에디터에서 맵과 아이템을 임시로 만들어 캡처: 두 번 캡처했을 때 위치가 서로 다른 것까지 확인</li>
+      </ul>
+      <img src="images/m5-items.png" alt="맵 위에 랜덤으로 놓인 금색 보석 4개" width="1280" height="720">
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Items/ItemSpawner.cs</code> — 새로 추가</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>무너지는 타일 위엔 안 놓으니까, 타일이 꺼져서 아이템을 못 먹게 되는 일은 없음</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M5</span></div>
+      <h2>아이템 프리팹 (금색 보석)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>Item</code>: 보이는 부분(<code>Visual</code>)만 초당 90° 회전 + 위아래로 둥실, 아이템마다 박자를 다르게</li>
+        <li>플레이어가 트리거(반지름 0.3)에 닿으면 <code>Collected</code> 이벤트를 한 번만 보내고 사라짐</li>
+        <li><code>Tools/MyGame/Build Item Assets</code>: 보석 머티리얼 · 프리팹 생성, Build All에 포함</li>
+        <li>첫 캡처에서 보석이 작고 칙칙한 올리브색이라 크기 0.28 → 0.34, 꼭짓점으로 서는 다이아몬드 모양, 은은한 발광(emission) 추가</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Items/Item.cs</code>, <code>Unity/Assets/Editor/ItemAssetBuilder.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Editor/EditorAssetUtility.cs</code> — 머티리얼 발광 지원</li>
+        <li><code>Unity/Assets/Prefabs/Item.prefab</code>, <code>Unity/Assets/Art/Materials/Item_Gem.mat</code> — 생성됨</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>먹을 때 이펙트는 M8에서</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M4</span></div>
       <h2>타일 크기 1.5배 · 카메라 범위 자동 계산</h2>
       <h3>한 일</h3>

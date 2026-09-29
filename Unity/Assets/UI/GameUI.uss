@@ -6,6 +6,34 @@
     display: none;
 }
 
+.hud {
+    position: absolute;
+    left: 32px;
+    top: 32px;
+    flex-direction: row;
+    align-items: center;
+    padding: 10px 22px 10px 16px;
+    background-color: rgba(250, 247, 240, 0.85);
+    border-radius: 999px;
+}
+
+.hud__gem {
+    width: 22px;
+    height: 22px;
+    margin-right: 12px;
+    rotate: 45deg;
+    background-color: rgb(247, 201, 72);
+    border-width: 2px;
+    border-color: rgb(196, 146, 20);
+    border-radius: 3px;
+}
+
+.hud__label {
+    font-size: 32px;
+    -unity-font-style: bold;
+    color: rgb(34, 32, 28);
+}
+
 .overlay {
     position: absolute;
     left: 0;

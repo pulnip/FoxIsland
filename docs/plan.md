@@ -82,11 +82,12 @@ Generated assets are rebuilt from code, never hand-edited. `Tools/MyGame/Build A
 | ------------------------ | -------------------- | --------------------------------------------------------------- |
 | Build Map Assets         | `MapAssetBuilder`    | tile materials, tile prefabs, `MapLayout_Main` (only if missing) |
 | Build Player Prefab      | `PlayerAssetBuilder` | player materials, `Player.prefab`                               |
+| Build Item Assets        | `ItemAssetBuilder`   | gem material, `Item.prefab`, `GameConfig` (only if missing)     |
 | Build UI Assets          | `UIAssetBuilder`     | `GamePanelSettings`                                             |
 | Setup Main Scene         | `MainSceneSetup`     | camera, light, `Map`, player on the start tile, `GameManager`, `UI` |
 
 Builders overwrite assets in place, so GUIDs and references survive a rebuild.
-`MapLayout_Main` is the exception: it is created once and then tuned by hand.
+`MapLayout_Main` and `GameConfig` are the exceptions: created once, then tuned by hand.
 
 ---
 
@@ -215,8 +216,12 @@ or a start-tile count other than one.
   - Pick without replacement; `itemCount` is clamped to the number of candidates.
   - Each item floats either at ground height (+0.4) or at jump height (+1.0), chosen randomly
     (50/50), so some items require jumping.
-- Item visual: small voxel gem/coin, rotating and bobbing.
-- Pickup: trigger collider; on enter → notify `GameManager`, play effect, destroy.
+- `GameManager.Start` asks `ItemSpawner.Spawn(count)` for the items (tiles already exist:
+  `MapBuilder` builds in `Awake`), then subscribes to each item's `Collected`.
+- Item visual: gold voxel gem (0.34 cube standing on a vertex, slight emission) under a
+  `Visual` child that spins 90°/s and bobs ±0.08 over 1.5 s with a random phase.
+- Pickup: sphere trigger (radius 0.3) on the root; on `OnTriggerEnter` from the player →
+  raise `Collected` once, destroy. Pickup effect comes in M8.
 
 ---
 
@@ -265,7 +270,9 @@ Cleared / GameOver ──(R key or Restart button)──▶ reload scene ──�
 ```
 
 - `GameManager` (single instance in the scene, `GameManager` object) owns the state,
-  remaining item count, and exposes events: `StateChanged`, `ItemCollected`.
+  item counts (`CollectedCount`, `TotalCount`), and `ElapsedTime` (frozen when the state
+  leaves `Playing`). Events: `StateChanged`, and `ItemCountChanged` (after spawning and after
+  every pickup). The last pickup switches to `Cleared`.
   - Holds a reference to the scene's `PlayerController` (no singleton); sets
     `PlayerController.InputEnabled` from the state. Gravity keeps applying while disabled.
   - Reads `Player/Restart`; `Restart()` reloads the active scene by build index.
@@ -275,9 +282,9 @@ Cleared / GameOver ──(R key or Restart button)──▶ reload scene ──�
   (built by `UIAssetBuilder`; scale with screen size, 1920×1080 reference).
   `GameUI` (on the `UI` object with a `UIDocument`) toggles panels via the `hidden` class.
   No `EventSystem` is needed; UI input comes from the Input System's default UI actions.
-- HUD: items collected `n / total`.
+- HUD: top-left pill with a small gem icon and `n / total`.
 - GameOver panel: "Game Over" + Restart button.
-- Cleared panel: "Clear!" + elapsed time + Restart button.
+- Cleared panel: "Clear!" + elapsed time + "Play Again (R)" button.
 - R restarts at any time, including mid-play.
 
 ---
