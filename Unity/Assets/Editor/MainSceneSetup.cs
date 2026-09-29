@@ -1,5 +1,7 @@
 using System.Linq;
 using MyGame.CameraRig;
+using MyGame.Map;
+using MyGame.Player;
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -10,8 +12,17 @@ namespace MyGame.EditorTools
     public static class MainSceneSetup
     {
         private const string ScenePath = "Assets/Scenes/Main.unity";
+        private const float SpawnClearance = 0.05f;
 
-        [MenuItem("Tools/MyGame/Setup Main Scene")]
+        [MenuItem("Tools/MyGame/Build All", priority = 0)]
+        public static void BuildAll()
+        {
+            MapAssetBuilder.Run();
+            PlayerAssetBuilder.Run();
+            Run();
+        }
+
+        [MenuItem("Tools/MyGame/Setup Main Scene", priority = 40)]
         public static void Run()
         {
             if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
@@ -22,6 +33,8 @@ namespace MyGame.EditorTools
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
             SetupCamera();
             SetupLight();
+            var layout = SetupMap();
+            SetupPlayer(layout);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
             Debug.Log($"[MainSceneSetup] {ScenePath} set up.");
@@ -36,11 +49,11 @@ namespace MyGame.EditorTools
                 cameraObject.AddComponent<AudioListener>();
             }
 
-            var camera = GetOrAddComponent<Camera>(cameraObject);
+            var camera = EditorAssetUtility.GetOrAddComponent<Camera>(cameraObject);
             camera.clearFlags = CameraClearFlags.SolidColor;
             camera.backgroundColor = new Color(0.62f, 0.78f, 0.90f);
 
-            GetOrAddComponent<QuarterViewCamera>(cameraObject).Apply();
+            EditorAssetUtility.GetOrAddComponent<QuarterViewCamera>(cameraObject).Apply();
         }
 
         private static void SetupLight()
@@ -63,7 +76,35 @@ namespace MyGame.EditorTools
             RenderSettings.ambientGroundColor = new Color(0.35f, 0.32f, 0.30f);
         }
 
-        private static T GetOrAddComponent<T>(GameObject gameObject) where T : Component =>
-            gameObject.TryGetComponent<T>(out var component) ? component : gameObject.AddComponent<T>();
+        private static MapLayout SetupMap()
+        {
+            var builder = Object.FindObjectsByType<MapBuilder>().FirstOrDefault();
+            if (builder == null)
+            {
+                builder = new GameObject("Map").AddComponent<MapBuilder>();
+            }
+
+            builder.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            var layout = AssetDatabase.LoadAssetAtPath<MapLayout>(MapAssetBuilder.LayoutPath);
+            EditorAssetUtility.SetReference(builder, "_layout", layout);
+            EditorAssetUtility.SetReference(builder, "_solidPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.SolidPrefabPath));
+            EditorAssetUtility.SetReference(builder, "_crumblingPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.CrumblingPrefabPath));
+            EditorAssetUtility.SetReference(builder, "_startPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.StartPrefabPath));
+            return layout;
+        }
+
+        private static void SetupPlayer(MapLayout layout)
+        {
+            var player = Object.FindObjectsByType<PlayerController>().FirstOrDefault();
+            if (player == null)
+            {
+                var prefab = AssetDatabase.LoadAssetAtPath<GameObject>(PlayerAssetBuilder.PlayerPrefabPath);
+                player = ((GameObject)PrefabUtility.InstantiatePrefab(prefab)).GetComponent<PlayerController>();
+            }
+
+            var start = layout != null && layout.TryGetStart(out var coordinates) ? coordinates : Vector2Int.zero;
+            var position = MapMetrics.TopCenter(start, 0) + Vector3.up * SpawnClearance;
+            player.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, 45f, 0f));
+        }
     }
 }

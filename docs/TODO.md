@@ -26,12 +26,14 @@ Work top to bottom unless the user says otherwise.
 
 ## M2. Flat map + capsule movement
 
-- [ ] `MapLayout` ScriptableObject (4×4 tile specs: type + height level)
-- [ ] Tile prefabs: Solid, Crumbling, Start (1×1 voxel-style cubes)
-- [ ] `MapBuilder`: instantiate tiles from `MapLayout` at scene load
-- [ ] Player prefab: capsule + `CharacterController`
-- [ ] `PlayerController`: camera-relative WASD movement and facing
-- [ ] `PlayerController`: jump with gravity, coyote time, jump buffer (§4.5 tuning targets)
+- [x] `MapLayout` ScriptableObject (4×4 tile specs: type + height level)
+- [x] Tile prefabs: Solid, Crumbling, Start (1×1 voxel-style cubes)
+- [x] `MapBuilder`: instantiate tiles from `MapLayout` at scene load
+- [x] Player prefab: capsule + `CharacterController`
+- [x] `PlayerController`: camera-relative WASD movement and facing
+- [x] `PlayerController`: jump with gravity, coyote time, jump buffer (§4.5 tuning targets)
+- [ ] Playtest in the editor: movement direction, turn, jump feel — **user**
+- [ ] Tune camera framing: the flat map fills only ~45% of the screen (revisit after M4 heights)
 
 ## M3. Falling + restart
 

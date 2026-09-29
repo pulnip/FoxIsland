@@ -26,6 +26,8 @@ After finishing each task (one `docs/TODO.md` checkbox):
 2. Add an entry to `docs/devlog.html` directly below the `NEW ENTRIES GO HERE` comment,
    following the template in that comment. Write the entry in Korean: what was done,
    files changed, notes (decisions, problems, what's next).
+   Use neutral wording in all project documents: no chat-persona forms of address or
+   nicknames for the user; the persona stays in chat only. Write "직접", or omit the subject.
 3. If a decision changed the spec, update `docs/plan.md` and, when the change is user-visible,
    `docs/plan.html` too.
 
@@ -53,8 +55,14 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
   `Unity/Assets/Editor/` exposed as a menu item under `Tools/MyGame/`, so the setup is
   reproducible. Editor open → ask the user to run the menu item. Editor closed → run it with
   `-batchmode -quit -projectPath Unity -executeMethod <Class.Method>`.
+- `Tools/MyGame/Build All` (`MainSceneSetup.BuildAll`) rebuilds every generated asset and the
+  scene (plan.md §2.1). To change a generated prefab or material, change its builder and rerun;
+  hand edits are lost on the next build. `MapLayout_Main` is never overwritten.
 - Never hand-edit `.unity`/`.prefab` YAML; an open editor would overwrite it on save.
 - Batch mode fails while the project is open in the editor (project lock).
+- Visual check without the editor: a temporary editor script can build the map in edit mode,
+  `camera.Render()` into a RenderTexture, and save a PNG to the scratchpad. Render **twice**;
+  in batch mode the first render uses stale material data. Delete the script afterwards.
 
 ## Environment
 
