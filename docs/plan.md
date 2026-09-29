@@ -57,6 +57,7 @@ MyGame/
 └── Unity/                         # Unity project root
     └── Assets/
         ├── Art/Character/         # imported FBX, materials
+        ├── Editor/                # Tools/MyGame/* menu items that build scenes and assets
         ├── Input/                 # PlayerControls.inputactions
         ├── Prefabs/               # Player, Tile variants, Item
         ├── Scenes/Main.unity

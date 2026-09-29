@@ -36,15 +36,28 @@ Project knowledge that must persist across sessions goes in this file, not in Cl
 - C# (Unity): standard .NET conventions. The C++ rules in the global CLAUDE.md do not apply.
 - Python (Blender scripts): PEP 8.
 - Scripts live under `Unity/Assets/Scripts/<Area>/` as laid out in `plan.md` §2.
+- Never hand-write `.meta` GUIDs; let Unity generate them.
 - Build gameplay with a capsule stand-in first; the Blender character comes in M6–M7.
+
+## Working with the Unity editor
+
+The user may keep the editor open while Claude works. Check with `Get-Process Unity`.
+
+- Text assets (C# scripts, `.inputactions` JSON, shaders): edit the files directly.
+  The editor reimports them when it regains focus.
+- Scenes, prefabs, ScriptableObjects, materials: build them with an editor script in
+  `Unity/Assets/Editor/` exposed as a menu item under `Tools/MyGame/`, so the setup is
+  reproducible. Editor open → ask the user to run the menu item. Editor closed → run it with
+  `-batchmode -quit -projectPath Unity -executeMethod <Class.Method>`.
+- Never hand-edit `.unity`/`.prefab` YAML; an open editor would overwrite it on save.
+- Batch mode fails while the project is open in the editor (project lock).
 
 ## Environment
 
 - Unity editor: `C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Unity.exe`.
   The project at `Unity/` was created in batch mode from the bundled
-  `com.unity.template.urp-blank` template. Batch-mode commands (`-batchmode -quit -projectPath Unity`)
-  fail while the project is open in the editor, so ask the user to close it first.
+  `com.unity.template.urp-blank` template.
 - Git: the repository root is `MyGame/`; `.gitignore` there covers `Unity/` paths.
-  The user runs `git init` and commits.
+  Commit only when the user says to; the user decides when.
 - Blender runs headless:
   `blender --background --python Tools/Blender/generate_character.py -- --animal fox --out Art/Character/Fox.fbx`
