@@ -108,6 +108,32 @@
 -->
     <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
+      <h2>발자국</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>요청: 여우가 걸어 다닐 때 발자국이 잠깐 남게. (사운드 · HUD 걷기 표시는 안 하기로 함)</li>
+        <li>걷기 · 달리기 클립에 발이 땅에 닿는 순간 <code>Footstep</code> 애니메이션 이벤트: 걷기는 대각선 두 발씩 0% · 50%, 달리기는 앞발 둘 25% · 뒷발 둘 75%</li>
+        <li><code>FootprintEmitter</code>(여우 모델에 붙음)가 해당 다리 아래로 레이를 쏴서 타일 표면에 납작한 어두운 복셀 발자국을 여우 방향으로 찍음. 공중에선 안 찍음</li>
+        <li>발자국 파티클 시스템 하나에 필요할 때만 하나씩 내보냄: 1.5초 수명, 앞 60%는 그대로, 뒤는 작아지며 사라짐</li>
+        <li>에디터 모드에서 여우를 한 걸음씩 옮기며 이벤트 함수를 직접 불러 확인: 8걸음 모두 두 개씩 찍힘</li>
+      </ul>
+      <img src="images/m8-footprints.png" alt="시작 타일에서 오른쪽 위로 이어지는 두 줄의 작은 발자국과 그 끝의 여우" width="1280" height="720">
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Player/FootprintEmitter.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Editor/EffectAssetBuilder.cs</code>, <code>CharacterAssetBuilder.cs</code>, <code>PlayerAssetBuilder.cs</code></li>
+        <li><code>Unity/Assets/Prefabs/Effects/Footprints.prefab</code> — 생성됨, <code>Unity/Assets/Prefabs/Player.prefab</code>, <code>Fox.fbx.meta</code></li>
+        <li><code>docs/plan.md</code> — §2, §2.1, §5, §6</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>반투명하게 흐려지게 하면 URP가 머티리얼 설정을 건드려서 빌드마다 파일이 흔들릴 위험이 있어(보석 발광 때 겪음), 크기가 줄어드는 방식으로 사라지게 함</li>
+        <li>발자국 색 · 크기 · 수명은 <code>EffectAssetBuilder.BuildFootprints</code>에서 조절</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
       <h2>UI 패널 다듬기</h2>
       <h3>한 일</h3>
       <ul>

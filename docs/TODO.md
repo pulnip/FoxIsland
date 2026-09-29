@@ -95,3 +95,5 @@ Work top to bottom unless the user says otherwise.
 - [ ] Playtest: pickup burst, HUD bump, crumble shake ramp and dust, panel fade and pop — **user**
 - [x] ~~Sounds (optional)~~ — dropped
 - [x] ~~HUD walk-mode indicator (optional)~~ — dropped for now
+- [x] Footprints that linger briefly where the fox's paws land (walk and run)
+- [x] Playtest: footprint timing, size, and lifetime — **user**

@@ -32,6 +32,17 @@ namespace MyGame.EditorTools
             ["Fall"] = new Vector3(580f, 320f),
         };
 
+        /// <summary>
+        /// Paw contacts per clip as (normalized time, legs) for <c>FootprintEmitter.Footstep</c>.
+        /// Walk plants its diagonal pairs half a cycle apart; Run (bound) lands the front pair,
+        /// then pushes off with the back pair.
+        /// </summary>
+        private static readonly Dictionary<string, (float Time, string Legs)[]> Footsteps = new()
+        {
+            ["Walk"] = new[] { (0f, "LegFR,LegBL"), (0.5f, "LegFL,LegBR") },
+            ["Run"] = new[] { (0.25f, "LegFL,LegFR"), (0.75f, "LegBL,LegBR") },
+        };
+
         private static readonly (string Name, AnimatorControllerParameterType Type)[] ParameterSpecs =
         {
             (Parameters.SpeedName, AnimatorControllerParameterType.Float),
@@ -73,6 +84,14 @@ namespace MyGame.EditorTools
             {
                 clip.name = clip.takeName.Substring(clip.takeName.LastIndexOf('|') + 1);
                 clip.loopTime = LoopingClips.Contains(clip.name);
+                clip.events = Footsteps.TryGetValue(clip.name, out var steps)
+                    ? steps.Select(step => new AnimationEvent
+                    {
+                        time = step.Time,
+                        functionName = nameof(MyGame.Player.FootprintEmitter.Footstep),
+                        stringParameter = step.Legs,
+                    }).ToArray()
+                    : System.Array.Empty<AnimationEvent>();
             }
 
             importer.clipAnimations = clips;

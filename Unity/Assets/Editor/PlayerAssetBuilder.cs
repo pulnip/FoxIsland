@@ -41,6 +41,13 @@ namespace MyGame.EditorTools
             var playerAnimator = root.AddComponent<PlayerAnimator>();
             EditorAssetUtility.SetReference(playerAnimator, "_animator", animator);
 
+            var footprintsPrefab = AssetDatabase.LoadAssetAtPath<ParticleSystem>(EffectAssetBuilder.FootprintsPath);
+            var footprints = (ParticleSystem)PrefabUtility.InstantiatePrefab(footprintsPrefab);
+            footprints.transform.SetParent(root.transform, false);
+            var footprintEmitter = model.AddComponent<FootprintEmitter>();
+            EditorAssetUtility.SetReference(footprintEmitter, "_player", root.GetComponent<PlayerController>());
+            EditorAssetUtility.SetReference(footprintEmitter, "_footprints", footprints);
+
             EditorAssetUtility.SavePrefab(root, PlayerPrefabPath);
             AssetDatabase.SaveAssets();
             Debug.Log("[PlayerAssetBuilder] Player prefab built.");
