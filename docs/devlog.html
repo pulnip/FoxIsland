@@ -103,6 +103,30 @@
 -->
     <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
+      <h2>템플릿 잔여물 정리 · 기본 프로젝트 커밋</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>튜토리얼 안내용 <code>TutorialInfo/</code>, <code>Readme.asset</code> 삭제 (<code>.meta</code> 포함)</li>
+        <li><code>SampleScene.unity</code> → <code>Main.unity</code> 이름 변경, 빌드 설정 경로도 수정 (GUID는 그대로)</li>
+        <li>배치 모드로 프로젝트를 열어서 에러 없이 임포트되는 것 확인</li>
+        <li>문서 · Unity 프로젝트 기본 상태를 커밋</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/TutorialInfo/</code>, <code>Unity/Assets/Readme.asset</code> — 삭제</li>
+        <li><code>Unity/Assets/Scenes/Main.unity</code> — 이름 변경</li>
+        <li><code>Unity/ProjectSettings/EditorBuildSettings.asset</code> — 씬 경로</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li><code>InputSystem_Actions.inputactions</code>는 <code>PlayerControls</code> 만들 때 교체 예정 (Input System 설정이 참조 중이라 그때 같이 바꿔야 함)</li>
+        <li><code>Settings/</code>의 URP 설정은 유지</li>
+        <li>다음: <code>Unity/Assets/</code> 폴더 구조 만들기</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
       <h2>문서를 docs/ 폴더로 이동 · git 초기화</h2>
       <h3>한 일</h3>
       <ul>

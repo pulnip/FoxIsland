@@ -15,9 +15,10 @@ Work top to bottom unless the user says otherwise.
 - [x] Add `.gitignore`
 - [x] Initialize git repository — **user does this**
 - [x] Move project documents into `docs/` and update references
-- [ ] Remove template leftovers (`TutorialInfo/`, `Readme.asset`, `SampleScene`)
+- [x] Remove template leftovers (`TutorialInfo/`, `Readme.asset`); rename `SampleScene` → `Main`
+- [x] Commit the base project state
 - [ ] Create folder structure under `Unity/Assets/` per `plan.md` §2
-- [ ] Create `Main` scene with directional light and orthographic quarter-view camera (§7)
+- [ ] Set up `Main` scene: directional light and orthographic quarter-view camera (§7)
 - [ ] Create `PlayerControls.inputactions` with `Move` (WASD), `Jump` (Space), `Restart` (R)
   (template's `InputSystem_Actions.inputactions` can be replaced)
 
