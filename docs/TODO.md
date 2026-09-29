@@ -97,3 +97,11 @@ Work top to bottom unless the user says otherwise.
 - [x] ~~HUD walk-mode indicator (optional)~~ — dropped for now
 - [x] Footprints that linger briefly where the fox's paws land (walk and run)
 - [x] Playtest: footprint timing, size, and lifetime — **user**
+- [x] Short voxel grass patches on solid tiles, swaying in the wind
+- [x] Playtest: grass amount, height, wind sway — **user** (feedback: thicker, taller, 3× more)
+- [x] Grass: thicker blades up to the fox's body, ~3× more tufts, flattened by the fox
+- [x] Playtest: trampling feel, grass density and height — **user** (feedback: too uniform, too clumped)
+- [x] Grass coverage per tile: bare, sparse, or full (instead of clumped patches everywhere)
+- [x] Per-blade wind and trampling in a vertex shader (tufts no longer move as one chunk)
+- [x] Playtest: per-blade sway and trampling recovery — **user** (feedback: recover faster)
+- [x] Grass recovers in 0.6 s instead of 1.2 s

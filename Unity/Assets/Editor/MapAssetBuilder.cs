@@ -11,8 +11,10 @@ namespace MyGame.EditorTools
         public const string SolidPrefabPath = "Assets/Prefabs/Tiles/Tile_Solid.prefab";
         public const string CrumblingPrefabPath = "Assets/Prefabs/Tiles/Tile_Crumbling.prefab";
         public const string StartPrefabPath = "Assets/Prefabs/Tiles/Tile_Start.prefab";
+        public const string GrassBladeMaterialPath = "Assets/Art/Materials/Grass_Blade.mat";
 
         private const string MaterialFolder = "Assets/Art/Materials";
+        private const string GrassShaderName = "MyGame/Grass";
 
         [MenuItem("Tools/MyGame/Build Map Assets", priority = 20)]
         public static void Run()
@@ -21,6 +23,7 @@ namespace MyGame.EditorTools
             var grass = EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Grass.mat", new Color(0.49f, 0.74f, 0.33f));
             var crumbling = EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Crumbling.mat", new Color(0.86f, 0.70f, 0.45f));
             var start = EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Start.mat", new Color(0.42f, 0.62f, 0.86f));
+            EditorAssetUtility.GetOrCreateMaterial(GrassBladeMaterialPath, GrassShaderName, new Color(0.64f, 0.86f, 0.36f), smoothness: 0f);
 
             BuildTilePrefab(SolidPrefabPath, grass, dirt, isCrumbling: false);
             BuildTilePrefab(CrumblingPrefabPath, crumbling, dirt, isCrumbling: true);

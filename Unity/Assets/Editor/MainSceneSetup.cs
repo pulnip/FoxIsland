@@ -43,6 +43,7 @@ namespace MyGame.EditorTools
             var mapBuilder = SetupMap();
             var layout = mapBuilder.Layout;
             var player = SetupPlayer(layout);
+            SetupGrass(mapBuilder, player);
             SetupCamera(layout, player);
             var itemSpawner = SetupItems(mapBuilder);
             var gameManager = SetupGameManager(player, itemSpawner);
@@ -128,6 +129,15 @@ namespace MyGame.EditorTools
             var position = MapMetrics.TopCenter(start, 0) + Vector3.up * SpawnClearance;
             player.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, 45f, 0f));
             return player;
+        }
+
+        private static void SetupGrass(MapBuilder mapBuilder, PlayerController player)
+        {
+            var grass = EditorAssetUtility.GetOrAddComponent<GrassField>(mapBuilder.gameObject);
+            EditorAssetUtility.ResetToDefaults(grass);
+            EditorAssetUtility.SetReference(grass, "_mapBuilder", mapBuilder);
+            EditorAssetUtility.SetReference(grass, "_material", AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.GrassBladeMaterialPath));
+            EditorAssetUtility.SetReference(grass, "_trampler", player.transform);
         }
 
         private static ItemSpawner SetupItems(MapBuilder mapBuilder)

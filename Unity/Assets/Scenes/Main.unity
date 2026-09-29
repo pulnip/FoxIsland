@@ -482,6 +482,7 @@ GameObject:
   m_Component:
   - component: {fileID: 577549369}
   - component: {fileID: 577549368}
+  - component: {fileID: 577549370}
   m_Layer: 0
   m_Name: Map
   m_TagString: Untagged
@@ -520,6 +521,35 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &577549370
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 577549367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 4e852c8b81054204492756bb21711978, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.GrassField
+  _mapBuilder: {fileID: 577549368}
+  _material: {fileID: 2100000, guid: a7f69bba1475cdf4791ebd2dde5d6238, type: 2}
+  _bladeHeight: {x: 0.12, y: 0.2}
+  _bareShare: 0.25
+  _fullShare: 0.35
+  _sparseTufts: {x: 3, y: 5}
+  _sparseSpacing: 0.3
+  _fullGrid: 4
+  _fullSkipChance: 0.1
+  _windDirection: {x: 1, y: 0, z: 0.4}
+  _swayAngle: 7
+  _swayFrequency: 1.1
+  _waveLength: 3
+  _trampler: {fileID: 1162758537}
+  _trampleRadius: 0.4
+  _trampleAngle: 65
+  _recoverTime: 0.6
 --- !u!1 &757931663
 GameObject:
   m_ObjectHideFlags: 0
@@ -685,6 +715,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe77f81192e15434f9f7e0cc08f74a28, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Player.PlayerController
+--- !u!4 &1162758537 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6834039903041899323, guid: 30f95c51271fa124f96fc6e9c96cc62b, type: 3}
+  m_PrefabInstance: {fileID: 1162758535}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1676309840
 GameObject:
   m_ObjectHideFlags: 0

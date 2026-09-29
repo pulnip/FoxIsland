@@ -108,6 +108,140 @@
 -->
     <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
+      <h2>잔디가 일어나는 시간 1.2초 → 0.6초</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>피드백: 지나간 자리의 풀잎이 좀 더 빨리 일어나도 될 것 같음</li>
+        <li><code>GrassField</code> 복구 시간 기본값 1.2 → 0.6초. 발자취 샘플 간격(복구 시간 ÷ 16)도 자동으로 약 0.0375초로 촘촘해져서 16개가 0.6초를 그대로 덮음</li>
+        <li>Build All로 씬 값이 새 기본값으로 바뀐 것 확인</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/GrassField.cs</code>, <code>Unity/Assets/Scenes/Main.unity</code></li>
+        <li><code>docs/plan.md</code> — §4.6</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>더 조절하려면 <code>GrassField.cs</code>의 <code>_recoverTime</code> 기본값만 바꾸면 됨</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
+      <h2>잔디: 풀잎마다 따로 휘기 (정점 셰이더)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>피드백: 덤불이 덩어리째 움직이는 게 어색함</li>
+        <li>덤불 전체를 돌리던 CPU 코드를 없애고, 직접 쓴 URP 셰이더 <code>MyGame/Grass</code>의 정점 단계에서 <b>풀잎 하나하나를 자기 밑동 기준으로</b> 회전 (법선도 같이 돌려서 음영이 맞음)</li>
+        <li>풀잎별 데이터는 메시에: <code>uv0.x</code> = 랜덤 박자, <code>uv1</code> = 풀잎 밑동 위치 → 이웃한 풀잎도 박자가 달라서 제각각 흔들림</li>
+        <li>밟힘은 셰이더에 상태가 없으니, <code>GrassField</code>가 여우의 최근 위치 16개를 약 0.075초 간격으로 기록해서 "오래될수록 약한 세기"로 전역 변수에 넘김 → 방금 지나간 곳은 누워 있고 1.2초에 걸쳐 차례로 일어남</li>
+        <li>SSAO가 쓰는 DepthOnly · DepthNormals 패스도 같은 휘어짐 계산을 공유해서, 그림자진 틈도 휜 풀잎을 따라감</li>
+      </ul>
+      <img src="images/m8-grass-per-blade.png" alt="여우 주변 풀잎이 하나씩 따로 바깥으로 기운 모습" width="1280" height="720">
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Art/Shaders/Grass.shader</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Scripts/Map/GrassField.cs</code> — 회전 코드 제거, 발자취 기록 · 셰이더 전역 값 전달, 메시 UV</li>
+        <li><code>Unity/Assets/Editor/EditorAssetUtility.cs</code> — 셰이더에 없는 속성은 건드리지 않게, <code>MapAssetBuilder.cs</code></li>
+        <li><code>docs/plan.md</code> — §2, §4.6</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>CPU로 풀잎마다 Transform을 두면 500개가 넘어서 GPU 방식을 택함. 덤불 오브젝트는 이제 전혀 안 움직임</li>
+        <li>HLSL에서 <code>point</code>(예약어) · <code>distance</code>(내장 함수)를 변수 이름으로 썼다가 컴파일 전에 발견해서 바꿈</li>
+        <li>배치 모드는 시간이 거의 안 흘러서 바람은 캡처로 확인 불가 → 플레이테스트 필요</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
+      <h2>잔디: 타일마다 맨땅 · 듬성듬성 · 가득</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>피드백: 움직임은 좋은데 덤불이 너무 빽빽함. 타일마다 풀이 없거나, 듬성듬성하거나, 전체에 있거나 하게 (덤불 하나하나는 그대로)</li>
+        <li>뭉친 무리 방식을 없애고 타일마다 세 종류 중 하나로:
+          <ul>
+            <li>맨땅: 풀 없음</li>
+            <li>듬성듬성: 덤불 3~5개가 서로 0.3 이상 떨어져 흩어짐</li>
+            <li>가득: 타일 전체에 4×4 격자로, 위치를 살짝 흔들고 10% 확률로 한 칸씩 비움</li>
+          </ul>
+        </li>
+        <li>타일을 비율로 나눔(맨땅 25% · 가득 35% · 나머지 듬성듬성) → 세 종류가 항상 섞여 나옴. 어느 타일이 뭐가 될지는 시드로 섞어서 매번 같음</li>
+        <li>지금 레이아웃: 맨땅 2 · 듬성듬성 3 · 가득 3, 덤불 58개</li>
+      </ul>
+      <img src="images/m8-grass-coverage.png" alt="타일마다 풀이 없거나, 드문드문하거나, 가득한 맵" width="1280" height="720">
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/GrassField.cs</code>, <code>Unity/Assets/Scenes/Main.unity</code></li>
+        <li><code>docs/plan.md</code> — §4.6</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>없앤 설정값(무리 수 등)은 씬을 다시 저장하면서 깔끔하게 빠진 것 확인</li>
+        <li>비율 · 격자 크기 · 간격은 <code>GrassField.cs</code> 기본값으로 조절</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
+      <h2>잔디: 더 굵고 높고 많게 · 밟으면 눕기</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>피드백: 좀 더 굵고 몸통까지 덮게, 양은 3배, 여우가 지나가면 풀잎이 쓰러지게</li>
+        <li>풀잎 폭 0.03 → 0.045, 높이 0.05~0.09 → 0.12~0.2 (여우 몸통 아랫면 0.15까지 올라옴)</li>
+        <li>모든 일반 타일에 무리 2~3개 × 덤불 2~4개 → 19개에서 54개로 (약 2.8배)</li>
+        <li>밟힘: 여우 발 위치에서 0.4 안의 덤불이 가까울수록 크게(최대 65°) 여우 반대쪽으로 눕고, 여우가 떠나면 1.2초에 걸쳐 일어남. 누운 동안엔 바람 흔들림도 줄어듦. 여우가 위아래로 0.3 넘게 떨어져 있으면(다른 층) 반응 안 함</li>
+        <li>씬에 저장된 옛 값이 새 기본값을 가리지 않도록, 씬 세팅이 <code>GrassField</code>를 코드 기본값으로 초기화한 뒤 참조를 연결 (<code>EditorAssetUtility.ResetToDefaults</code>)</li>
+        <li>여우를 풀 무리 한가운데 세우고 한 프레임 계산해서 확인: 주변 덤불 7개가 20° 넘게 누움</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m8-grass-dense.png" alt="맵 전체: 일반 타일 여덟 곳에 풍성한 풀 덤불" width="1280" height="720"><figcaption>전체 (54개)</figcaption></figure>
+        <figure><img src="images/m8-grass-trample.png" alt="확대: 여우 발밑 풀은 바깥으로 눕고 주변 풀은 몸통 높이로 섬" width="1280" height="720"><figcaption>밟힘</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/GrassField.cs</code></li>
+        <li><code>Unity/Assets/Editor/EditorAssetUtility.cs</code>, <code>MainSceneSetup.cs</code>, <code>Unity/Assets/Scenes/Main.unity</code></li>
+        <li><code>docs/plan.md</code> — §4.6 · <code>CLAUDE.md</code> — 기본값 초기화 규칙</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>이제 <code>GrassField</code> 값은 코드 기본값이 기준. 인스펙터 값은 시험용이고, Build All을 돌리면 코드 값으로 돌아감</li>
+        <li>누운 풀이 일어나는 모습 · 바람은 플레이로 확인 필요</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
+      <h2>잔디 덤불 · 바람</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>요청: 여우 다리 절반쯤 덮는 짧은 잔디를 몇 군데, 바람에 살짝 흔들리게</li>
+        <li><code>GrassField</code>: 일반 잔디 타일에만 덤불 무리를 뿌림 (시작 · 무너지는 타일 · 구멍 제외). 타일 좌표로 시드를 정해서 매번 같은 자리</li>
+        <li>덤불 하나 = 복셀 풀잎 7~11개 (폭 0.03, 높이 0.05~0.09 → 여우 다리 0.15의 절반쯤). 메시는 코드로 4종류 만들어 돌려 씀</li>
+        <li>바람: 덤불마다 밑동을 축으로 바람 방향으로 0~7° 기울기가 출렁임. 위치에 따라 박자를 어긋나게 해서 바람이 맵을 가로질러 물결처럼 지나감</li>
+        <li>첫 캡처에서 풀잎이 가늘고 타일과 색이 비슷해 거의 안 보임 → 풀잎 굵게, 덤불 풍성하게, 타일보다 밝은 연두색으로</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m8-grass.png" alt="맵 전체: 잔디 타일 네 곳에 밝은 연두색 풀 덤불" width="1280" height="720"><figcaption>전체</figcaption></figure>
+        <figure><img src="images/m8-grass-close.png" alt="확대: 여우 다리 절반쯤 높이의 복셀 풀잎" width="1280" height="720"><figcaption>확대 (다리 높이 비교)</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/GrassField.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Editor/MapAssetBuilder.cs</code>, <code>MainSceneSetup.cs</code>, <code>Unity/Assets/Scenes/Main.unity</code></li>
+        <li><code>Unity/Assets/Art/Materials/Grass_Blade.mat</code> — 생성됨</li>
+        <li><code>docs/plan.md</code> — §4.6 새로 추가, §2, §2.1</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>풀잎 상자 면의 삼각형 순서를 처음에 반대로 짰다가 검산으로 발견해 수정 (Unity는 시계 방향이 앞면)</li>
+        <li>흔들림은 캡처로 확인이 안 돼서 플레이테스트 필요. 양 · 높이 · 바람 세기는 <code>Map</code> 오브젝트의 <code>GrassField</code> 인스펙터에서 조절 (양은 다음 실행부터 반영)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
       <h2>발자국</h2>
       <h3>한 일</h3>
       <ul>

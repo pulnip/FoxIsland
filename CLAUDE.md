@@ -59,6 +59,9 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
   scene (plan.md §2.1). To change a generated prefab or material, change its builder and rerun;
   hand edits are lost on the next build. `MapLayout_Main` is never overwritten.
   Builders must be deterministic: running Build All twice must leave `git status` clean.
+  Scene components whose tuning lives in code (`GrassField`) are reset to their script defaults
+  by `EditorAssetUtility.ResetToDefaults`; changing a code default alone does not update a
+  component already saved in the scene otherwise.
 - Never hand-edit `.unity`/`.prefab` YAML; an open editor would overwrite it on save.
 - Batch mode fails while the project is open in the editor (project lock).
 - Visual check without the editor: a temporary editor script can build the map in edit mode,

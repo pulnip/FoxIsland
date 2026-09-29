@@ -9,6 +9,8 @@ namespace MyGame.EditorTools
         public const string LitShaderName = "Universal Render Pipeline/Lit";
         public const string ParticlesLitShaderName = "Universal Render Pipeline/Particles/Simple Lit";
 
+        private const string SmoothnessProperty = "_Smoothness";
+
         private static readonly string[] ColorProperties = { "_BaseColor", "_Color" };
 
         public static void EnsureFolder(string path)
@@ -59,7 +61,11 @@ namespace MyGame.EditorTools
                 }
             }
 
-            material.SetFloat("_Smoothness", smoothness);
+            if (material.HasProperty(SmoothnessProperty))
+            {
+                material.SetFloat(SmoothnessProperty, smoothness);
+            }
+
             EditorUtility.SetDirty(material);
             return material;
         }
@@ -74,7 +80,8 @@ namespace MyGame.EditorTools
                 }
             }
 
-            return Mathf.Approximately(material.GetFloat("_Smoothness"), smoothness);
+            return !material.HasProperty(SmoothnessProperty)
+                   || Mathf.Approximately(material.GetFloat(SmoothnessProperty), smoothness);
         }
 
         private static bool IsApproximately(Color a, Color b)
@@ -110,6 +117,30 @@ namespace MyGame.EditorTools
 
         public static T GetOrAddComponent<T>(GameObject gameObject) where T : Component =>
             gameObject.TryGetComponent<T>(out var component) ? component : gameObject.AddComponent<T>();
+
+        /// <summary>
+        /// Overwrites every serialized field of <paramref name="component"/> with its code defaults,
+        /// so scene components follow the script rather than values saved by an older build.
+        /// </summary>
+        public static void ResetToDefaults<T>(T component) where T : MonoBehaviour
+        {
+            var fresh = new GameObject("DefaultsSource").AddComponent<T>();
+            var source = new SerializedObject(fresh);
+            var target = new SerializedObject(component);
+            var property = source.GetIterator();
+            property.NextVisible(true);
+            do
+            {
+                if (property.name != "m_Script")
+                {
+                    target.CopyFromSerializedProperty(property);
+                }
+            }
+            while (property.NextVisible(false));
+
+            target.ApplyModifiedPropertiesWithoutUndo();
+            Object.DestroyImmediate(fresh.gameObject);
+        }
 
         public static void SetFloat(Object target, string propertyName, float value)
         {
