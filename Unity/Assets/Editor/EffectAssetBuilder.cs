@@ -13,6 +13,8 @@ namespace MyGame.EditorTools
         public const string PickupBurstPath = "Assets/Prefabs/Effects/PickupBurst.prefab";
         public const string CrumbleDustPath = "Assets/Prefabs/Effects/CrumbleDust.prefab";
         public const string FootprintsPath = "Assets/Prefabs/Effects/Footprints.prefab";
+        public const string SplashPath = "Assets/Prefabs/Effects/Splash.prefab";
+        public const string TileSplashPath = "Assets/Prefabs/Effects/TileSplash.prefab";
 
         private const string MaterialPath = "Assets/Art/Materials/Effect_Voxel.mat";
 
@@ -44,6 +46,36 @@ namespace MyGame.EditorTools
                 Gravity = 1.2f,
                 Shape = ParticleSystemShapeType.Box,
                 ShapeScale = new Vector3(1.3f, 0.1f, 1.3f),
+            });
+
+            var splashColor = new Color(0.86f, 0.95f, 1f);
+            var up = new Vector3(-90f, 0f, 0f);
+            BuildBurst(SplashPath, material, new BurstSettings
+            {
+                Color = splashColor,
+                Count = 22,
+                Lifetime = new Vector2(0.45f, 0.8f),
+                Speed = new Vector2(2.2f, 3.6f),
+                Size = new Vector2(0.06f, 0.12f),
+                Gravity = 1f,
+                Shape = ParticleSystemShapeType.Cone,
+                ShapeScale = Vector3.one * 0.15f,
+                ShapeRotation = up,
+                ConeAngle = 20f,
+            });
+
+            BuildBurst(TileSplashPath, material, new BurstSettings
+            {
+                Color = splashColor,
+                Count = 36,
+                Lifetime = new Vector2(0.5f, 0.9f),
+                Speed = new Vector2(1.5f, 3f),
+                Size = new Vector2(0.07f, 0.14f),
+                Gravity = 1f,
+                Shape = ParticleSystemShapeType.Box,
+                ShapeScale = new Vector3(1.4f, 1.4f, 0.05f),
+                ShapeRotation = up,
+                RandomDirection = 0.25f,
             });
 
             BuildFootprints(material);
@@ -130,7 +162,13 @@ namespace MyGame.EditorTools
             shape.enabled = true;
             shape.shapeType = settings.Shape;
             shape.scale = settings.ShapeScale;
+            shape.rotation = settings.ShapeRotation;
             shape.radius = 1f;
+            shape.randomDirectionAmount = settings.RandomDirection;
+            if (settings.Shape == ParticleSystemShapeType.Cone)
+            {
+                shape.angle = settings.ConeAngle;
+            }
 
             var sizeOverLifetime = particles.sizeOverLifetime;
             sizeOverLifetime.enabled = true;
@@ -160,6 +198,11 @@ namespace MyGame.EditorTools
             public float Gravity;
             public ParticleSystemShapeType Shape;
             public Vector3 ShapeScale;
+
+            /// <summary>Euler angles; the cone and box shapes emit along their local +Z.</summary>
+            public Vector3 ShapeRotation;
+            public float RandomDirection;
+            public float ConeAngle;
         }
     }
 }

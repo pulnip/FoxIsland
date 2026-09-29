@@ -11,6 +11,12 @@ namespace MyGame.Map
         public const float LevelHeight = 0.5f;
         public const float TileBottom = -0.5f;
 
+        /// <summary>Surface of the lake around and under the grid; touching it ends the game.</summary>
+        public const float WaterLevel = -0.3f;
+
+        /// <summary>Floor of the lake; tile visuals reach down to it as pillars.</summary>
+        public const float LakeBedY = -1.5f;
+
         public static float TopY(int level) => level * LevelHeight;
 
         public static Vector3 TopCenter(Vector2Int coordinates, int level) =>

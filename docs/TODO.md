@@ -105,3 +105,5 @@ Work top to bottom unless the user says otherwise.
 - [x] Per-blade wind and trampling in a vertex shader (tufts no longer move as one chunk)
 - [x] Playtest: per-blade sway and trampling recovery — **user** (feedback: recover faster)
 - [x] Grass recovers in 0.6 s instead of 1.2 s
+- [x] Lake: water in the holes and around the grid, wave and foam shader, touching water = game over, splashes
+- [ ] Playtest: water look (colors, foam, waves), game over on touching water, splashes — **user**

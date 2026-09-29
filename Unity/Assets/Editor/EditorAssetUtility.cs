@@ -70,6 +70,32 @@ namespace MyGame.EditorTools
             return material;
         }
 
+        /// <summary>
+        /// Sets a material property only when it differs, so rebuilding leaves the file untouched.
+        /// </summary>
+        public static bool SetColorIfChanged(Material material, string property, Color value)
+        {
+            if (IsApproximately(material.GetColor(property), value))
+            {
+                return false;
+            }
+
+            material.SetColor(property, value);
+            return true;
+        }
+
+        /// <inheritdoc cref="SetColorIfChanged"/>
+        public static bool SetFloatIfChanged(Material material, string property, float value)
+        {
+            if (Mathf.Approximately(material.GetFloat(property), value))
+            {
+                return false;
+            }
+
+            material.SetFloat(property, value);
+            return true;
+        }
+
         private static bool Matches(Material material, Color color, float smoothness)
         {
             foreach (var property in ColorProperties)

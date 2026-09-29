@@ -108,6 +108,49 @@
 -->
     <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
+      <h2>호수: 구멍과 맵 바깥을 물로, 물 셰이더와 물보라</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>맵이 호수 위의 섬이 됨. 구멍과 4×4 바깥이 전부 수면 <code>y = -0.3</code>의 물이고, <b>물에 닿으면 게임 오버</b> (기존 <code>y &lt; -5</code> 추락 판정 대체). 여우는 물보라와 함께 그대로 가라앉음</li>
+        <li>타일 겉모습은 호수 바닥(<code>y = -1.5</code>, 모래색)까지 내려가는 기둥으로 바꿈. 충돌체는 그대로라서 조작감은 같음</li>
+        <li>직접 쓴 URP 셰이더 <code>MyGame/Water</code>:
+          <ul>
+            <li>사인파 3개로 정점을 살짝 출렁이게 하고, 픽셀 단계에서 잔물결 2개를 더해 법선을 만듦</li>
+            <li>카메라 깊이 텍스처로 물 밑까지의 깊이를 재서, 얕은 곳은 밝은 청록에 반투명, 깊은 곳은 짙은 파랑에 거의 불투명. 물에 잠긴 기둥이 수면 바로 아래에서 비치다가 깊어질수록 사라짐</li>
+            <li>물이 기둥(과 가라앉는 여우)에 닿는 곳에 흰 거품 띠, 그리고 기슭에서 바깥으로 밀려나가는 얇은 띠가 약 3초마다 하나씩</li>
+            <li>섬의 그림자가 수면에 드리워짐</li>
+          </ul>
+        </li>
+        <li>물보라 이펙트 2종: <code>Splash</code>(여우가 빠질 때, 원뿔 모양으로 튀는 22개 큐브), <code>TileSplash</code>(무너지는 타일 윗면이 물에 잠길 때, 타일 크기로 튀는 36개 큐브)</li>
+        <li>물 메시는 <code>WaterSurface</code>가 플레이 시작 때 40×40 격자(0.5 간격)로 만듦. 잔디처럼 에디터 편집 화면에서는 안 보이고 플레이 모드에서 보임</li>
+        <li>Build All을 두 번 돌려 결과가 같은 것(결정성) 확인</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m8-water-overview.png" alt="호수 위의 맵 전체"><figcaption>전체 모습: 기둥을 따라 생긴 거품 띠, 얕은 곳에 비치는 기둥, 수면의 그림자</figcaption></figure>
+        <figure><img src="images/m8-water-closeup.png" alt="구멍에 빠지는 여우와 가라앉는 타일"><figcaption>테스트 배치: 구멍에 빠진 여우 발 주변의 거품, 0.6만큼 가라앉은 무너지는 타일</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Art/Shaders/Water.shader</code> — 새 물 셰이더</li>
+        <li><code>Unity/Assets/Scripts/Map/WaterSurface.cs</code> — 물 격자 메시 생성</li>
+        <li><code>Unity/Assets/Scripts/Map/MapMetrics.cs</code> — <code>WaterLevel</code>, <code>LakeBedY</code></li>
+        <li><code>Unity/Assets/Scripts/Map/Tile.cs</code> — 기둥 모양으로</li>
+        <li><code>Unity/Assets/Scripts/Map/CrumblingTile.cs</code> — 가라앉을 때 물보라</li>
+        <li><code>Unity/Assets/Scripts/Core/GameManager.cs</code> — 물 닿음 판정, 물보라</li>
+        <li><code>Unity/Assets/Editor/</code> — <code>EffectAssetBuilder</code>(물보라), <code>MapAssetBuilder</code>(물·호수 바닥 머티리얼), <code>MainSceneSetup</code>(<code>Lake</code> 오브젝트, 카메라 깊이 텍스처, 배경색), <code>EditorAssetUtility</code>(바뀐 값만 쓰는 머티리얼 헬퍼)</li>
+        <li>생성물: <code>Water.mat</code>, <code>Lake_Bed.mat</code>, <code>Splash.prefab</code>, <code>TileSplash.prefab</code>, 타일 프리팹 3개, <code>Main.unity</code></li>
+        <li><code>docs/plan.md</code> — §1, §2, §4.1, §4.4, 새 §4.7 물, §8</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>물 색·투명도·거품 폭·파도는 <code>MapAssetBuilder.BuildWaterMaterial</code>의 값을 바꾸고 Build All 하면 됨 (머티리얼을 직접 고치면 다음 빌드에서 덮어써짐)</li>
+        <li>거품과 깊이 표현은 카메라 깊이 텍스처가 필요해서, 메인 카메라에서 강제로 켬 (Mobile 품질 설정에서도 동작)</li>
+        <li>물결 움직임, 거품 띠, 물보라 타이밍은 정지 화면으로 확인할 수 없어서 플레이테스트 필요</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
       <h2>잔디가 일어나는 시간 1.2초 → 0.6초</h2>
       <h3>한 일</h3>
       <ul>

@@ -4,7 +4,7 @@ using UnityEngine;
 namespace MyGame.Map
 {
     /// <summary>
-    /// Shakes when first stood on, then drops away and respawns (plan.md §4.1).
+    /// Shakes when first stood on, then sinks into the lake and respawns (plan.md §4.1).
     /// Only the visual moves; the collider stays put and is disabled while the tile is gone.
     /// </summary>
     [RequireComponent(typeof(Tile), typeof(BoxCollider))]
@@ -12,6 +12,7 @@ namespace MyGame.Map
     {
         [SerializeField] private Transform _visual;
         [SerializeField] private ParticleSystem _dustEffect;
+        [SerializeField] private ParticleSystem _splashEffect;
         [SerializeField] private float _shakeDuration = 0.8f;
         [SerializeField] private float _shakeAmplitude = 0.05f;
         [SerializeField] private float _fallDuration = 0.6f;
@@ -45,16 +46,24 @@ namespace MyGame.Map
             }
 
             _collider.enabled = false;
+            var top = transform.TransformPoint(_collider.center + Vector3.up * (_collider.size.y * 0.5f));
             if (_dustEffect != null)
             {
-                var top = transform.TransformPoint(_collider.center + Vector3.up * (_collider.size.y * 0.5f));
                 Instantiate(_dustEffect, top, Quaternion.identity);
             }
 
+            var splashed = false;
             for (var elapsed = 0f; elapsed < _fallDuration; elapsed += Time.deltaTime)
             {
                 var progress = elapsed / _fallDuration;
-                _visual.localPosition = Vector3.down * (_fallDistance * progress * progress);
+                var drop = _fallDistance * progress * progress;
+                _visual.localPosition = Vector3.down * drop;
+                if (!splashed && top.y - drop < MapMetrics.WaterLevel)
+                {
+                    splashed = true;
+                    SpawnSplash(top);
+                }
+
                 yield return null;
             }
 
@@ -77,6 +86,14 @@ namespace MyGame.Map
 
             _visual.localScale = Vector3.one;
             _isCrumbling = false;
+        }
+
+        private void SpawnSplash(Vector3 top)
+        {
+            if (_splashEffect != null)
+            {
+                Instantiate(_splashEffect, new Vector3(top.x, MapMetrics.WaterLevel, top.z), Quaternion.identity);
+            }
         }
 
         private bool IsOccupied()

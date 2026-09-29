@@ -3,9 +3,9 @@ using UnityEngine;
 namespace MyGame.Map
 {
     /// <summary>
-    /// A voxel block whose top surface sits at its level height and whose base is at
-    /// <see cref="MapMetrics.TileBottom"/>. The collider covers the full cell; visuals are inset
-    /// slightly so the grid reads clearly.
+    /// A voxel pillar whose top surface sits at its level height. The visual reaches down to
+    /// <see cref="MapMetrics.LakeBedY"/>; the collider covers the full cell down to
+    /// <see cref="MapMetrics.TileBottom"/>. Visuals are inset slightly so the grid reads clearly.
     /// </summary>
     [RequireComponent(typeof(BoxCollider))]
     public class Tile : MonoBehaviour
@@ -40,8 +40,8 @@ namespace MyGame.Map
             _top.localPosition = new Vector3(0f, top - TopThickness * 0.5f, 0f);
             _top.localScale = new Vector3(visualWidth, TopThickness, visualWidth);
 
-            var bodyHeight = height - TopThickness;
-            _body.localPosition = new Vector3(0f, MapMetrics.TileBottom + bodyHeight * 0.5f, 0f);
+            var bodyHeight = top - TopThickness - MapMetrics.LakeBedY;
+            _body.localPosition = new Vector3(0f, MapMetrics.LakeBedY + bodyHeight * 0.5f, 0f);
             _body.localScale = new Vector3(visualWidth, bodyHeight, visualWidth);
 
             var collider = GetComponent<BoxCollider>();

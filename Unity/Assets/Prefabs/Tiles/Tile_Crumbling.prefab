@@ -117,8 +117,8 @@ Transform:
   m_GameObject: {fileID: 4253204963417531500}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: -0.325, z: 0}
-  m_LocalScale: {x: 1.46, y: 0.35, z: 1.46}
+  m_LocalPosition: {x: 0, y: -0.825, z: 0}
+  m_LocalScale: {x: 1.46, y: 1.35, z: 1.46}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 2897808603126199208}
@@ -297,6 +297,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.CrumblingTile
   _visual: {fileID: 2897808603126199208}
   _dustEffect: {fileID: 2445187452365417908, guid: 4253b720938a494429d09f5f3b3c0354, type: 3}
+  _splashEffect: {fileID: 8103500051495855211, guid: 93b082919667ade4b8e65cf9d4a2f388, type: 3}
   _shakeDuration: 0.8
   _shakeAmplitude: 0.05
   _fallDuration: 0.6

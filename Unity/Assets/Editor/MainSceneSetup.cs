@@ -9,6 +9,7 @@ using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.Rendering;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.UIElements;
 
 namespace MyGame.EditorTools
@@ -17,6 +18,7 @@ namespace MyGame.EditorTools
     {
         private const string ScenePath = "Assets/Scenes/Main.unity";
         private const float SpawnClearance = 0.05f;
+        private const float LakeBedThickness = 0.2f;
 
         [MenuItem("Tools/MyGame/Build All", priority = 0)]
         public static void BuildAll()
@@ -44,6 +46,7 @@ namespace MyGame.EditorTools
             var layout = mapBuilder.Layout;
             var player = SetupPlayer(layout);
             SetupGrass(mapBuilder, player);
+            SetupLake(layout);
             SetupCamera(layout, player);
             var itemSpawner = SetupItems(mapBuilder);
             var gameManager = SetupGameManager(player, itemSpawner);
@@ -67,7 +70,8 @@ namespace MyGame.EditorTools
 
             var camera = EditorAssetUtility.GetOrAddComponent<Camera>(cameraObject);
             camera.clearFlags = CameraClearFlags.SolidColor;
-            camera.backgroundColor = new Color(0.62f, 0.78f, 0.90f);
+            camera.backgroundColor = new Color(0.12f, 0.36f, 0.56f);
+            camera.GetUniversalAdditionalCameraData().requiresDepthOption = CameraOverrideOption.On;
 
             var jumpHeight = new SerializedObject(player).FindProperty("_jumpHeight").floatValue;
             var bounds = MapMetrics.GridBounds(layout.Width, layout.Depth);
@@ -140,6 +144,41 @@ namespace MyGame.EditorTools
             EditorAssetUtility.SetReference(grass, "_trampler", player.transform);
         }
 
+        /// <summary>
+        /// Water centered on the grid at <see cref="MapMetrics.WaterLevel"/>, over a sand bed the
+        /// tile pillars stand on. The water shader reads the camera depth texture for its depth
+        /// tint and foam.
+        /// </summary>
+        private static void SetupLake(MapLayout layout)
+        {
+            var water = Object.FindObjectsByType<WaterSurface>().FirstOrDefault();
+            if (water == null)
+            {
+                water = new GameObject("Lake").AddComponent<WaterSurface>();
+            }
+
+            EditorAssetUtility.ResetToDefaults(water);
+            var center = MapMetrics.GridBounds(layout.Width, layout.Depth).center;
+            water.transform.SetPositionAndRotation(new Vector3(center.x, MapMetrics.WaterLevel, center.z), Quaternion.identity);
+
+            var renderer = water.GetComponent<MeshRenderer>();
+            renderer.sharedMaterial = AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.WaterMaterialPath);
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+            renderer.receiveShadows = true;
+
+            var bed = water.transform.Find("Bed");
+            if (bed == null)
+            {
+                bed = EditorAssetUtility.CreateVisual(PrimitiveType.Cube, "Bed", water.transform,
+                    AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.LakeBedMaterialPath)).transform;
+            }
+
+            var size = new SerializedObject(water).FindProperty("_size").floatValue;
+            bed.localPosition = Vector3.up * (MapMetrics.LakeBedY - MapMetrics.WaterLevel - LakeBedThickness * 0.5f);
+            bed.localRotation = Quaternion.identity;
+            bed.localScale = new Vector3(size, LakeBedThickness, size);
+        }
+
         private static ItemSpawner SetupItems(MapBuilder mapBuilder)
         {
             var spawner = Object.FindObjectsByType<ItemSpawner>().FirstOrDefault();
@@ -165,6 +204,7 @@ namespace MyGame.EditorTools
             EditorAssetUtility.SetReference(gameManager, "_config", AssetDatabase.LoadAssetAtPath<GameConfig>(ItemAssetBuilder.GameConfigPath));
             EditorAssetUtility.SetReference(gameManager, "_player", player);
             EditorAssetUtility.SetReference(gameManager, "_itemSpawner", itemSpawner);
+            EditorAssetUtility.SetReference(gameManager, "_splashEffect", AssetDatabase.LoadAssetAtPath<ParticleSystem>(EffectAssetBuilder.SplashPath));
             return gameManager;
         }
 

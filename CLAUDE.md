@@ -1,8 +1,8 @@
 # MyGame — Voxel Animal Platformer
 
 Unity 6 3D game: a voxel animal (built with Blender Python) walks and jumps on a 4×4 tile map
-under a fixed quarter-view camera, collecting random items. Falling = game over,
-all items = clear, R = restart.
+standing in a lake, under a fixed quarter-view camera, collecting random items.
+Falling into the water = game over, all items = clear, R = restart.
 
 ## Key files
 

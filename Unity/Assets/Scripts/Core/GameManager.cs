@@ -1,5 +1,6 @@
 using System;
 using MyGame.Items;
+using MyGame.Map;
 using MyGame.Player;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -8,15 +9,15 @@ using UnityEngine.SceneManagement;
 namespace MyGame.Core
 {
     /// <summary>
-    /// Owns the game state (plan.md §8): spawns and counts items, detects falling,
-    /// gates player input, and restarts the scene.
+    /// Owns the game state (plan.md §8): spawns and counts items, detects the player touching the
+    /// water, gates player input, and restarts the scene.
     /// </summary>
     public class GameManager : MonoBehaviour
     {
         [SerializeField] private GameConfig _config;
         [SerializeField] private PlayerController _player;
         [SerializeField] private ItemSpawner _itemSpawner;
-        [SerializeField] private float _killPlaneY = -5f;
+        [SerializeField] private ParticleSystem _splashEffect;
 
         private InputAction _restartAction;
         private float _startTime;
@@ -64,8 +65,14 @@ namespace MyGame.Core
                 return;
             }
 
-            if (State == GameState.Playing && _player.transform.position.y < _killPlaneY)
+            var position = _player.transform.position;
+            if (State == GameState.Playing && position.y < MapMetrics.WaterLevel)
             {
+                if (_splashEffect != null)
+                {
+                    Instantiate(_splashEffect, new Vector3(position.x, MapMetrics.WaterLevel, position.z), Quaternion.identity);
+                }
+
                 SetState(GameState.GameOver);
             }
         }
