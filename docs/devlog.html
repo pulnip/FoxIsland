@@ -78,6 +78,10 @@
   .entry ul { margin: 0; padding-left: 1.2em; }
   .entry li { margin: 2px 0; }
   .entry img { display: block; max-width: 100%; height: auto; margin-top: 8px; border-radius: 8px; border: 1px solid var(--border); }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-top: 8px; }
+  .gallery figure { margin: 0; }
+  .gallery img { margin-top: 0; }
+  .gallery figcaption { font-size: 0.8rem; color: var(--muted); text-align: center; }
   code { font-family: ui-monospace, Consolas, monospace; font-size: 0.88em; background: var(--bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
   footer { margin-top: 40px; color: var(--muted); font-size: 0.85rem; }
 </style>
@@ -102,6 +106,131 @@
       <ul><li>결정한 것, 문제, 다음에 할 것</li></ul>
     </article>
 -->
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M6</span></div>
+      <h2>FBX 내보내기 · 검증</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>Blender 5.2 LTS로 헤드리스 실행 → 종료 코드 0, <code>Unity/Assets/Art/Character/Fox.fbx</code>에 바로 저장 (루트 <code>Art/</code>에 만들고 복사하던 계획은 LFS 중복이라 뺌)</li>
+        <li>검증용 스크립트로 FBX를 Blender에 다시 불러와 확인: 파츠 메시 7개가 각자 뼈에 붙음, 뼈 8개 계층과 위치 정확, 애니메이션 4개 길이 정확, 머티리얼 3개, 삼각형 1,156개</li>
+        <li>Unity 배치 모드로 임포트 → 경고 없음, <code>.meta</code>는 Unity가 생성</li>
+        <li><code>--preview</code>로 동작별 미리보기 렌더</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m6-fox-idle.png" alt="여우 Idle 자세" width="480" height="480"><figcaption>Idle</figcaption></figure>
+        <figure><img src="images/m6-fox-walk.png" alt="여우 Walk 자세" width="480" height="480"><figcaption>Walk</figcaption></figure>
+        <figure><img src="images/m6-fox-jump.png" alt="여우 Jump 자세" width="480" height="480"><figcaption>Jump</figcaption></figure>
+        <figure><img src="images/m6-fox-fall.png" alt="여우 Fall 자세" width="480" height="480"><figcaption>Fall</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Art/Character/Fox.fbx</code> — 생성됨 (LFS)</li>
+        <li><code>docs/plan.md</code> — §1, §2, §3 전면 수정 · <code>CLAUDE.md</code> — Blender 경로와 재생성 명령</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>FBX 내보내기가 클립 이름을 <code>Fox|Walk</code>처럼 만듦 → M7에서 Unity 임포트 설정으로 <code>Walk</code>로 바꿀 예정</li>
+        <li>미리보기 색 맞추기: 처음엔 주황이 갈색 · 흰색이 회색으로 나옴. Blender 스튜디오 조명과 색 변환 탓이라 평면 조명 + 외곽선 + <code>Raw</code> 변환으로 바꿔서 Unity에서 보일 팔레트 색 그대로 나오게 함</li>
+        <li>M6 끝! 다음: M7 (Unity에서 캡슐을 여우로 교체)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M6</span></div>
+      <h2>애니메이션 4종</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>Idle</code> (30프레임 반복): 몸 살짝 오르내림, 고개 끄덕, 꼬리 좌우</li>
+        <li><code>Walk</code> (16프레임 반복): 대각선 다리 쌍(앞왼+뒤오 / 앞오+뒤왼)이 ±25° 교차, 한 주기에 몸 두 번 들썩, 꼬리 좌우</li>
+        <li><code>Jump</code> (9프레임 한 번): 앞다리 앞으로 · 뒷다리 뒤로 쭉, 고개 들고 꼬리 세움</li>
+        <li><code>Fall</code> (12프레임 반복): 다리 벌리고 코는 아래로, 꼬리 위로, 살짝 파닥</li>
+        <li>키마다 모든 뼈를 다 찍어서, 동작끼리 자세가 섞이지 않게 함</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Tools/Blender/generate_character.py</code> — <code>ANIMATIONS</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>뼈가 전부 위를 향하게 만들어서, 뼈 X축 회전 = 앞뒤 끄덕 / 뼈 Y축 회전 = 좌우 흔들기로 단순하게 맞춤</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M6</span></div>
+      <h2>뼈대 (Armature)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>Root → Body → Head · LegFL · LegFR · LegBL · LegBR · Tail</code>, 각 뼈 시작점 = 파츠의 관절 위치(엉덩이 · 목 · 꼬리 뿌리)</li>
+        <li>파츠 메시를 해당 뼈에 직접 붙임 (<code>parent_type = 'BONE'</code>) → 스키닝 없이 통째로 움직임</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Tools/Blender/generate_character.py</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>기획서의 "가중치 1.0 스키닝" 대신 뼈에 직접 붙이는 방식: 결과는 같고, Unity에서 스킨드 메시 없이 일반 메시로 들어와 더 가볍고 단순함</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M6</span></div>
+      <h2>팔레트 머티리얼</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>팔레트 색마다 머티리얼 하나 (주황 · 흰색 · 검정), 각 파츠 메시엔 실제로 쓰는 색만 연결</li>
+        <li>Principled BSDF 기본색 + 뷰포트 색을 같이 설정, 거칠기 0.9로 무광</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Tools/Blender/generate_character.py</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>안 쓰는 색까지 붙이면 Unity에서 빈 서브메시가 생겨서 쓰는 것만 연결</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M6</span></div>
+      <h2>파츠별 메시 만들기 (안쪽 면 제거)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>generate_character.py</code>: 빈 씬에서 시작 → 동물 데이터 읽기 → 상자를 복셀로 채우기 → 파츠마다 메시 하나</li>
+        <li>같은 파츠의 복셀끼리 맞닿은 면은 안 만들고, 꼭짓점은 공유해서 폴리곤 최소화</li>
+        <li>다른 파츠와 맞닿은 면은 남김 → 다리가 회전할 때 구멍이 안 보이게</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Tools/Blender/generate_character.py</code> — 새로 추가</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>여우 전체 삼각형 1,156개</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M6</span></div>
+      <h2>여우 복셀 데이터</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>animals/fox.py</code>: 복셀 크기 0.05, 폭 6 · 길이 19 · 높이 12칸 → 0.3 × 0.95 × 0.6 (높이는 플레이어 충돌 캡슐과 같음)</li>
+        <li>머리가 큰 귀여운 비율: 흰 볼 · 주둥이, 검은 눈 · 코 · 발 · 귀 끝, 흰 꼬리 끝, 흰 배</li>
+        <li>팔레트 3색: 주황 <code>o</code>, 흰색 <code>w</code>, 검정 <code>k</code></li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Tools/Blender/animals/fox.py</code> — 새로 추가</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>기획서의 "층별 텍스트 그리드" 대신 "상자 목록 + 덧칠" 방식으로 바꿈: 훨씬 짧고 고치기 쉬움</li>
+        <li>다른 동물은 같은 파츠 이름으로 파일 하나만 추가하면 됨</li>
+      </ul>
+    </article>
+
     <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M5</span></div>
       <h2>클리어 패널 · 걸린 시간</h2>

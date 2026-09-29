@@ -80,5 +80,8 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
 - `.gitattributes` forces LF for all text files and routes binary assets (models, images,
   audio, fonts, `LightingData.asset`) through Git LFS. When adding a new binary file type,
   add its LFS pattern there before the first commit of such a file.
-- Blender runs headless:
-  `blender --background --python Tools/Blender/generate_character.py -- --animal fox --out Art/Character/Fox.fbx`
+- Blender 5.2 LTS: `C:\Program Files\Blender Foundation\Blender 5.2\blender.exe`. Regenerate the
+  character (from the repo root, Git Bash):
+  `blender --background --factory-startup --python Tools/Blender/generate_character.py -- --animal fox --out Unity/Assets/Art/Character/Fox.fbx --preview <scratch dir>`
+  and look at the preview PNGs before handing the FBX to Unity. Each export rewrites the whole
+  binary (LFS), so regenerate only when the model or animations actually change.

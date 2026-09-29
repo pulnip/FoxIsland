@@ -65,16 +65,17 @@ Work top to bottom unless the user says otherwise.
 
 ## M6. Blender character
 
-- [ ] `Tools/Blender/animals/fox.py`: voxel layers + palette
-- [ ] `generate_character.py`: scene reset, per-part mesh build with interior-face culling
-- [ ] Materials from palette
-- [ ] Armature (`Root → Body → Head/Legs/Tail`) with rigid 1.0 weights
-- [ ] Actions: `Idle`, `Walk`, `Jump`, `Fall`
-- [ ] FBX export to `Art/Character/Fox.fbx`; verify headless run exits 0
+- [x] `Tools/Blender/animals/fox.py`: voxel boxes + palette
+- [x] `generate_character.py`: scene reset, per-part mesh build with interior-face culling
+- [x] Materials from palette
+- [x] Armature (`Root → Body → Head/Legs/Tail`) with rigid parts (meshes parented to bones)
+- [x] Actions: `Idle`, `Walk`, `Jump`, `Fall`
+- [x] FBX export to `Unity/Assets/Art/Character/Fox.fbx`; verify headless run exits 0
 
 ## M7. Character integration
 
-- [ ] Import `Fox.fbx` as Generic rig; verify four clips, facing +Z, feet at y = 0
+- [ ] Import `Fox.fbx` as Generic rig; rename clips `Fox|Idle` → `Idle` etc., loop Idle/Walk/Fall;
+  verify facing +Z, feet at y = 0
 - [ ] Animator Controller: Idle/Walk/Jump/Fall states and parameters (§6)
 - [ ] `PlayerAnimator`: drive Animator parameters from `PlayerController`
 - [ ] Replace capsule visual with fox in Player prefab
