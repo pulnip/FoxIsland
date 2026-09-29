@@ -107,6 +107,241 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M7</span></div>
+      <h2>기본 달리기 · 왼쪽 Ctrl로 걷기 토글</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>요청: 기본은 달리기, 왼쪽 Ctrl을 누르면 걷기 모드로 토글</li>
+        <li>입력 액션 <code>Sprint</code>(Shift 두 개) → <code>ToggleWalk</code>(왼쪽 Ctrl 하나)로 교체</li>
+        <li><code>PlayerController.IsRunning</code>이 처음엔 참, Ctrl을 누를 때마다 뒤집힘 (게임 오버 · 클리어 중엔 무시)</li>
+        <li>Animator는 그대로: <code>Running</code>이 "걷기 모드가 아님"을 뜻하게 됐을 뿐</li>
+        <li>배치 모드로 입력 액션 목록을 찍어서 <code>ToggleWalk: leftCtrl</code> 확인, 재빌드 변경 없음</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Input/PlayerControls.inputactions</code>, <code>Unity/Assets/Scripts/Player/PlayerController.cs</code></li>
+        <li><code>docs/plan.md</code> — §1, §4.5, §6 · <code>docs/plan.html</code> — 조작</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>재시작하면 씬이 다시 로드되니까 달리기 모드로 돌아감</li>
+        <li>지금은 화면에 현재 모드 표시가 없음 → 필요하면 HUD에 걷기 아이콘 추가 (M8 후보)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M7</span></div>
+      <h2>Animator: 걷기 · 달리기 상태 분리</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>Run</code> 상태와 <code>Running</code> 불 파라미터 추가: 멈춤 = Idle, Shift 없이 이동 = Walk, Shift 누르고 이동 = Run</li>
+        <li>세 이동 상태끼리는 "목표 상태의 조건"을 한 곳에 정의해서 모든 쌍을 자동 연결, 낙하 · 착지 전환도 세 상태 모두에</li>
+        <li>클립마다 재생 배속 파라미터: <code>WalkPlaybackSpeed</code>(기준 1), <code>RunPlaybackSpeed</code>(기준 3) → 둘 다 제 속도에서 1배속</li>
+        <li>파라미터 목록을 생성과 검사가 같은 배열로 쓰도록 정리. 상태 5개 · 파라미터 7개 · 전환 14개 확인</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Editor/CharacterAssetBuilder.cs</code>, <code>Unity/Assets/Scripts/Player/PlayerAnimator.cs</code></li>
+        <li><code>Unity/Assets/Art/Character/Fox.controller</code>, <code>Fox.fbx.meta</code>, <code>Unity/Assets/Prefabs/Player.prefab</code></li>
+        <li><code>docs/plan.md</code> — §6</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>걷기 · 달리기를 속도 숫자로 가르면 빌더에 이동 속도를 또 적어야 해서 불 파라미터로 함</li>
+        <li>앞 작업의 "걷기 2배속"은 이걸로 대체됨: 이제 걷기는 속도 1에서 1배속</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M7</span></div>
+      <h2>달리기 애니메이션 (바운드 걸음)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>플레이테스트 피드백: 속도 3에 걷기 동작을 빠르게 돌리니 다리만 바쁘게 왔다 갔다 해서 어색함 → 달리기 동작을 따로 만듦</li>
+        <li>바운드 걸음: 앞다리 둘, 뒷다리 둘이 각각 같이 움직이는 깡충깡충 달리기 (12프레임 = 0.4초 반복)</li>
+        <li>공중에서 쭉 뻗기 → 앞발 착지하며 앞이 숙여짐 → 다리를 몸 아래로 모음 → 뒷발로 박차며 앞이 들림</li>
+        <li>머리는 몸통 앞뒤 기울기의 절반만큼 반대로 돌려 시선 유지, 꼬리는 반박자 늦게 따라옴</li>
+        <li>옆모습 렌더로 네 단계 확인</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m7-run-00.png" alt="달리기 0프레임: 공중에서 쭉 뻗기" width="360" height="300"><figcaption>0 뻗기</figcaption></figure>
+        <figure><img src="images/m7-run-03.png" alt="달리기 3프레임: 앞발 착지" width="360" height="300"><figcaption>3 앞발 착지</figcaption></figure>
+        <figure><img src="images/m7-run-06.png" alt="달리기 6프레임: 다리 모으기" width="360" height="300"><figcaption>6 모으기</figcaption></figure>
+        <figure><img src="images/m7-run-09.png" alt="달리기 9프레임: 뒷발로 박차기" width="360" height="300"><figcaption>9 박차기</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Tools/Blender/generate_character.py</code> — <code>_bound</code> 포즈, <code>Run</code> 클립</li>
+        <li><code>Unity/Assets/Art/Character/Fox.fbx</code> — 다시 생성</li>
+        <li><code>docs/plan.md</code> — §1, §3</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>화면에서 왼쪽을 보는 옆모습 기준</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M7</span></div>
+      <h2>Shift 달리기 · 기본 걷기 속도 1</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>입력에 <code>Sprint</code> 액션 추가 (왼쪽 · 오른쪽 Shift)</li>
+        <li><code>PlayerController</code>: 기본 걷기 1, Shift를 누르는 동안 달리기 3. <code>IsRunning</code> 공개</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Input/PlayerControls.inputactions</code>, <code>Unity/Assets/Scripts/Player/PlayerController.cs</code></li>
+        <li><code>docs/plan.md</code> — §1, §4.5, §6 · <code>docs/plan.html</code> — 조작</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>게임플레이 변화: 점프 거리가 걸을 때 약 0.62, 달릴 때 약 1.86 (유닛, 타일 한 칸 = 1.5) → 구멍 한 칸은 달리기 점프로만 건널 수 있음</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M7</span></div>
+      <h2>걷기: 다리에 맞춰 몸통 흔들기</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>요청: 다리 움직임에 맞춰 몸통도 살짝 흔들려서 실제로 걷는 느낌이 나게</li>
+        <li>보폭 끝(0 · 8프레임)마다 몸통이 좌우로 ±4° 기울고 ±3° 비틀림 → 대각선 다리 쌍이 바뀔 때 체중이 옮겨가는 느낌</li>
+        <li>머리는 반대로 ∓2° 돌려서 시선은 앞을 유지, 꼬리는 몸 비틀기와 반대로 흔들어 균형</li>
+        <li>다리가 모이는 순간(4 · 12프레임)엔 몸이 똑바로 서며 살짝 떠오름 (기존 들썩임 유지)</li>
+        <li>걷기 키 포즈를 <code>_stride(방향)</code> · <code>_passing()</code> 함수로 정리</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m7-walk-sway-00.png" alt="걷기 0프레임 정면: 몸통이 한쪽으로 기움" width="360" height="360"><figcaption>0프레임</figcaption></figure>
+        <figure><img src="images/m7-walk-sway-04.png" alt="걷기 4프레임 정면: 몸통이 똑바로 섬" width="360" height="360"><figcaption>4프레임</figcaption></figure>
+        <figure><img src="images/m7-walk-sway-08.png" alt="걷기 8프레임 정면: 몸통이 반대쪽으로 기움" width="360" height="360"><figcaption>8프레임</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Tools/Blender/generate_character.py</code> — 걷기 키 포즈</li>
+        <li><code>Unity/Assets/Art/Character/Fox.fbx</code> — 다시 생성</li>
+        <li><code>docs/plan.md</code> — §3.1</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>정면 렌더로 기울기 확인, Unity 재임포트 후 클립 이름 · 설정 유지 확인</li>
+        <li>각도는 "살짝"에 맞춰 작게 잡음. 더 크게 · 작게 원하면 <code>_stride</code>의 숫자만 바꾸면 됨</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M7</span></div>
+      <h2>걷기 애니메이션 속도를 이동 속도에 연동</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>플레이테스트 피드백: 이동 속도에 비해 걷는 동작이 느림</li>
+        <li>Animator 파라미터 <code>WalkPlaybackSpeed</code> 추가, Walk 상태의 재생 배속으로 연결</li>
+        <li><code>PlayerAnimator</code>가 <code>현재 속도 ÷ 기준 속도</code>를 매 프레임 넣음. 기준 속도 기본 1.5 → 걷는 속도 3에서 2배속</li>
+        <li>파라미터 구성이 바뀌어서 컨트롤러가 자동으로 다시 만들어짐, 두 번째 빌드부터 변경 없음 확인</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Player/PlayerAnimator.cs</code>, <code>Unity/Assets/Editor/CharacterAssetBuilder.cs</code></li>
+        <li><code>Unity/Assets/Art/Character/Fox.controller</code>, <code>Unity/Assets/Prefabs/Player.prefab</code></li>
+        <li><code>docs/plan.md</code> — §6</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>기준 속도(<code>Walk Reference Speed</code>)는 플레이어 인스펙터에서 플레이 중에도 바로 조절 가능: 작을수록 빨라짐</li>
+        <li>속도에 비례하니까, 나중에 걷는 속도를 바꿔도 발 박자가 따라감</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M7</span></div>
+      <h2>플레이어 프리팹: 캡슐 → 여우</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>Player</code> 아래 <code>Model</code>로 <code>Fox.fbx</code>를 넣고 <code>Animator</code>에 컨트롤러 연결 (루트 모션 끔, 화면 밖에서도 애니메이션)</li>
+        <li>캡슐 · 코 큐브와 그 머티리얼(<code>Player_Body</code>, <code>Player_Nose</code>) 삭제 — 참조가 없는 것 확인 후</li>
+        <li>에디터에서 여우 네 마리를 각 자세로 세워 캡처: 모두 이동 방향(+Z)을 보고 똑바로 섬</li>
+      </ul>
+      <img src="images/m7-fox-poses.png" alt="맵 위에 Idle, Walk, Jump, Fall 자세로 선 여우 네 마리" width="1280" height="720">
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Editor/PlayerAssetBuilder.cs</code>, <code>Unity/Assets/Prefabs/Player.prefab</code></li>
+        <li><code>docs/plan.md</code> — §6 프리팹 구조</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>클립이 모델 루트 자체의 위치 · 회전을 키로 갖고 있어서, <code>Model</code>은 항상 원점에 둬야 함. 여우를 옮기려면 <code>Player</code>를 옮김</li>
+        <li>여우 길이(0.95)가 충돌 캡슐 지름(0.4)보다 길어 기둥 옆에서 머리 · 꼬리가 살짝 파고들 수 있음 → 플레이테스트로 확인</li>
+        <li>M7 구현 끝! 다음: 직접 플레이테스트 후 M8 (다듬기)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M7</span></div>
+      <h2>PlayerAnimator</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>매 프레임 <code>Speed</code>(수평 속도) · <code>Grounded</code> · <code>VerticalSpeed</code>를 Animator에 전달</li>
+        <li><code>PlayerController</code>에 <code>Jumped</code> 이벤트 추가: 코요테 타임 · 점프 버퍼를 통과해서 실제로 뛰는 순간에만 <code>Jump</code> 트리거</li>
+        <li><code>PlayerController</code> 다음에 실행되도록 실행 순서 지정 → 같은 프레임의 움직임이 바로 반영</li>
+        <li>파라미터 이름 · 해시는 <code>PlayerAnimator.Parameters</code> 한 곳에만 두고 빌더도 이걸 씀</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Player/PlayerAnimator.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Scripts/Player/PlayerController.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>걷기 애니메이션 속도는 아직 이동 속도와 따로 놂. 발이 미끄러져 보이면 M8에서 맞춤</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M7</span></div>
+      <h2>Animator Controller</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>상태 4개: Idle(기본) · Walk · Jump · Fall, 파라미터 4개: <code>Speed</code> · <code>Grounded</code> · <code>VerticalSpeed</code> · <code>Jump</code></li>
+        <li>Idle ↔ Walk: 속도 0.1 기준 / 어디서든 → Jump: 트리거 / Jump → Fall: 내려가기 시작하면 / Idle · Walk → Fall: 발판에서 걸어 떨어지면 / Fall → Idle · Walk: 착지하면</li>
+        <li>전환은 전부 0.1초 블렌드, 종료 시간 대기 없음. Animator 창에서 보기 좋게 상태 위치도 배치</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Editor/CharacterAssetBuilder.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Art/Character/Fox.controller</code> — 생성됨</li>
+        <li><code>docs/plan.md</code> — §2.1, §6</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>컨트롤러를 다시 만들면 내부 ID가 전부 바뀌어서, 상태 · 파라미터 구성이 달라졌을 때만 다시 만들게 함 (강제로 다시 만들려면 에셋 삭제)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M7</span></div>
+      <h2>Fox.fbx 임포트 설정</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>Tools/MyGame/Build Character Assets</code>: Generic 리그, 클립 이름 <code>Fox|Walk</code> → <code>Walk</code>, Idle · Walk · Fall 반복</li>
+        <li><code>CharacterMaterialPostprocessor</code>: 여우 머티리얼을 FBX 색 그대로 + 무광 URP Lit으로 → 팔레트 색이 타일과 같은 느낌으로 나옴</li>
+        <li>클립 4개 이름 · 길이 · 반복 설정, 여우 방향 · 높이를 로그로 검증</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Editor/CharacterAssetBuilder.cs</code>, <code>CharacterMaterialPostprocessor.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Art/Character/Fox.fbx.meta</code> — 임포트 설정</li>
+        <li><code>docs/plan.md</code> — §3.4</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>문제 1: 처음엔 여우 색이 창백한 베이지 → URP 기본 FBX 머티리얼 변환이 광택 등을 섞어서. 후처리기로 해결</li>
+        <li>문제 2: Blender→Unity 축 변환. "축 변환 굽기(Bake Axis Conversion)"를 켜면 기본 자세만 고쳐지고 애니메이션 곡선은 안 고쳐져서 움직이는 순간 여우가 90° 넘어짐. 끄는 게 정답이고, 그 상태에서 Blender −Y가 Unity +Z가 됨. 여러 조합을 실제로 임포트해보며 확인</li>
+        <li>문제 3: 보석 머티리얼이 빌드마다 바뀜 → 에디터를 열면 URP가 발광 키워드를 지우고, 빌더가 다시 넣고의 반복. 발광을 빼서 해결 (보석 가시성은 크기 · 색 덕분이라 차이 없음)</li>
+        <li>여우 모델의 가장 낮은 점이 약 −0.02 → 충돌 캡슐이 스킨 두께(0.02)만큼 떠서 서니까 대략 상쇄될 것으로 예상, 플레이테스트로 확인 필요</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M6</span></div>
       <h2>FBX 내보내기 · 검증</h2>
       <h3>한 일</h3>

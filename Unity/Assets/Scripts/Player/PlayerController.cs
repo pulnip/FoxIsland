@@ -1,3 +1,4 @@
+using System;
 using MyGame.Map;
 using UnityEngine;
 using UnityEngine.InputSystem;
@@ -12,7 +13,8 @@ namespace MyGame.Player
     {
         private const float GroundedVerticalSpeed = -2f;
 
-        [SerializeField] private float _walkSpeed = 3f;
+        [SerializeField] private float _walkSpeed = 1f;
+        [SerializeField] private float _runSpeed = 3f;
         [SerializeField] private float _turnSpeed = 720f;
         [SerializeField] private float _jumpHeight = 1.2f;
         [SerializeField] private float _gravity = -25f;
@@ -23,9 +25,12 @@ namespace MyGame.Player
         private CharacterController _controller;
         private InputAction _moveAction;
         private InputAction _jumpAction;
+        private InputAction _toggleWalkAction;
         private float _verticalSpeed;
         private float _lastGroundedTime = float.NegativeInfinity;
         private float _lastJumpPressedTime = float.NegativeInfinity;
+
+        public event Action Jumped;
 
         /// <summary>
         /// When false, move and jump input are ignored; gravity still applies.
@@ -38,6 +43,11 @@ namespace MyGame.Player
 
         public float HorizontalSpeed { get; private set; }
 
+        /// <summary>
+        /// Running is the default; the toggle-walk key switches between walking and running.
+        /// </summary>
+        public bool IsRunning { get; private set; } = true;
+
         private void Awake() => _controller = GetComponent<CharacterController>();
 
         private void OnEnable()
@@ -45,8 +55,10 @@ namespace MyGame.Player
             var actions = InputSystem.actions;
             _moveAction = actions.FindAction("Player/Move", throwIfNotFound: true);
             _jumpAction = actions.FindAction("Player/Jump", throwIfNotFound: true);
+            _toggleWalkAction = actions.FindAction("Player/ToggleWalk", throwIfNotFound: true);
             _moveAction.Enable();
             _jumpAction.Enable();
+            _toggleWalkAction.Enable();
         }
 
         private void Start()
@@ -79,12 +91,18 @@ namespace MyGame.Player
                 _verticalSpeed = Mathf.Sqrt(2f * _jumpHeight * -_gravity);
                 _lastGroundedTime = float.NegativeInfinity;
                 _lastJumpPressedTime = float.NegativeInfinity;
+                Jumped?.Invoke();
             }
 
             _verticalSpeed += _gravity * Time.deltaTime;
 
             var input = InputEnabled ? _moveAction.ReadValue<Vector2>() : Vector2.zero;
-            var horizontal = ToWorldDirection(input) * _walkSpeed;
+            if (InputEnabled && _toggleWalkAction.WasPressedThisFrame())
+            {
+                IsRunning = !IsRunning;
+            }
+
+            var horizontal = ToWorldDirection(input) * (IsRunning ? _runSpeed : _walkSpeed);
             var flags = _controller.Move((horizontal + Vector3.up * _verticalSpeed) * Time.deltaTime);
             if ((flags & CollisionFlags.Above) != 0 && _verticalSpeed > 0f)
             {

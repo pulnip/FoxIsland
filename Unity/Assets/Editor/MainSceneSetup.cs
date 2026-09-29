@@ -22,6 +22,7 @@ namespace MyGame.EditorTools
         public static void BuildAll()
         {
             MapAssetBuilder.Run();
+            CharacterAssetBuilder.Run();
             PlayerAssetBuilder.Run();
             ItemAssetBuilder.Run();
             UIAssetBuilder.Run();

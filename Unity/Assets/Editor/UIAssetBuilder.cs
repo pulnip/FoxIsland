@@ -11,7 +11,7 @@ namespace MyGame.EditorTools
 
         private const string ThemePath = "Assets/UI/GameTheme.tss";
 
-        [MenuItem("Tools/MyGame/Build UI Assets", priority = 22)]
+        [MenuItem("Tools/MyGame/Build UI Assets", priority = 24)]
         public static void Run()
         {
             var settings = AssetDatabase.LoadAssetAtPath<PanelSettings>(PanelSettingsPath);

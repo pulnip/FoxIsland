@@ -8,8 +8,8 @@ Run headless:
         [--preview DIR] [--blend PATH]
 
 Each body part becomes one mesh parented rigidly to its bone, so the rig
-needs no skinning. The animal faces -Y in Blender, which the FBX axis
-conversion turns into +Z in Unity.
+needs no skinning. The animal faces -Y in Blender, which becomes +Z in
+Unity as long as the Unity importer leaves Bake Axis Conversion off.
 """
 
 import argparse
@@ -40,7 +40,8 @@ BACK_LEGS = ("LegBL", "LegBR")
 # Each clip: (frame count, [(frame, pose)]). A pose maps a bone name to
 # {"rot": (x, y, z) degrees in bone space, "lift": metres along the bone}.
 # Bones point up, so bone X pitches (+ swings a leg back, dips the nose,
-# raises the tail) and bone Y yaws. Unlisted bones rest at zero.
+# raises the tail), bone Y yaws, and bone Z rolls about the nose-to-tail
+# axis. Unlisted bones rest at zero.
 
 
 def _legs(front, back, pair_a=None, pair_b=None):
@@ -63,6 +64,40 @@ def _pose(legs=None, **bones):
     return pose
 
 
+def _stride(side):
+    """Walk extreme: one diagonal pair forward, the body rolling and
+    twisting with the weight shift, head and tail countering the twist."""
+    return _pose(
+        _legs(0, 0, 25 * side, -25 * side),
+        Body={"rot": (0, 3 * side, 4 * side)},
+        Head={"rot": (0, -2 * side, -2 * side)},
+        Tail={"rot": (0, -12 * side, 0)},
+    )
+
+
+def _bound(front, back, pitch, lift, tail):
+    """Run (bound) pose: front legs move together, back legs together.
+
+    The body pitches with the gait; the head takes back half of it so the
+    gaze stays level.
+    """
+    return _pose(
+        _legs(front, back),
+        Body={"rot": (pitch, 0, 0), "lift": lift},
+        Head={"rot": (-pitch * 0.5, 0, 0)},
+        Tail={"rot": (tail, 0, 0)},
+    )
+
+
+def _passing():
+    """Walk passing pose: legs under the body, body at the top of its bob."""
+    return _pose(
+        _legs(0, 0, 0, 0),
+        Body={"lift": 0.015},
+        Head={"rot": (2, 0, 0)},
+    )
+
+
 ANIMATIONS = {
     "Idle": (30, [
         (0, _pose(Body={"lift": 0.0}, Tail={"rot": (0, -8, 0)})),
@@ -71,13 +106,18 @@ ANIMATIONS = {
         (30, _pose(Body={"lift": 0.0}, Tail={"rot": (0, -8, 0)})),
     ]),
     "Walk": (16, [
-        (0, _pose(_legs(0, 0, 25, -25), Tail={"rot": (0, -12, 0)})),
-        (4, _pose(_legs(0, 0, 0, 0), Body={"lift": 0.015},
-                  Head={"rot": (2, 0, 0)})),
-        (8, _pose(_legs(0, 0, -25, 25), Tail={"rot": (0, 12, 0)})),
-        (12, _pose(_legs(0, 0, 0, 0), Body={"lift": 0.015},
-                   Head={"rot": (2, 0, 0)})),
-        (16, _pose(_legs(0, 0, 25, -25), Tail={"rot": (0, -12, 0)})),
+        (0, _stride(1)),
+        (4, _passing()),
+        (8, _stride(-1)),
+        (12, _passing()),
+        (16, _stride(1)),
+    ]),
+    "Run": (12, [
+        (0, _bound(front=-40, back=40, pitch=-8, lift=0.035, tail=10)),
+        (3, _bound(front=-5, back=20, pitch=6, lift=0.0, tail=25)),
+        (6, _bound(front=35, back=-35, pitch=2, lift=0.02, tail=20)),
+        (9, _bound(front=15, back=0, pitch=-6, lift=0.0, tail=5)),
+        (12, _bound(front=-40, back=40, pitch=-8, lift=0.035, tail=10)),
     ]),
     "Jump": (9, [
         (0, _pose()),
@@ -95,7 +135,7 @@ ANIMATIONS = {
 }
 
 
-PREVIEW_FRAMES = {"Idle": 15, "Walk": 0, "Jump": 9, "Fall": 0}
+PREVIEW_FRAMES = {"Idle": 15, "Walk": 0, "Run": 0, "Jump": 9, "Fall": 0}
 
 
 def parse_args():

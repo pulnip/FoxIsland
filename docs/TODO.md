@@ -74,11 +74,18 @@ Work top to bottom unless the user says otherwise.
 
 ## M7. Character integration
 
-- [ ] Import `Fox.fbx` as Generic rig; rename clips `Fox|Idle` → `Idle` etc., loop Idle/Walk/Fall;
+- [x] Import `Fox.fbx` as Generic rig; rename clips `Fox|Idle` → `Idle` etc., loop Idle/Walk/Fall;
   verify facing +Z, feet at y = 0
-- [ ] Animator Controller: Idle/Walk/Jump/Fall states and parameters (§6)
-- [ ] `PlayerAnimator`: drive Animator parameters from `PlayerController`
-- [ ] Replace capsule visual with fox in Player prefab
+- [x] Animator Controller: Idle/Walk/Jump/Fall states and parameters (§6)
+- [x] `PlayerAnimator`: drive Animator parameters from `PlayerController`
+- [x] Replace capsule visual with fox in Player prefab
+- [x] Scale Walk playback with movement speed (playtest: walk looked too slow)
+- [x] Walk: body roll and twist synced to the legs, head and tail countering
+- [x] `Sprint` input action (Left/Right Shift); walk speed 1, run speed 3 while held
+- [x] `Run` clip (bound gait) in the Blender generator
+- [x] Animator: Run state, `Running` bool, per-clip playback speed (Walk ref 1, Run ref 3)
+- [x] Run by default; Left Ctrl toggles walk mode (replaces hold-Shift sprint)
+- [x] Playtest: animation states and transitions, facing, fox size vs. collider — **user**
 
 ## M8. Polish
 

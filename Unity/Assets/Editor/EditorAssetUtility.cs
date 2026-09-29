@@ -25,11 +25,10 @@ namespace MyGame.EditorTools
         /// An existing material that already matches is left untouched: URP rewrites the legacy
         /// <c>_Color</c> with float round-off, so re-saving it would churn the file on every build.
         /// </summary>
-        public static Material GetOrCreateLitMaterial(string path, Color color, float smoothness = 0.1f, Color emission = default)
+        public static Material GetOrCreateLitMaterial(string path, Color color, float smoothness = 0.1f)
         {
             EnsureFolder(Path.GetDirectoryName(path).Replace('\\', '/'));
             var shader = Shader.Find(LitShaderName);
-            var isEmissive = emission.maxColorComponent > 0f;
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
@@ -39,9 +38,7 @@ namespace MyGame.EditorTools
             else if (material.shader == shader
                      && IsApproximately(material.GetColor("_BaseColor"), color)
                      && IsApproximately(material.GetColor("_Color"), color)
-                     && Mathf.Approximately(material.GetFloat("_Smoothness"), smoothness)
-                     && material.IsKeywordEnabled("_EMISSION") == isEmissive
-                     && (!isEmissive || IsApproximately(material.GetColor("_EmissionColor"), emission)))
+                     && Mathf.Approximately(material.GetFloat("_Smoothness"), smoothness))
             {
                 return material;
             }
@@ -50,17 +47,6 @@ namespace MyGame.EditorTools
             material.SetColor("_BaseColor", color);
             material.SetColor("_Color", color);
             material.SetFloat("_Smoothness", smoothness);
-            if (isEmissive)
-            {
-                material.EnableKeyword("_EMISSION");
-                material.SetColor("_EmissionColor", emission);
-                material.globalIlluminationFlags = MaterialGlobalIlluminationFlags.None;
-            }
-            else
-            {
-                material.DisableKeyword("_EMISSION");
-            }
-
             EditorUtility.SetDirty(material);
             return material;
         }

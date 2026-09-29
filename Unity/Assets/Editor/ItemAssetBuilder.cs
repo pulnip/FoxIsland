@@ -15,12 +15,11 @@ namespace MyGame.EditorTools
         private const float TriggerRadius = 0.3f;
         private const float GemSize = 0.34f;
 
-        [MenuItem("Tools/MyGame/Build Item Assets", priority = 22)]
+        [MenuItem("Tools/MyGame/Build Item Assets", priority = 23)]
         public static void Run()
         {
-            var gemColor = new Color(1f, 0.78f, 0.12f);
             var gemMaterial = EditorAssetUtility.GetOrCreateLitMaterial(
-                $"{MaterialFolder}/Item_Gem.mat", gemColor, smoothness: 0.7f, emission: gemColor * 0.45f);
+                $"{MaterialFolder}/Item_Gem.mat", new Color(1f, 0.78f, 0.12f), smoothness: 0.7f);
 
             var root = new GameObject("Item");
             var trigger = root.AddComponent<SphereCollider>();
