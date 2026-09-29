@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>개발 일지</title>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --surface: #ffffff;
+    --text: #22201c;
+    --muted: #6b665d;
+    --border: #e3ded3;
+    --accent: #e0762a;
+    --accent-soft: #fbe6d4;
+    --line: #d8d2c5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #1a1916;
+      --surface: #24221e;
+      --text: #ece8df;
+      --muted: #a39d91;
+      --border: #3a3731;
+      --accent: #f08c42;
+      --accent-soft: #3d2a1a;
+      --line: #3a3731;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #1a1916;
+    --surface: #24221e;
+    --text: #ece8df;
+    --muted: #a39d91;
+    --border: #3a3731;
+    --accent: #f08c42;
+    --accent-soft: #3d2a1a;
+    --line: #3a3731;
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Pretendard", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    line-height: 1.6;
+  }
+  main { max-width: 820px; margin: 0 auto; padding: 40px 16px 64px; }
+  header h1 { margin: 0 0 4px; font-size: 1.9rem; letter-spacing: -0.02em; }
+  header p { margin: 0; color: var(--muted); }
+
+  .timeline { position: relative; margin-top: 32px; padding-left: 28px; }
+  .timeline::before {
+    content: ""; position: absolute; left: 8px; top: 6px; bottom: 6px;
+    width: 2px; background: var(--line);
+  }
+  .entry {
+    position: relative;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+  }
+  .entry::before {
+    content: ""; position: absolute; left: -26px; top: 20px;
+    width: 14px; height: 14px; border-radius: 50%;
+    background: var(--accent); border: 3px solid var(--bg);
+  }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 0.85rem; color: var(--muted); }
+  .tag {
+    padding: 1px 8px; border-radius: 999px;
+    background: var(--accent-soft); color: var(--accent); font-weight: 700;
+  }
+  .entry h2 { margin: 6px 0 10px; font-size: 1.1rem; }
+  .entry h3 { margin: 12px 0 4px; font-size: 0.85rem; color: var(--muted); font-weight: 600; }
+  .entry ul { margin: 0; padding-left: 1.2em; }
+  .entry li { margin: 2px 0; }
+  code { font-family: ui-monospace, Consolas, monospace; font-size: 0.88em; background: var(--bg); padding: 1px 5px; border-radius: 4px; overflow-wrap: anywhere; }
+  footer { margin-top: 40px; color: var(--muted); font-size: 0.85rem; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>📓 개발 일지</h1>
+    <p>복셀 동물 플랫포머 — 작업 하나 끝날 때마다 기록. 최신 항목이 위에.</p>
+  </header>
+
+  <div class="timeline">
+<!-- NEW ENTRIES GO HERE (newest first). Template:
+    <article class="entry">
+      <div class="meta"><time>YYYY-MM-DD</time><span class="tag">M#</span></div>
+      <h2>작업 제목</h2>
+      <h3>한 일</h3>
+      <ul><li>...</li></ul>
+      <h3>변경된 파일</h3>
+      <ul><li><code>path</code> — 설명</li></ul>
+      <h3>메모</h3>
+      <ul><li>결정한 것, 문제, 다음에 할 것</li></ul>
+    </article>
+-->
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
+      <h2>문서를 docs/ 폴더로 이동 · git 초기화</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>git init</code> 후 <code>.gitignore</code>만 넣어서 첫 커밋</li>
+        <li>기획 문서들을 <code>docs/</code>로 옮기고, <code>devlog.html</code>만 커밋되도록 <code>docs/.gitignore</code> 추가</li>
+        <li><code>CLAUDE.md</code>의 파일 경로를 전부 <code>docs/</code> 기준으로 갱신</li>
+        <li><code>plan.md</code>의 폴더 구조 갱신, 삭제된 <code>blueprint.md</code> 참조 제거</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>CLAUDE.md</code> — 문서 경로를 <code>docs/</code>로</li>
+        <li><code>docs/plan.md</code> — 폴더 구조, 도입부</li>
+        <li><code>docs/TODO.md</code> — git 초기화 · 문서 이동 체크</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li><code>plan.html</code>은 git에 안 올라가고 로컬에만 있음</li>
+        <li>다음: 템플릿 잔여물(<code>TutorialInfo/</code>, <code>Readme.asset</code>, <code>SampleScene</code>) 정리</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
+      <h2>.gitignore 추가</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>저장소 루트(<code>MyGame/</code>) 기준으로 <code>.gitignore</code> 작성</li>
+        <li>Unity 생성 폴더(<code>Library</code>, <code>Temp</code>, <code>Logs</code>, <code>UserSettings</code> 등)는 <code>Unity/</code> 경로로 한정해서 제외</li>
+        <li>IDE 자동 생성 파일(<code>*.csproj</code>, <code>*.slnx</code>), Blender 백업(<code>*.blend1</code>), OS 잡파일 제외</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>.gitignore</code> — 새로 추가</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li><code>git init</code>과 첫 커밋은 직접</li>
+        <li>생성된 <code>Fox.fbx</code>는 커밋 대상으로 둠 (Unity에서 쓰는 에셋이라서)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
+      <h2>Unity 프로젝트 생성</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>Unity 6000.6.3f1 배치 모드(<code>-createProject</code> + <code>-cloneFromTemplate</code>)로 <code>Unity/</code>에 프로젝트 생성</li>
+        <li>에디터에 들어있는 <code>com.unity.template.urp-blank</code> 템플릿 사용 → URP 17.6, Input System 1.20 포함</li>
+        <li>Active Input Handling이 이미 새 Input System으로 설정된 것 확인 → Input System 작업도 같이 완료</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/</code> — 새 Unity 프로젝트</li>
+        <li><code>CLAUDE.md</code> — 에디터 경로, 배치 모드 주의사항 추가</li>
+        <li><code>plan.md</code> — 엔진 버전 확정</li>
+        <li><code>TODO.md</code> — 완료 체크, 템플릿 정리 작업 추가</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>템플릿에 딸려온 <code>TutorialInfo/</code>, <code>Readme.asset</code>, <code>SampleScene</code>은 다음 작업에서 정리</li>
+        <li>배치 모드 명령은 에디터에서 프로젝트가 열려 있으면 실패하니까 주의</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M0</span></div>
+      <h2>할 일 목록 · 개발 일지 · 프로젝트 규칙 파일 생성</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>plan.md</code> §9 마일스톤을 체크박스 단위 작업으로 쪼개서 할 일 목록 작성</li>
+        <li>작업 기록용 개발 일지(이 페이지) 생성</li>
+        <li>세션 간 공유할 규칙을 담은 프로젝트 <code>CLAUDE.md</code> 생성</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>TODO.md</code> — M0~M8 작업 목록</li>
+        <li><code>devlog.html</code> — 개발 일지</li>
+        <li><code>CLAUDE.md</code> — 작업 흐름, 코드 규칙, 파일 안내</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>작업 하나 = 체크박스 하나 = 일지 항목 하나로 기록하기로 함</li>
+        <li>M1에 git 초기화 작업 추가</li>
+        <li>다음: Unity Hub에서 <code>Unity/</code> 폴더에 3D (URP) 프로젝트 생성 (직접 해야 함)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M0</span></div>
+      <h2>게임 기획서 작성</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>blueprint.md</code> 초안을 바탕으로 세부 기획 확정</li>
+        <li>캐릭터는 Blender Python으로 만드는 복셀 동물 (기본: 여우)</li>
+        <li>추락 요소 전부 포함: 맵 가장자리, 구멍, 높이 차, 무너지는 타일</li>
+        <li>아이템은 게임 시작마다 랜덤, 카메라는 고정 쿼터뷰, 조작은 WASD + Space</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>plan.md</code> — Claude Code용 영어 스펙</li>
+        <li><code>plan.html</code> — 한글 시각 요약</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>무너지는 타일은 3초 뒤 복구 → 아이템을 못 먹게 되는 상황 방지</li>
+        <li>캡슐로 게임 로직 먼저 완성하고 캐릭터는 M6~M7에서 입히기</li>
+        <li>미정: 최종 동물, 제한 시간/기록, 맵 추가 여부</li>
+      </ul>
+    </article>
+  </div>
+
+  <footer>할 일 목록은 <code>TODO.md</code>, 전체 스펙은 <code>plan.md</code> 참고</footer>
+</main>
+</body>
+</html>
