@@ -18,7 +18,7 @@ Work top to bottom unless the user says otherwise.
 - [x] Remove template leftovers (`TutorialInfo/`, `Readme.asset`); rename `SampleScene` → `Main`
 - [x] Commit the base project state
 - [x] Create folder structure under `Unity/Assets/` per `plan.md` §2
-- [ ] Set up `Main` scene: directional light and orthographic quarter-view camera (§7)
+- [x] Set up `Main` scene: directional light and orthographic quarter-view camera (§7)
 - [ ] Create `PlayerControls.inputactions` with `Move` (WASD), `Jump` (Space), `Restart` (R)
   (template's `InputSystem_Actions.inputactions` can be replaced)
 
@@ -29,7 +29,7 @@ Work top to bottom unless the user says otherwise.
 - [ ] `MapBuilder`: instantiate tiles from `MapLayout` at scene load
 - [ ] Player prefab: capsule + `CharacterController`
 - [ ] `PlayerController`: camera-relative WASD movement and facing
-- [ ] `PlayerController`: jump with gravity, coyote time, jump buffer (§4.4 tuning targets)
+- [ ] `PlayerController`: jump with gravity, coyote time, jump buffer (§4.5 tuning targets)
 
 ## M3. Falling + restart
 

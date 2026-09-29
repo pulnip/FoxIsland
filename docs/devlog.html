@@ -103,6 +103,33 @@
 -->
     <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
+      <h2>Main 씬 쿼터뷰 카메라 · 라이트 세팅</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>QuarterViewCamera</code> 컴포넌트: 맵 범위(Bounds)를 주면 (30°, 45°) 쿼터뷰 위치와 직교 크기를 자동 계산. 화면 비율이 바뀌면 다시 계산하고, 에디터에서도 바로 반영(<code>[ExecuteAlways]</code>)</li>
+        <li>직교 크기는 범위 박스의 꼭짓점 8개를 화면에 투영해서, 가로·세로 중 빡빡한 쪽이 70%를 채우도록 계산</li>
+        <li><code>Tools/MyGame/Setup Main Scene</code> 메뉴 추가: 카메라(하늘색 단색 배경) + 디렉셔널 라이트(따뜻한 색, 소프트 그림자) + 3색 환경광 세팅. 여러 번 실행해도 결과 같음</li>
+        <li>에디터가 꺼져 있어서 배치 모드로 메뉴를 직접 실행, 저장된 씬 값 검증</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/CameraRig/QuarterViewCamera.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Editor/MainSceneSetup.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Scenes/Main.unity</code> — 카메라 · 라이트 설정</li>
+        <li><code>docs/plan.md</code> — 타일 좌표 규칙(§4.4), 카메라 구현 방식(§7)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>타일 좌표 규칙 확정: 타일 (열, 행) → 월드 (열, *, 행), 타일 윗면 높이 = 레벨 × 0.5</li>
+        <li>문제 1: <code>GetComponent() ?? AddComponent()</code>는 에디터에서 Unity의 "가짜 null" 때문에 동작 안 함 → <code>TryGetComponent</code>로 수정</li>
+        <li>문제 2: Unity 6.6에서 <code>FindObjectsSortMode</code>가 deprecated → 새 오버로드 사용</li>
+        <li>근평면·원평면 여유를 넉넉히(±10) 줘서 추락 중인 캐릭터나 이펙트가 잘리지 않게 함</li>
+        <li>다음: <code>PlayerControls.inputactions</code> (WASD / Space / R)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
       <h2>Unity 에셋 폴더 구조 생성</h2>
       <h3>한 일</h3>
       <ul>

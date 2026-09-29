@@ -162,7 +162,15 @@ row 0:  S  0  0  .
 `MapLayout` ScriptableObject holding a 4×4 array of tile specs (type + height level).
 `MapBuilder` instantiates tile prefabs from it at scene load.
 
-### 4.4 Physics tuning targets
+### 4.4 Coordinates
+
+- Tile `(column, row)` is centered at world `(column, *, row)`; the map spans
+  x, z ∈ [-0.5, 3.5]. Row 0 / column 0 is the corner nearest the camera.
+- A tile's top surface is at `y = level × 0.5`.
+- The camera frames the box center `(1.5, 0.85, 1.5)`, size `(4, 2.7, 4)`: tile tops from
+  level 0 down to -0.5, up to level 2 plus jump apex (≈ 2.2).
+
+### 4.5 Physics tuning targets
 
 - Walk speed: 3 units/s.
 - Jump apex: ~1.2 units above takeoff → can climb one level (0.5) comfortably, two levels (1.0) barely.
@@ -201,10 +209,14 @@ row 0:  S  0  0  .
 
 ## 7. Camera
 
-- Orthographic, rotation `(30°, 45°, 0°)`, fixed position framing the whole 4×4 map plus
-  margin for jump height.
-- Orthographic size chosen so the map fills ~70% of screen height.
+- `QuarterViewCamera` (`[ExecuteAlways]`): orthographic, rotation `(30°, 45°, 0°)`, placed
+  20 units back from the center of `FramedBounds` (§4.4).
+- Orthographic size is computed from the projected corners of `FramedBounds` so the box
+  fills 70% of the tighter screen dimension; recomputed when the aspect ratio changes.
+- `MapBuilder` may later set `FramedBounds` from the actual map.
 - No follow logic needed at this map size.
+- Scene setup (camera, directional light, trilight ambient) is reproducible via
+  `Tools/MyGame/Setup Main Scene` (`MainSceneSetup`).
 
 ---
 
