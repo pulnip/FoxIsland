@@ -15,6 +15,13 @@
     padding: 10px 22px 10px 16px;
     background-color: rgba(250, 247, 240, 0.85);
     border-radius: 999px;
+    transition-property: scale;
+    transition-duration: 0.12s;
+    transition-timing-function: ease-out;
+}
+
+.hud--bump {
+    scale: 1.15 1.15;
 }
 
 .hud__gem {
@@ -43,6 +50,16 @@
     align-items: center;
     justify-content: center;
     background-color: rgba(20, 18, 16, 0.55);
+    opacity: 1;
+    transition-property: opacity;
+    transition-duration: 0.3s;
+}
+
+/* Overlays fade instead of vanishing, so they hide by opacity rather than display. */
+.overlay.hidden {
+    display: flex;
+    opacity: 0;
+    visibility: hidden;
 }
 
 .card {
@@ -51,12 +68,37 @@
     align-items: center;
     background-color: rgb(250, 247, 240);
     border-radius: 20px;
+    border-top-width: 10px;
+    scale: 1 1;
+    transition-property: scale;
+    transition-duration: 0.35s;
+    transition-timing-function: ease-out-back;
+}
+
+.overlay.hidden .card {
+    scale: 0.8 0.8;
+}
+
+.card--danger {
+    border-top-color: rgb(204, 72, 52);
+}
+
+.card--success {
+    border-top-color: rgb(247, 201, 72);
 }
 
 .card__title {
     font-size: 64px;
     -unity-font-style: bold;
     color: rgb(34, 32, 28);
+}
+
+.card--danger .card__title {
+    color: rgb(204, 72, 52);
+}
+
+.card--success .card__title {
+    color: rgb(224, 118, 42);
 }
 
 .card__body {
@@ -74,10 +116,13 @@
     background-color: rgb(224, 118, 42);
     border-width: 0;
     border-radius: 12px;
+    transition-property: scale, background-color;
+    transition-duration: 0.1s;
 }
 
 .card__button:hover {
     background-color: rgb(240, 140, 66);
+    scale: 1.05 1.05;
 }
 
 .card__button:active {

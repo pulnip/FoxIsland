@@ -52,6 +52,8 @@ namespace MyGame.EditorTools
             {
                 var crumblingTile = root.AddComponent<CrumblingTile>();
                 EditorAssetUtility.SetReference(crumblingTile, "_visual", visual);
+                EditorAssetUtility.SetReference(crumblingTile, "_dustEffect",
+                    AssetDatabase.LoadAssetAtPath<ParticleSystem>(EffectAssetBuilder.CrumbleDustPath));
             }
 
             EditorAssetUtility.SavePrefab(root, path);

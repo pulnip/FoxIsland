@@ -89,7 +89,9 @@ Work top to bottom unless the user says otherwise.
 
 ## M8. Polish
 
-- [ ] Item pickup effect
-- [ ] Crumbling tile shake visuals
-- [ ] Style UI panels
-- [ ] Sounds (optional)
+- [x] Item pickup effect
+- [x] Crumbling tile shake visuals
+- [x] Style UI panels
+- [ ] Playtest: pickup burst, HUD bump, crumble shake ramp and dust, panel fade and pop — **user**
+- [x] ~~Sounds (optional)~~ — dropped
+- [x] ~~HUD walk-mode indicator (optional)~~ — dropped for now

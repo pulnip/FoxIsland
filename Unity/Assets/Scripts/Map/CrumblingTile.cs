@@ -11,8 +11,9 @@ namespace MyGame.Map
     public class CrumblingTile : MonoBehaviour
     {
         [SerializeField] private Transform _visual;
+        [SerializeField] private ParticleSystem _dustEffect;
         [SerializeField] private float _shakeDuration = 0.8f;
-        [SerializeField] private float _shakeAmplitude = 0.04f;
+        [SerializeField] private float _shakeAmplitude = 0.05f;
         [SerializeField] private float _fallDuration = 0.6f;
         [SerializeField] private float _fallDistance = 3f;
         [SerializeField] private float _respawnDelay = 3f;
@@ -37,12 +38,19 @@ namespace MyGame.Map
 
             for (var elapsed = 0f; elapsed < _shakeDuration; elapsed += Time.deltaTime)
             {
-                var jitter = Random.insideUnitCircle * _shakeAmplitude;
+                var ramp = Mathf.Lerp(0.3f, 1f, elapsed / _shakeDuration);
+                var jitter = Random.insideUnitCircle * (_shakeAmplitude * ramp);
                 _visual.localPosition = new Vector3(jitter.x, 0f, jitter.y);
                 yield return null;
             }
 
             _collider.enabled = false;
+            if (_dustEffect != null)
+            {
+                var top = transform.TransformPoint(_collider.center + Vector3.up * (_collider.size.y * 0.5f));
+                Instantiate(_dustEffect, top, Quaternion.identity);
+            }
+
             for (var elapsed = 0f; elapsed < _fallDuration; elapsed += Time.deltaTime)
             {
                 var progress = elapsed / _fallDuration;

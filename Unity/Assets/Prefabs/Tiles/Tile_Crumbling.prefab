@@ -296,8 +296,9 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.CrumblingTile
   _visual: {fileID: 2897808603126199208}
+  _dustEffect: {fileID: 2445187452365417908, guid: 4253b720938a494429d09f5f3b3c0354, type: 3}
   _shakeDuration: 0.8
-  _shakeAmplitude: 0.04
+  _shakeAmplitude: 0.05
   _fallDuration: 0.6
   _fallDistance: 3
   _respawnDelay: 3

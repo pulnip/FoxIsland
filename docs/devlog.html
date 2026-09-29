@@ -107,6 +107,73 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
+      <h2>UI 패널 다듬기</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>패널이 뚝 나타나는 대신 0.3초 동안 페이드 인, 카드는 80% 크기에서 톡 튀어나오며 커짐</li>
+        <li>게임 오버 카드는 빨간 띠와 빨간 제목, 클리어 카드는 금색 띠와 주황 제목</li>
+        <li>버튼에 마우스를 올리면 5% 커짐, 보석을 먹을 때마다 HUD가 0.12초 동안 115%로 튐 (처음 <code>0 / 4</code>가 뜰 땐 안 튐)</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/UI/GameUI.uss</code>, <code>GameUI.uxml</code>, <code>Unity/Assets/Scripts/UI/GameUI.cs</code></li>
+        <li><code>docs/plan.md</code> — §8</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li><code>display: none</code>은 전환 효과가 안 걸려서, 패널은 투명도 + <code>visibility</code>로 숨기도록 바꿈 (숨은 패널은 클릭도 안 받음)</li>
+        <li>UI Toolkit 화면은 캡처가 안 돼서 모양은 플레이테스트로 확인 필요</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
+      <h2>무너지는 타일 연출</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>흔들림이 처음엔 30% 세기로 시작해서 떨어지기 직전 100%까지 커짐 → "곧 떨어진다"가 더 잘 읽힘, 최대 세기도 0.04 → 0.05</li>
+        <li>떨어지는 순간 타일 윗면에서 모래색 복셀 흙먼지(<code>CrumbleDust</code>)가 흩날림</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/CrumblingTile.cs</code>, <code>Unity/Assets/Editor/MapAssetBuilder.cs</code></li>
+        <li><code>Unity/Assets/Prefabs/Tiles/Tile_Crumbling.prefab</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>이펙트 모양은 아래 "보석 이펙트" 항목의 캡처 참고</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M8</span></div>
+      <h2>보석 먹을 때 이펙트 · 이펙트 빌더</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>Tools/MyGame/Build Effect Assets</code>: 작은 큐브를 흩뿌리는 한 번짜리 파티클 이펙트 두 개 (<code>PickupBurst</code>, <code>CrumbleDust</code>), Build All 맨 앞에서 실행</li>
+        <li>흰색 파티클 머티리얼 하나에 이펙트마다 시작 색을 곱해서 금색 · 모래색을 같이 씀</li>
+        <li>큐브 조각은 무작위로 돌며 튀고, 중력으로 떨어지면서 작아지고, 끝나면 스스로 삭제</li>
+        <li>보석을 먹으면 그 자리에서 금색 조각 18개가 터짐</li>
+        <li>에디터에서 파티클을 미리 재생해 캡처: 첫 캡처에서 금색 조각이 너무 작아 크기 · 개수 · 속도를 키움</li>
+      </ul>
+      <img src="images/m8-effects.png" alt="2칸 기둥 위에서 터지는 금색 보석 조각과, 무너진 타일 자리의 모래색 흙먼지" width="1280" height="720">
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Editor/EffectAssetBuilder.cs</code> — 새로 추가</li>
+        <li><code>Unity/Assets/Editor/EditorAssetUtility.cs</code> — 파티클 셰이더도 쓸 수 있게 머티리얼 함수 일반화</li>
+        <li><code>Unity/Assets/Scripts/Items/Item.cs</code>, <code>Unity/Assets/Editor/ItemAssetBuilder.cs</code>, <code>Unity/Assets/Prefabs/Item.prefab</code></li>
+        <li><code>Unity/Assets/Prefabs/Effects/*.prefab</code>, <code>Unity/Assets/Art/Materials/Effect_Voxel.mat</code> — 생성됨</li>
+        <li><code>docs/plan.md</code> — §2, §2.1, §4.1, §5</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>세 번 연속 빌드해도 변경 없음 확인</li>
+        <li>남은 M8: 사운드(선택), HUD 걷기 모드 표시(선택)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M7</span></div>
       <h2>기본 달리기 · 왼쪽 Ctrl로 걷기 토글</h2>
       <h3>한 일</h3>

@@ -190,6 +190,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Items.Item
   _visual: {fileID: 7711751913059830922}
+  _pickupEffect: {fileID: 8956781043304082427, guid: a402bf88116e502408c97e2079a62fb4, type: 3}
   _spinSpeed: 90
   _bobAmplitude: 0.08
   _bobPeriod: 1.5

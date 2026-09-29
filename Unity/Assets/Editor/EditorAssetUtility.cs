@@ -6,7 +6,10 @@ namespace MyGame.EditorTools
 {
     internal static class EditorAssetUtility
     {
-        private const string LitShaderName = "Universal Render Pipeline/Lit";
+        public const string LitShaderName = "Universal Render Pipeline/Lit";
+        public const string ParticlesLitShaderName = "Universal Render Pipeline/Particles/Simple Lit";
+
+        private static readonly string[] ColorProperties = { "_BaseColor", "_Color" };
 
         public static void EnsureFolder(string path)
         {
@@ -25,30 +28,53 @@ namespace MyGame.EditorTools
         /// An existing material that already matches is left untouched: URP rewrites the legacy
         /// <c>_Color</c> with float round-off, so re-saving it would churn the file on every build.
         /// </summary>
-        public static Material GetOrCreateLitMaterial(string path, Color color, float smoothness = 0.1f)
+        public static Material GetOrCreateLitMaterial(string path, Color color, float smoothness = 0.1f) =>
+            GetOrCreateMaterial(path, LitShaderName, color, smoothness);
+
+        /// <summary>
+        /// Like <see cref="GetOrCreateLitMaterial"/> for any shader with <c>_BaseColor</c> and
+        /// <c>_Smoothness</c>; <c>_Color</c> is kept in sync only where the shader has it.
+        /// </summary>
+        public static Material GetOrCreateMaterial(string path, string shaderName, Color color, float smoothness)
         {
             EnsureFolder(Path.GetDirectoryName(path).Replace('\\', '/'));
-            var shader = Shader.Find(LitShaderName);
+            var shader = Shader.Find(shaderName);
             var material = AssetDatabase.LoadAssetAtPath<Material>(path);
             if (material == null)
             {
                 material = new Material(shader);
                 AssetDatabase.CreateAsset(material, path);
             }
-            else if (material.shader == shader
-                     && IsApproximately(material.GetColor("_BaseColor"), color)
-                     && IsApproximately(material.GetColor("_Color"), color)
-                     && Mathf.Approximately(material.GetFloat("_Smoothness"), smoothness))
+            else if (material.shader == shader && Matches(material, color, smoothness))
             {
                 return material;
             }
 
             material.shader = shader;
-            material.SetColor("_BaseColor", color);
-            material.SetColor("_Color", color);
+            foreach (var property in ColorProperties)
+            {
+                if (material.HasProperty(property))
+                {
+                    material.SetColor(property, color);
+                }
+            }
+
             material.SetFloat("_Smoothness", smoothness);
             EditorUtility.SetDirty(material);
             return material;
+        }
+
+        private static bool Matches(Material material, Color color, float smoothness)
+        {
+            foreach (var property in ColorProperties)
+            {
+                if (material.HasProperty(property) && !IsApproximately(material.GetColor(property), color))
+                {
+                    return false;
+                }
+            }
+
+            return Mathf.Approximately(material.GetFloat("_Smoothness"), smoothness);
         }
 
         private static bool IsApproximately(Color a, Color b)

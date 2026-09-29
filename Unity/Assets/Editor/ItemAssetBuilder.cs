@@ -33,6 +33,8 @@ namespace MyGame.EditorTools
             gem.transform.localRotation = Quaternion.FromToRotation(Vector3.one, Vector3.up);
             gem.transform.localScale = Vector3.one * GemSize;
             EditorAssetUtility.SetReference(item, "_visual", visual);
+            EditorAssetUtility.SetReference(item, "_pickupEffect",
+                AssetDatabase.LoadAssetAtPath<ParticleSystem>(EffectAssetBuilder.PickupBurstPath));
 
             EditorAssetUtility.SavePrefab(root, ItemPrefabPath);
             EnsureGameConfig();

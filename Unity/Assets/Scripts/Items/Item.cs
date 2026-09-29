@@ -11,6 +11,7 @@ namespace MyGame.Items
     public class Item : MonoBehaviour
     {
         [SerializeField] private Transform _visual;
+        [SerializeField] private ParticleSystem _pickupEffect;
         [SerializeField] private float _spinSpeed = 90f;
         [SerializeField] private float _bobAmplitude = 0.08f;
         [SerializeField] private float _bobPeriod = 1.5f;
@@ -37,6 +38,11 @@ namespace MyGame.Items
             }
 
             _isCollected = true;
+            if (_pickupEffect != null)
+            {
+                Instantiate(_pickupEffect, _visual.position, Quaternion.identity);
+            }
+
             Collected?.Invoke(this);
             Destroy(gameObject);
         }

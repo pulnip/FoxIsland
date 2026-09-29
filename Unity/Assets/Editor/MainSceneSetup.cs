@@ -21,6 +21,7 @@ namespace MyGame.EditorTools
         [MenuItem("Tools/MyGame/Build All", priority = 0)]
         public static void BuildAll()
         {
+            EffectAssetBuilder.Run();
             MapAssetBuilder.Run();
             CharacterAssetBuilder.Run();
             PlayerAssetBuilder.Run();
