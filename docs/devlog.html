@@ -103,6 +103,34 @@
 -->
     <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
+      <h2>Git LFS · 줄바꿈 설정 (.gitattributes)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>.gitattributes</code> 추가
+          <ul>
+            <li>모든 텍스트 파일 줄바꿈을 LF로 통일 → 커밋할 때 뜨던 CRLF 경고 정리</li>
+            <li>Unity YAML(<code>.unity</code>, <code>.prefab</code>, <code>.asset</code>, <code>.mat</code>, <code>.anim</code>, <code>.controller</code> 등)에 UnityYAMLMerge 병합 지정</li>
+            <li>모델(<code>.fbx</code>, <code>.blend</code>, <code>.vox</code> 등), 이미지, 사운드, 폰트, <code>LightingData.asset</code>을 Git LFS로</li>
+          </ul>
+        </li>
+        <li>저장소에 LFS 훅 설치 (<code>git lfs update</code>)</li>
+        <li>기존 파일 재정규화 확인 — 인덱스가 이미 전부 LF라서 바뀐 파일 없음</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>.gitattributes</code> — 새로 추가</li>
+        <li><code>CLAUDE.md</code> — 새 바이너리 형식은 첫 커밋 전에 LFS 패턴 추가하는 규칙</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>바이너리 파일이 하나도 커밋되기 전이라 히스토리 재작성(<code>git lfs migrate</code>) 없이 시작</li>
+        <li>UnityYAMLMerge는 git 설정에 병합 드라이버를 등록해야 동작함. 등록 전엔 일반 병합으로 동작하니까 문제는 없음</li>
+        <li>다음: <code>PlayerControls.inputactions</code> (WASD / Space / R)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-09-29</time><span class="tag">M1</span></div>
       <h2>Main 씬 쿼터뷰 카메라 · 라이트 세팅</h2>
       <h3>한 일</h3>
       <ul>

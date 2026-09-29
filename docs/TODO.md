@@ -17,6 +17,7 @@ Work top to bottom unless the user says otherwise.
 - [x] Move project documents into `docs/` and update references
 - [x] Remove template leftovers (`TutorialInfo/`, `Readme.asset`); rename `SampleScene` → `Main`
 - [x] Commit the base project state
+- [x] Add `.gitattributes`: LF line endings, Unity YAML merge, Git LFS for binary assets
 - [x] Create folder structure under `Unity/Assets/` per `plan.md` §2
 - [x] Set up `Main` scene: directional light and orthographic quarter-view camera (§7)
 - [ ] Create `PlayerControls.inputactions` with `Move` (WASD), `Jump` (Space), `Restart` (R)

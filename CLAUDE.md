@@ -59,5 +59,8 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
   `com.unity.template.urp-blank` template.
 - Git: the repository root is `MyGame/`; `.gitignore` there covers `Unity/` paths.
   Commit only when the user says to; the user decides when.
+- `.gitattributes` forces LF for all text files and routes binary assets (models, images,
+  audio, fonts, `LightingData.asset`) through Git LFS. When adding a new binary file type,
+  add its LFS pattern there before the first commit of such a file.
 - Blender runs headless:
   `blender --background --python Tools/Blender/generate_character.py -- --animal fox --out Art/Character/Fox.fbx`
