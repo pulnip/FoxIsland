@@ -1,0 +1,38 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b319efc4194e314ba0f3e30702da04e, type: 3}
+  m_Name: Beach01
+  m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.MapLayout
+  _rows:
+  - 0s 0s 1s 1s
+  - 0w 0w 0s 1s
+  - 0s . 0s 0s
+  - 0s 0s 0w 0s
+  _start: {x: 0, y: 0}
+  _itemMode: 1
+  _randomItemCount: 4
+  _items:
+  - _cell: {x: 3, y: 3}
+    _inAir: 0
+  - _cell: {x: 0, y: 2}
+    _inAir: 0
+  - _cell: {x: 2, y: 1}
+    _inAir: 1
+  _tide:
+    _enabled: 0
+    _rise: 0.6
+    _period: 9
+  _switches: []
+  _risingBlocks: []
+  _crates: []
+  _springboards: []
+  _platforms: []

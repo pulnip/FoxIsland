@@ -1,0 +1,56 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b319efc4194e314ba0f3e30702da04e, type: 3}
+  m_Name: Meadow05
+  m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.MapLayout
+  _rows:
+  - 2m 2m 2m 5m 5m 5m
+  - 1m . . . . 5m
+  - 1m . 0w 0w . 0m
+  - 1m . 0w 0w . 0m
+  - 0m 0mc 0m 0m 0mc 0m
+  - 0m 0m 0m 0m 0m 1m
+  _start: {x: 0, y: 0}
+  _itemMode: 1
+  _randomItemCount: 4
+  _items:
+  - _cell: {x: 4, y: 5}
+    _inAir: 0
+  - _cell: {x: 5, y: 4}
+    _inAir: 1
+  - _cell: {x: 2, y: 5}
+    _inAir: 0
+  - _cell: {x: 3, y: 2}
+    _inAir: 0
+  - _cell: {x: 0, y: 3}
+    _inAir: 1
+  _tide:
+    _enabled: 0
+    _rise: 0.6
+    _period: 9
+  _switches:
+  - _cell: {x: 3, y: 3}
+    _group: 0
+    _holdTime: 7
+  _risingBlocks:
+  - _cell: {x: 5, y: 1}
+    _group: 0
+    _raisedHeight: 2
+  - _cell: {x: 5, y: 2}
+    _group: 0
+    _raisedHeight: 3
+  - _cell: {x: 5, y: 3}
+    _group: 0
+    _raisedHeight: 4
+  _crates: []
+  _springboards: []
+  _platforms: []

@@ -67,7 +67,7 @@ MyGame/
         ├── Input/                 # PlayerControls.inputactions
         ├── Prefabs/               # Player, Item, Tiles/Tile_{Solid,Crumbling}, Effects/{PickupBurst,CrumbleDust,Footprints,Splash,TileSplash,StepSplash}, Puzzle/{FloorSwitch,RisingMarker,Crate,Springboard,MovingPlatform}
         ├── Scenes/Main.unity
-        ├── ScriptableObjects/     # WorldList, Levels/Level01… (MapLayout)
+        ├── ScriptableObjects/     # WorldList, Levels/{Beach,Meadow,Forest,Mountain}01–05 (MapLayout)
         ├── UI/                    # GameUI.uxml/.uss, GameTheme.tss, GamePanelSettings, Fonts/Inter-Regular.ttf (+ OFL license)
         └── Scripts/
             ├── Core/              # GameManager, GameState, LevelLoader, LevelSession, PlayerProgress
@@ -100,7 +100,8 @@ generated prefab need unique names: prefab saving matches them by name, and dupl
 file IDs on every build.
 The levels (`Levels/*.asset`) and `WorldList` are the exceptions: created once, then edited
 with the map tool. `MapAssetBuilder` moved the original `MapLayout_Main` to `Levels/Level01`
-(GUID kept).
+(GUID kept), later renamed `Meadow01`; on a fresh project it still creates `Level01` with the
+world list.
 
 ---
 
@@ -203,16 +204,35 @@ A hole (`.`) is lake water: falling in ends the game. The **start** is not a cel
 separate cell reference on the layout (`MapLayout.Start`); it must be a block and never holds an
 item. Crumbling blocks respawn so that no item can become permanently unreachable.
 
-### 4.2 Level 1 layout
+### 4.2 Stages
 
-Row 0 is the row nearest the camera; the start is (0, 0). Tuned during playtesting.
+Twenty drafts, five per world (`Levels/<World>01–05`), all with fixed items except Meadow01
+(random 4) and zero validator errors. Each world's first stage introduces its element gently;
+the fifth mixes it with the earlier ones. Sizes grow from 4 × 4 to 7 × 7. Rows and placements
+live in the assets; tune them with the map tool.
 
-```
-row 3:  1m  .   2m  2m
-row 2:  0sc 1m  .   0sc
-row 1:  0m  .   0sc 1m
-row 0:  0m  0m  0m  .
-```
+| Stage | Size | Idea |
+|---|---|---|
+| 1-1 Beach01 | 4 × 4 | sand and shallow water, one hole |
+| 1-2 Beach02 | 5 × 4 | crumbling sand bridges, a jump across a hole |
+| 1-3 Beach03 | 5 × 5 | tide intro (rise 0.6, 12 s): a dune refuge, gems on the low ring |
+| 1-4 Beach04 | 6 × 5 | tide 0.9 (heights 0–1 flood), height-2 refuges, crumbling, water |
+| 1-5 Beach05 | 6 × 6 | tide 1.0 every 10 s, scattered refuges, crumbling, a jump down |
+| 2-1 Meadow01 | 4 × 4 | the original level (crumbling now meadow): heights |
+| 2-2 Meadow02 | 5 × 5 | timer elevator: a 4 s switch sinks a height-3 block; stand on it and ride it back up to the plateau |
+| 2-3 Meadow03 | 6 × 5 | timer bridge: a 5 s switch raises two valley blocks to height 4 between plateaus |
+| 2-4 Meadow04 | 6 × 6 | elevator (group A) to a ledge, then a bridge (group B) to the far plateau |
+| 2-5 Meadow05 | 6 × 6 | timer race: one 7 s switch raises a three-step stair to a height-5 tower |
+| 3-1 Forest01 | 6 × 5 | crate intro: fill one hole of a two-wide gap, jump the other |
+| 3-2 Forest02 | 6 × 5 | push a crate onto a held switch to keep a bridge up |
+| 3-3 Forest03 | 6 × 6 | one crate as a step up to a ledge, another to fill the way to an island |
+| 3-4 Forest04 | 6 × 6 | a crate on a held switch lowers the gate of a walled garden |
+| 3-5 Forest05 | 7 × 6 | fill a hole with one crate, move the other onto the gate switch |
+| 4-1 Mountain01 | 5 × 5 | springboard intro: up three levels to a snow plateau; a little ice |
+| 4-2 Mountain02 | 6 × 5 | moving platform intro across open water |
+| 4-3 Mountain03 | 6 × 6 | springboard to a plateau, an iceberg chain to icy blocks |
+| 4-4 Mountain04 | 6 × 6 | springboard to a high platform, a low platform below |
+| 4-5 Mountain05 | 7 × 7 | ice, an iceberg chain with a jump, a springboard to a height-6 peak, a long platform |
 
 ### 4.3 Data
 
@@ -369,13 +389,13 @@ layouts.
     brushes work only on firm, still blocks other than the start, a rising block, or a crate,
     and switch the layout to `Fixed`.
   - Puzzle (§4.10): `K` Switch, `U` Rising, `X` Crate, `J` Spring, `P` Platform. Options row:
-    group A/B/C (`Q` cycles) for switches and rising blocks, "Rise to" (0–6), platform height
-    (0–6) and period (3–12 s). Switch, crate, and springboard share a cell slot (placing one
+    group A/B/C (`Q` cycles) for switches and rising blocks, switch timer (0–10 s in 0.5 s
+    steps), "Rise to" (0–6), platform height (0–6) and period (3–12 s). Switch, crate, and springboard share a cell slot (placing one
     replaces the others); all need a firm block, crates and springboards stay off the start.
     Platform: click one end, then the other in the same row or column (`Esc` cancels). Painting
     a hole, crumbling, or iceberg drops the cell's puzzle elements.
   - Grid badges: rising block = inner outline in its group color + `↑n`/`↓n` (top right);
-    switch = group letter, crate `▣`, springboard `⤒` (bottom left); `≈` (bottom right) = under
+    switch = group letter plus its timer (`A4`), crate `▣`, springboard `⤒` (bottom left); `≈` (bottom right) = under
     water at high tide; platforms = a bar along the path with `P<height>` at both ends.
 - **Size**: width × depth (2–8), grown or cropped from the (0, 0) corner (new cells height 0 in
   the last used skin);
@@ -400,8 +420,10 @@ layouts.
     moves: up one level is easy, up two is "hard" (still counted), any drop is fine; a running
     jump crosses one hole in a straight line onto a block no higher than the takeoff. Air items
     count as reachable with their block (jump apex 1.2). Each cell offers a set of floor heights:
-    its block, a rising block's raised height, the top of a crate on its starting cell, and a
-    platform passing over (so holes on a platform path become standable). A step works when some
+    its block, a rising block's raised height, the top of a crate on each cell it can slide to
+    along its row or column (over floors no higher than its own), a hole that crate would fill
+    (height 0), and a platform passing over (so holes on a platform path or in a crate's line
+    become standable; reachability warnings cover real blocks only). A step works when some
     height of the next cell is close enough above some height of this one. From a springboard
     the climb limit is 4 (also across a hole); a platform joins every cell on its path. The tide
     is judged at low water. Moving elements are only estimated; the tool says so.
@@ -425,7 +447,7 @@ Built by `PuzzleBoard` (the `Puzzles` object; `LevelLoader` calls `Build(layout)
 | Element | Data | Behavior |
 |---|---|---|
 | Tide (beach) | `TideSettings`: enabled, rise 0.3–1.0, period 6–12 s | `Tide` (on `Lake`) moves the water to `WaterLevel + rise × (1 − cos 2πt/T) / 2`, starting at low tide; the clock runs only outside the title. `GameManager.WaterLevel` follows it, so low blocks drown the fox at high tide. Icebergs ride it (`MapBuilder._tide` → `FloatingBlock.Tide`). HUD gauge (§8.1). |
-| Switch (meadow) | `SwitchPlacement`: cell, group A/B/C | `FloorSwitch`: a plate on the block top, no collider. Pressed while a `CharacterController` is over it or a crate rests on its cell; the button sinks 0.05. A group is on while any of its switches is pressed (`PuzzleBoard.IsGroupOn`). |
+| Switch (meadow) | `SwitchPlacement`: cell, group A/B/C, hold time 0–10 s | `FloorSwitch`: a plate on the block top, no collider. Pressed while a `CharacterController` is over it or a crate rests on its cell; the button sinks 0.05. A timer switch (hold time > 0) stays on that long after release, its button rising back as the time runs out; 0 = only while pressed. A group is on while any of its switches is on (`PuzzleBoard.IsGroupOn`). Meadow stages use timers (the fox alone), forest ones hold with crates. |
 | Rising block (meadow) | `RisingBlockPlacement`: cell, group, raised height 0–6 | `RisingBlock` on the cell's tile moves it between its own height and the raised height (lower = it sinks) in 0.4 s while the group is on. Pillar and collider stretch down so it always reaches the lake bed. A frame in the group color (`RisingMarker`) marks the top. |
 | Crate (forest) | `Crates`: starting cells | `Crate`, one level tall, pivot at the bottom. Walking into a side along a grid axis (from its floor level) for 0.2 s slides it one cell in 0.25 s, if the target is inside the grid, no higher, not a crumbling block, iceberg, springboard, or other crate, and the fox is not in the way. It drops to a lower floor, keeps sliding over ice, and falling into a hole makes it a permanent height-0 floor (top flush at 0; splash). Resting crates follow the block under them (rising blocks) and press switches. |
 | Springboard (mountain) | `Springboards`: cells | `Springboard`: pad on the block top, no collider. A grounded fox over it is launched 2.4 high (`PlayerController.Launch`, raises `Jumped`), enough for four levels; 0.3 s cooldown, the pad wobbles. |

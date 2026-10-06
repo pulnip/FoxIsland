@@ -82,6 +82,7 @@ namespace MyGame.EditorTools.MapTool
 
         [SerializeField] private PuzzleGroup _group;
         [SerializeField] private int _raisedHeight = 2;
+        [SerializeField] private float _holdTime = 3f;
         [SerializeField] private int _platformHeight = 1;
         [SerializeField] private float _platformPeriod = 6f;
 
@@ -726,6 +727,9 @@ namespace MyGame.EditorTools.MapTool
                 }
 
                 GUILayout.Space(12f);
+                GUILayout.Label("Timer (s)", GUILayout.Width(56f));
+                _holdTime = Mathf.Round(EditorGUILayout.Slider(_holdTime, 0f, SwitchPlacement.MaxHoldTime, GUILayout.Width(140f)) * 2f) * 0.5f;
+                GUILayout.Space(12f);
                 GUILayout.Label("Rise to", GUILayout.Width(44f));
                 _raisedHeight = EditorGUILayout.IntSlider(_raisedHeight, 0, CellSpec.MaxHeight, GUILayout.Width(140f));
                 GUILayout.Space(12f);
@@ -737,7 +741,8 @@ namespace MyGame.EditorTools.MapTool
             }
 
             EditorGUILayout.LabelField(
-                "Switch / Rising use the group; Rising moves the block to \"Rise to\" while the group is on. Platform: click one end, then the other.",
+                "Switch / Rising use the group. A switch stays on for its timer after the fox steps off (0 = only while pressed); " +
+                "Rising moves the block to \"Rise to\" while the group is on. Platform: click one end, then the other.",
                 EditorStyles.miniLabel);
         }
 
@@ -860,7 +865,9 @@ namespace MyGame.EditorTools.MapTool
             var corner = new Rect(rect.x + 2f, rect.yMax - 15f, 18f, 13f);
             foreach (var floorSwitch in _draft.Switches.Where(floorSwitch => floorSwitch.Cell == cell))
             {
-                Badge(corner, floorSwitch.Group.ToString(), PuzzleGroups.ColorOf(floorSwitch.Group), Color.white);
+                var label = floorSwitch.HoldTime > 0f ? $"{floorSwitch.Group}{floorSwitch.HoldTime:0.#}" : floorSwitch.Group.ToString();
+                Badge(new Rect(corner.x, corner.y, floorSwitch.HoldTime > 0f ? 30f : corner.width, corner.height), label,
+                    PuzzleGroups.ColorOf(floorSwitch.Group), Color.white);
             }
 
             if (_draft.Crates.Contains(cell))
@@ -1063,7 +1070,7 @@ namespace MyGame.EditorTools.MapTool
 
             var isSame = brush switch
             {
-                Brush.Switch => _draft.Switches.Contains(new SwitchPlacement(cell, _group)),
+                Brush.Switch => _draft.Switches.Contains(new SwitchPlacement(cell, _group, _holdTime)),
                 Brush.Crate => _draft.Crates.Contains(cell),
                 _ => _draft.Springboards.Contains(cell),
             };
@@ -1079,7 +1086,7 @@ namespace MyGame.EditorTools.MapTool
             switch (brush)
             {
                 case Brush.Switch:
-                    _draft.SetSwitches(_draft.Switches.Append(new SwitchPlacement(cell, _group)).ToArray());
+                    _draft.SetSwitches(_draft.Switches.Append(new SwitchPlacement(cell, _group, _holdTime)).ToArray());
                     break;
                 case Brush.Crate:
                     _draft.SetCrates(_draft.Crates.Append(cell).ToArray());

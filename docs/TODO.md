@@ -171,4 +171,6 @@ Work top to bottom unless the user says otherwise.
 
 ## M16. Stages
 
-- [ ] 20 stage drafts (beach, meadow, forest, mountain), no validator errors
+- [x] Timer switches (meadow puzzles need no crate)
+- [x] 20 stage drafts (beach, meadow, forest, mountain), no validator errors
+- [ ] Playtest all 20 stages: difficulty curve, timer lengths, tide periods, hard-jump shortcuts

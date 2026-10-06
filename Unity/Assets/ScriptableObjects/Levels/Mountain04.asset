@@ -1,0 +1,51 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2b319efc4194e314ba0f3e30702da04e, type: 3}
+  m_Name: Mountain04
+  m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.MapLayout
+  _rows:
+  - 4n 4n . . . 4n
+  - 4n 4n . . . 4n
+  - 1r 1r . . . 1n
+  - 1r 1r . . . 1r
+  - 0r 0r . . . 0r
+  - 0r 0r . . . 0i
+  _start: {x: 0, y: 0}
+  _itemMode: 1
+  _randomItemCount: 4
+  _items:
+  - _cell: {x: 5, y: 5}
+    _inAir: 0
+  - _cell: {x: 5, y: 0}
+    _inAir: 0
+  - _cell: {x: 0, y: 5}
+    _inAir: 1
+  - _cell: {x: 5, y: 2}
+    _inAir: 0
+  _tide:
+    _enabled: 0
+    _rise: 0.6
+    _period: 9
+  _switches: []
+  _risingBlocks: []
+  _crates: []
+  _springboards:
+  - {x: 1, y: 3}
+  _platforms:
+  - _from: {x: 2, y: 4}
+    _to: {x: 4, y: 4}
+    _height: 4
+    _period: 7
+  - _from: {x: 2, y: 1}
+    _to: {x: 4, y: 1}
+    _height: 0
+    _period: 5

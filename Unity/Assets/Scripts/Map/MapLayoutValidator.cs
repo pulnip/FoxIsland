@@ -73,7 +73,7 @@ namespace MyGame.Map
             CheckItems(layout, cells, reach, report);
             if (hasStart)
             {
-                AddReachabilityWarnings(reach, report);
+                AddReachabilityWarnings(cells, reach, report);
             }
 
             return report;
@@ -336,13 +336,19 @@ namespace MyGame.Map
             }
         }
 
-        private static void AddReachabilityWarnings(Reachability[,] reach, LayoutReport report)
+        /// <summary>Warns about real blocks only; holes a platform or crate may cover are not blocks.</summary>
+        private static void AddReachabilityWarnings(CellSpec[,] cells, Reachability[,] reach, LayoutReport report)
         {
             for (var row = 0; row < reach.GetLength(1); row++)
             {
                 for (var column = 0; column < reach.GetLength(0); column++)
                 {
                     var cell = new Vector2Int(column, row);
+                    if (!cells[column, row].IsBlock)
+                    {
+                        continue;
+                    }
+
                     switch (reach[column, row])
                     {
                         case Reachability.Unreachable:
@@ -385,6 +391,10 @@ namespace MyGame.Map
             foreach (var cell in layout.Crates.Where(cell => IsFirmBlock(cells, cell)))
             {
                 floors[cell.x, cell.y] |= 1 << (cells[cell.x, cell.y].Height + 1);
+                foreach (var direction in Directions)
+                {
+                    MarkCratePath(cells, floors, cell, direction);
+                }
             }
 
             foreach (var platform in layout.Platforms.Where(platform => platform.IsStraight))
@@ -396,6 +406,35 @@ namespace MyGame.Map
             }
 
             return floors;
+        }
+
+        /// <summary>
+        /// A crate pushed along <paramref name="direction"/> slides over floors no higher than its
+        /// own (dropping onto lower ones), adding a step on each, and fills the first hole it reaches
+        /// with a height-0 floor.
+        /// </summary>
+        private static void MarkCratePath(CellSpec[,] cells, int[,] floors, Vector2Int crate, Vector2Int direction)
+        {
+            var width = cells.GetLength(0);
+            var depth = cells.GetLength(1);
+            var height = cells[crate.x, crate.y].Height;
+            for (var cell = crate + direction; IsInside(cell, width, depth); cell += direction)
+            {
+                var spec = cells[cell.x, cell.y];
+                if (!spec.IsBlock)
+                {
+                    floors[cell.x, cell.y] |= 1;
+                    return;
+                }
+
+                if (spec.Height > height || spec.IsCrumbling || spec.Skin == Skin.Iceberg)
+                {
+                    return;
+                }
+
+                height = spec.Height;
+                floors[cell.x, cell.y] |= 1 << (height + 1);
+            }
         }
 
         /// <summary>
