@@ -10,7 +10,7 @@ namespace MyGame.Map
     /// Edited with Tools/MyGame/Map Tool; <see cref="MapLayoutValidator"/> checks it.
     /// </summary>
     [CreateAssetMenu(menuName = "MyGame/Map Layout", fileName = "MapLayout")]
-    public class MapLayout : ScriptableObject
+    public class MapLayout : ScriptableObject, ISerializationCallbackReceiver
     {
         public const int MinSize = 2;
         public const int MaxSize = 8;
@@ -145,6 +145,15 @@ namespace MyGame.Map
 
         public void SetItems(ItemPlacement[] items) => _items = items;
 
+        /// <summary>Copies the tiles and item setup (not the name) from <paramref name="other"/>.</summary>
+        public void CopyFrom(MapLayout other)
+        {
+            SetRows((string[])other._rows.Clone());
+            _itemMode = other._itemMode;
+            _randomItemCount = other._randomItemCount;
+            _items = (ItemPlacement[])other._items.Clone();
+        }
+
         /// <summary>
         /// Checks the text shape only (tokens, rectangular rows). Content rules such as the single
         /// start tile belong to <see cref="MapLayoutValidator"/>, so a layout mid-edit still loads.
@@ -196,6 +205,13 @@ namespace MyGame.Map
             error = null;
             return true;
         }
+
+        void ISerializationCallbackReceiver.OnBeforeSerialize()
+        {
+        }
+
+        /// <summary>Undo, JSON overwrite, and reloads replace the rows behind the parse cache's back.</summary>
+        void ISerializationCallbackReceiver.OnAfterDeserialize() => _tiles = null;
 
         private void OnEnable() => _tiles = null;
 

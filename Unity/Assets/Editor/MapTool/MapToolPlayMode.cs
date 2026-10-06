@@ -7,8 +7,9 @@ using UnityEngine.SceneManagement;
 namespace MyGame.EditorTools.MapTool
 {
     /// <summary>
-    /// "Play This Level": enters play mode on one layout. <see cref="LevelSession.TestLayout"/> reads
-    /// the layout from <c>SessionState</c>; the key is cleared when play mode ends.
+    /// "Play This Level": enters play mode on one layout, unsaved edits included. The layout goes to
+    /// <c>SessionState</c> as JSON, which <see cref="LevelSession.TestLayout"/> reads back; the key is
+    /// cleared when play mode ends.
     /// </summary>
     [InitializeOnLoad]
     internal static class MapToolPlayMode
@@ -22,7 +23,6 @@ namespace MyGame.EditorTools.MapTool
                 return;
             }
 
-            AssetDatabase.SaveAssetIfDirty(layout);
             if (SceneManager.GetActiveScene().path != MainSceneSetup.ScenePath)
             {
                 if (!EditorSceneManager.SaveCurrentModifiedScenesIfUserWantsTo())
@@ -33,7 +33,7 @@ namespace MyGame.EditorTools.MapTool
                 EditorSceneManager.OpenScene(MainSceneSetup.ScenePath, OpenSceneMode.Single);
             }
 
-            SessionState.SetString(LevelSession.TestLayoutKey, AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(layout)));
+            SessionState.SetString(LevelSession.TestLayoutKey, EditorJsonUtility.ToJson(layout));
             MapToolPreview.Clear();
             EditorApplication.EnterPlaymode();
         }

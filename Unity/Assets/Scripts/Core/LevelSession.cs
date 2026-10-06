@@ -10,8 +10,14 @@ namespace MyGame.Core
     public static class LevelSession
     {
 #if UNITY_EDITOR
-        /// <summary><c>SessionState</c> key holding the GUID of the layout the map tool test-plays.</summary>
-        public const string TestLayoutKey = "FoxIsland.MapTool.TestLayout";
+        /// <summary>
+        /// <c>SessionState</c> key holding the layout the map tool test-plays, as JSON, so unsaved
+        /// edits can be played.
+        /// </summary>
+        public const string TestLayoutKey = "FoxIsland.MapTool.TestLayoutJson";
+
+        private static string _testJson;
+        private static MapLayout _testLayout;
 #endif
 
         public static bool OpenAtTitle { get; set; } = true;
@@ -28,11 +34,19 @@ namespace MyGame.Core
             get
             {
 #if UNITY_EDITOR
-                var guid = UnityEditor.SessionState.GetString(TestLayoutKey, string.Empty);
-                if (guid.Length > 0)
+                var json = UnityEditor.SessionState.GetString(TestLayoutKey, string.Empty);
+                if (json.Length > 0)
                 {
-                    var path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-                    return UnityEditor.AssetDatabase.LoadAssetAtPath<MapLayout>(path);
+                    if (_testLayout == null || json != _testJson)
+                    {
+                        _testLayout = ScriptableObject.CreateInstance<MapLayout>();
+                        UnityEditor.EditorJsonUtility.FromJsonOverwrite(json, _testLayout);
+                        _testLayout.name = "Test Play";
+                        _testLayout.hideFlags = HideFlags.DontSave;
+                        _testJson = json;
+                    }
+
+                    return _testLayout;
                 }
 #endif
                 return null;

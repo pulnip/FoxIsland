@@ -108,6 +108,34 @@
 -->
     <article class="entry">
       <div class="meta"><time>2026-10-06</time><span class="tag">M11</span></div>
+      <h2>맵툴: 편집용 사본, 저장 · 변경 취소</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>문제: 맵툴이 칠할 때마다 레벨 에셋에 바로 저장해서, 시험 삼아 칠한 배치가 Level01에 그대로 남음</li>
+        <li>이제 레벨마다 메모리 사본을 고침. 칠하기 · Undo · 검사 · 3D 미리보기 · 테스트 플레이가 모두 사본 기준이고, <b>Save</b>(버튼 또는 Ctrl+S)를 눌러야 에셋이 바뀜</li>
+        <li>저장 안 된 레벨은 목록과 이름 칸에 <code>*</code>, 창 제목에도 표시. <b>Discard Changes</b>는 확인 후 저장된 상태로 되돌림</li>
+        <li>창을 닫을 때 저장 안 된 레벨이 있으면 Unity가 저장 / 버리기 / 취소를 물어봄 (<code>hasUnsavedChanges</code>)</li>
+        <li>레벨을 바꿔가며 편집해도 사본이 유지되고, 스크립트를 다시 컴파일해도 <code>SessionState</code>에 잠시 보관했다가 복원</li>
+        <li>창으로 돌아오면 수정 안 한 사본은 에셋을 다시 읽음 (git으로 되돌린 내용이 바로 반영)</li>
+        <li>Play This Level은 사본을 JSON으로 넘겨서 저장 안 한 상태 그대로 플레이 (아무것도 저장하지 않음)</li>
+        <li>레벨 목록 작업(순서, New, Duplicate, Remove, 이름 바꾸기)은 지금처럼 즉시 반영. Duplicate는 화면에 보이는 내용(저장 안 한 수정 포함)을 복사</li>
+        <li>같이 고침: <code>MapLayout</code>의 파싱 캐시가 Undo나 JSON 덮어쓰기 뒤에 옛 타일을 들고 있을 수 있어서, 역직렬화 때 캐시를 비우도록 함</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Editor/MapTool/MapToolWindow.cs</code>, <code>MapToolPlayMode.cs</code></li>
+        <li><code>Unity/Assets/Scripts/Map/MapLayout.cs</code> (<code>CopyFrom</code>, 캐시 초기화), <code>Unity/Assets/Scripts/Core/LevelSession.cs</code> (JSON 테스트 레이아웃)</li>
+        <li><code>docs/plan.md</code> — §4.8</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>배치 모드로 확인: 칠하면 저장 안 됨 표시가 생기고 에셋은 그대로, Discard로 원상복구, Save로 에셋 반영 (5개 검사 통과, 확인 후 Level01 되돌림). Build All 결과 변화 없음</li>
+        <li>창을 닫을 때 확인창, Ctrl+S, 재컴파일 후 복원은 창을 띄워야 해서 플레이테스트 항목으로 남김</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M11</span></div>
       <h2>미끄러운 얼음</h2>
       <h3>한 일</h3>
       <ul>

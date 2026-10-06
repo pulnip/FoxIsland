@@ -314,8 +314,19 @@ row 0:  S  0  0  .
 ### 4.8 Map tool
 
 `Tools/MyGame/Map Tool` (`Editor/MapTool/MapToolWindow`, IMGUI) edits `LevelList` and the
-layouts. Every edit is undoable (`Undo.RecordObject`) and saved to the asset at the end of a
-stroke.
+layouts.
+
+- **Drafts**: each opened layout is edited as an in-memory copy (`Instantiate`, `DontSave`);
+  painting, undo (`Undo.RecordObject` on the draft), checks, the preview, and test play all use
+  the draft. The asset changes only on **Save** (button or Ctrl+S; `MapLayout.CopyFrom`).
+  **Discard Changes** (with a confirmation) copies the asset back and clears the draft's undo.
+  A level whose draft differs from its asset (compared as JSON) shows `*` in the list and the
+  name field; the window sets `hasUnsavedChanges`, so closing it asks Save / Discard / Cancel
+  for all of them. Drafts switch with the selection and keep their edits. A script reload
+  stashes unsaved drafts in `SessionState` and restores them. When the window regains focus,
+  clean drafts reload from their assets (so a `git checkout` shows up). Level list operations
+  (order, New, Duplicate, Remove, rename) still apply to the assets at once; Duplicate copies
+  what is on screen, unsaved edits included.
 
 - **Level list** (left): reorderable play order; New (blank 4×4 at level 0, start at (0, 0),
   `Levels/LevelNN.asset`), Duplicate (copy inserted after the selection), Remove (from the list,
@@ -348,10 +359,12 @@ stroke.
   its own `MapBuilder`, `GrassField`, `TerrainDecor`, `SnowField`, and `WaterSurface` copied from the scene's, rebuilt on every
   edit and framed in the Scene view. Every object in it is `HideFlags.DontSave`, so saving the
   scene never writes it. Cleared when the window closes, the toggle goes off, or play mode starts.
-- **▶ Play This Level** (`MapToolPlayMode`): saves, opens the Main scene, stores the layout GUID
-  in `SessionState` (`LevelSession.TestLayoutKey`), and enters play mode. `LevelSession.TestLayout`
-  makes `LevelLoader` load it, the title is skipped, and the HUD shows `TEST PLAY`; the key is
-  erased when play mode ends.
+- **▶ Play This Level** (`MapToolPlayMode`): opens the Main scene, stores the draft as JSON in
+  `SessionState` (`LevelSession.TestLayoutKey`; unsaved edits play too, nothing is saved), and
+  enters play mode. `LevelSession.TestLayout` rebuilds a layout from it for `LevelLoader`, the
+  title is skipped, and the HUD shows `TEST PLAY`; the key is erased when play mode ends.
+- `MapLayout` resets its parse cache in `OnAfterDeserialize`, so undo and JSON overwrites never
+  leave stale tiles behind.
 
 ### 4.9 Elevation zones
 

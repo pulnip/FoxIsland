@@ -136,3 +136,5 @@ Work top to bottom unless the user says otherwise.
 - [x] Snow that presses down under paws and landings (`SnowField`, `Snow.shader`)
 - [x] Slippery ice (momentum on ice, idle slide)
 - [ ] Playtest: ice feel, snow prints, decorations never hiding the fox or gems — **user**
+- [x] Map tool edits drafts: `*` on unsaved levels, Save (Ctrl+S), Discard Changes, preview and test play of unsaved edits
+- [ ] Playtest the drafts: unsaved `*`, Save / Discard, close prompt, Ctrl+S, script reload keeps edits — **user**

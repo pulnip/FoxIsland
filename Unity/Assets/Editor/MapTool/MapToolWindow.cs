@@ -9,7 +9,8 @@ namespace MyGame.EditorTools.MapTool
 {
     /// <summary>
     /// Tools/MyGame/Map Tool (plan.md §4.8): manages the level list and paints one layout on a
-    /// top-down grid, with live checks, a Scene view preview, and test play.
+    /// top-down grid, with live checks, a Scene view preview, and test play. Layouts are edited as
+    /// in-memory drafts; nothing reaches the asset until Save (unsaved levels show a *).
     /// </summary>
     internal sealed class MapToolWindow : EditorWindow
     {
@@ -19,6 +20,8 @@ namespace MyGame.EditorTools.MapTool
         private const float ListWidth = 220f;
         private const string SelectionKey = "FoxIsland.MapTool.Selected";
         private const string PreviewKey = "FoxIsland.MapTool.Preview";
+        private const string DraftListKey = "FoxIsland.MapTool.Drafts";
+        private const string DraftKeyPrefix = "FoxIsland.MapTool.Draft.";
         private const int MaxRandomItems = 32;
 
         private static readonly Color HoleColor = new(0.16f, 0.36f, 0.58f);
@@ -57,10 +60,14 @@ namespace MyGame.EditorTools.MapTool
 
         [SerializeField] private Brush _brush = Brush.Level0;
 
+        private readonly Dictionary<MapLayout, MapLayout> _drafts = new();
+        private readonly Dictionary<MapLayout, string> _savedJson = new();
+        private readonly HashSet<MapLayout> _modified = new();
         private LevelList _levels;
         private SerializedObject _levelsObject;
         private ReorderableList _list;
         private MapLayout _layout;
+        private MapLayout _draft;
         private TileSpec[,] _tiles;
         private string _parseError;
         private LayoutReport _report;
@@ -97,6 +104,7 @@ namespace MyGame.EditorTools.MapTool
         private void OnEnable()
         {
             minSize = new Vector2(760f, 520f);
+            saveChangesMessage = "Some levels in the Map Tool have unsaved changes.";
             _preview = SessionState.GetBool(PreviewKey, false);
             Undo.undoRedoPerformed += OnUndoRedo;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
@@ -107,13 +115,72 @@ namespace MyGame.EditorTools.MapTool
         {
             Undo.undoRedoPerformed -= OnUndoRedo;
             EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
-            SaveLayout();
+            StashDrafts();
             MapToolPreview.Clear();
+        }
+
+        /// <summary>The window closed (after Unity asked about unsaved changes): forget the drafts.</summary>
+        private void OnDestroy()
+        {
+            EraseStash();
+            foreach (var draft in _drafts.Values)
+            {
+                if (draft != null)
+                {
+                    DestroyImmediate(draft);
+                }
+            }
+
+            _drafts.Clear();
+        }
+
+        /// <summary>Clean drafts follow their asset in case it changed outside the tool (git, inspector).</summary>
+        private void OnFocus()
+        {
+            foreach (var asset in _drafts.Keys.ToList())
+            {
+                if (asset == null)
+                {
+                    _drafts.Remove(asset);
+                    continue;
+                }
+
+                if (!_modified.Contains(asset) && _drafts[asset] != null)
+                {
+                    _drafts[asset].CopyFrom(asset);
+                    _savedJson[asset] = SavedJsonOf(asset);
+                }
+            }
+
+            UpdateUnsavedState();
+            Reload();
+            RefreshPreview(frame: false);
+        }
+
+        public override void SaveChanges()
+        {
+            foreach (var asset in _modified.ToList())
+            {
+                Save(asset);
+            }
+
+            base.SaveChanges();
+        }
+
+        public override void DiscardChanges()
+        {
+            foreach (var asset in _modified.ToList())
+            {
+                Discard(asset);
+            }
+
+            base.DiscardChanges();
         }
 
         private void OnUndoRedo()
         {
             _levelsObject?.Update();
+            UpdateUnsavedState();
             Reload();
             RefreshPreview(frame: false);
             Repaint();
@@ -177,13 +244,15 @@ namespace MyGame.EditorTools.MapTool
                 onSelectCallback = list => Select(list.index),
             };
 
+            RestoreDrafts();
             Select(Mathf.Clamp(SessionState.GetInt(SelectionKey, 0), 0, Mathf.Max(0, _levels.Count - 1)));
         }
 
         private void DrawLevelElement(Rect rect, int index, bool isActive, bool isFocused)
         {
-            var level = _list.serializedProperty.GetArrayElementAtIndex(index).objectReferenceValue;
-            EditorGUI.LabelField(rect, $"{index + 1}.  {(level != null ? level.name : "(missing)")}");
+            var level = _list.serializedProperty.GetArrayElementAtIndex(index).objectReferenceValue as MapLayout;
+            var label = level != null ? level.name + (_modified.Contains(level) ? " *" : string.Empty) : "(missing)";
+            EditorGUI.LabelField(rect, $"{index + 1}.  {label}");
         }
 
         private void DrawLevelList()
@@ -220,8 +289,8 @@ namespace MyGame.EditorTools.MapTool
 
         private void Select(int index)
         {
-            SaveLayout();
             _layout = index >= 0 && index < _levels.Count ? _levels[index] : null;
+            _draft = GetDraft(_layout);
             _list.index = index;
             SessionState.SetInt(SelectionKey, index);
             _highlight = null;
@@ -249,7 +318,16 @@ namespace MyGame.EditorTools.MapTool
                 return;
             }
 
-            InsertLevel(AssetDatabase.LoadAssetAtPath<MapLayout>(path), _list.index + 1);
+            // Duplicate what is on screen, unsaved edits included.
+            var copy = AssetDatabase.LoadAssetAtPath<MapLayout>(path);
+            if (_modified.Contains(_layout))
+            {
+                copy.CopyFrom(_draft);
+                EditorUtility.SetDirty(copy);
+                AssetDatabase.SaveAssetIfDirty(copy);
+            }
+
+            InsertLevel(copy, _list.index + 1);
         }
 
         private void InsertLevel(MapLayout layout, int index)
@@ -279,7 +357,9 @@ namespace MyGame.EditorTools.MapTool
             var levels = _levels.Levels.ToList();
             var index = levels.IndexOf(removed);
             levels.RemoveAt(index);
+            ForgetDraft(removed);
             _layout = null;
+            _draft = null;
             SetLevels(levels, "Remove Level");
             if (choice == 2)
             {
@@ -314,8 +394,8 @@ namespace MyGame.EditorTools.MapTool
                 EditorGUILayout.HelpBox($"The rows do not parse: {_parseError}", MessageType.Error);
                 if (GUILayout.Button("Reset to a blank 4 × 4"))
                 {
-                    Undo.RecordObject(_layout, "Reset Layout");
-                    _layout.SetRows(new[] { "0 0 0 0", "0 0 0 0", "0 0 0 0", "S 0 0 0" });
+                    Undo.RecordObject(_draft, "Reset Layout");
+                    _draft.SetRows(new[] { "0 0 0 0", "0 0 0 0", "0 0 0 0", "S 0 0 0" });
                     MarkChanged();
                 }
 
@@ -333,16 +413,39 @@ namespace MyGame.EditorTools.MapTool
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                var newName = EditorGUILayout.DelayedTextField("Name", _layout.name);
+                var modified = _modified.Contains(_layout);
+                var newName = EditorGUILayout.DelayedTextField(modified ? "Name *" : "Name", _layout.name);
                 if (newName != _layout.name && !string.IsNullOrWhiteSpace(newName))
                 {
                     var error = AssetDatabase.RenameAsset(AssetDatabase.GetAssetPath(_layout), newName);
                     _status = string.IsNullOrEmpty(error) ? null : error;
+                    _draft.name = _layout.name;
+                    _savedJson[_layout] = SavedJsonOf(_layout);
+                    UpdateUnsavedState();
                 }
 
                 if (GUILayout.Button("Ping", GUILayout.Width(48f)))
                 {
                     EditorGUIUtility.PingObject(_layout);
+                }
+            }
+
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                var modified = _modified.Contains(_layout);
+                GUILayout.Label(modified ? "Unsaved changes" : "Saved", modified ? EditorStyles.boldLabel : EditorStyles.label, GUILayout.Width(120f));
+                using (new EditorGUI.DisabledScope(!modified))
+                {
+                    if (GUILayout.Button("Save (Ctrl+S)", GUILayout.Height(22f)))
+                    {
+                        Save(_layout);
+                    }
+
+                    if (GUILayout.Button("Discard Changes", GUILayout.Height(22f))
+                        && EditorUtility.DisplayDialog("Discard Changes", $"Throw away the unsaved changes to {_layout.name}?", "Discard", "Cancel"))
+                    {
+                        Discard(_layout);
+                    }
                 }
             }
 
@@ -367,8 +470,7 @@ namespace MyGame.EditorTools.MapTool
                 {
                     if (GUILayout.Button("▶  Play This Level", GUILayout.Height(24f)))
                     {
-                        SaveLayout();
-                        MapToolPlayMode.Play(_layout);
+                        MapToolPlayMode.Play(_draft);
                     }
                 }
             }
@@ -429,31 +531,31 @@ namespace MyGame.EditorTools.MapTool
         {
             using (new EditorGUILayout.HorizontalScope())
             {
-                var mode = (ItemMode)EditorGUILayout.EnumPopup("Items", _layout.ItemMode);
-                if (mode != _layout.ItemMode)
+                var mode = (ItemMode)EditorGUILayout.EnumPopup("Items", _draft.ItemMode);
+                if (mode != _draft.ItemMode)
                 {
-                    Undo.RecordObject(_layout, "Change Item Mode");
-                    _layout.ItemMode = mode;
+                    Undo.RecordObject(_draft, "Change Item Mode");
+                    _draft.ItemMode = mode;
                     MarkChanged();
                 }
 
-                if (_layout.ItemMode == ItemMode.Random)
+                if (_draft.ItemMode == ItemMode.Random)
                 {
-                    var count = EditorGUILayout.IntSlider(_layout.RandomItemCount, 0, MaxRandomItems);
-                    if (count != _layout.RandomItemCount)
+                    var count = EditorGUILayout.IntSlider(_draft.RandomItemCount, 0, MaxRandomItems);
+                    if (count != _draft.RandomItemCount)
                     {
-                        Undo.RecordObject(_layout, "Change Item Count");
-                        _layout.RandomItemCount = count;
+                        Undo.RecordObject(_draft, "Change Item Count");
+                        _draft.RandomItemCount = count;
                         MarkChanged();
                     }
                 }
                 else
                 {
-                    GUILayout.Label($"{_layout.Items.Count} placed", GUILayout.Width(80f));
+                    GUILayout.Label($"{_draft.Items.Count} placed", GUILayout.Width(80f));
                     if (GUILayout.Button("Clear Items", GUILayout.Width(90f)))
                     {
-                        Undo.RecordObject(_layout, "Clear Items");
-                        _layout.SetItems(System.Array.Empty<ItemPlacement>());
+                        Undo.RecordObject(_draft, "Clear Items");
+                        _draft.SetItems(System.Array.Empty<ItemPlacement>());
                         MarkChanged();
                     }
 
@@ -500,12 +602,12 @@ namespace MyGame.EditorTools.MapTool
             var area = GUILayoutUtility.GetRect(AxisLabelSize + width * CellSize, AxisLabelSize * 2f + depth * CellSize);
             var origin = new Vector2(area.x + AxisLabelSize, area.y);
             var items = new Dictionary<Vector2Int, bool>();
-            foreach (var item in _layout.Items)
+            foreach (var item in _draft.Items)
             {
                 items[item.Cell] = item.InAir;
             }
 
-            var showItems = _layout.ItemMode == ItemMode.Fixed;
+            var showItems = _draft.ItemMode == ItemMode.Fixed;
             var cells = _report != null && _report.Cells.GetLength(0) == width && _report.Cells.GetLength(1) == depth ? _report.Cells : null;
 
             for (var row = 0; row < depth; row++)
@@ -607,7 +709,6 @@ namespace MyGame.EditorTools.MapTool
                 case EventType.MouseUp when GUIUtility.hotControl == id:
                     GUIUtility.hotControl = 0;
                     Undo.CollapseUndoOperations(_strokeGroup);
-                    SaveLayout();
                     current.Use();
                     break;
             }
@@ -632,10 +733,10 @@ namespace MyGame.EditorTools.MapTool
                     PaintIce(cell);
                     break;
                 case Brush.EraseItem:
-                    if (_layout.Items.Any(item => item.Cell == cell))
+                    if (_draft.Items.Any(item => item.Cell == cell))
                     {
-                        Undo.RecordObject(_layout, "Erase Item");
-                        _layout.SetItems(_layout.Items.Where(item => item.Cell != cell).ToArray());
+                        Undo.RecordObject(_draft, "Erase Item");
+                        _draft.SetItems(_draft.Items.Where(item => item.Cell != cell).ToArray());
                         MarkChanged();
                     }
 
@@ -653,7 +754,7 @@ namespace MyGame.EditorTools.MapTool
                 return;
             }
 
-            Undo.RecordObject(_layout, "Paint Tiles");
+            Undo.RecordObject(_draft, "Paint Tiles");
             if (spec.Type == TileType.Start)
             {
                 for (var column = 0; column < _tiles.GetLength(0); column++)
@@ -669,10 +770,10 @@ namespace MyGame.EditorTools.MapTool
             }
 
             _tiles[cell.x, cell.y] = spec;
-            _layout.SetTiles(_tiles);
-            if (spec.Type != TileType.Solid && _layout.Items.Any(item => item.Cell == cell))
+            _draft.SetTiles(_tiles);
+            if (spec.Type != TileType.Solid && _draft.Items.Any(item => item.Cell == cell))
             {
-                _layout.SetItems(_layout.Items.Where(item => item.Cell != cell).ToArray());
+                _draft.SetItems(_draft.Items.Where(item => item.Cell != cell).ToArray());
             }
 
             MarkChanged();
@@ -700,19 +801,19 @@ namespace MyGame.EditorTools.MapTool
             }
 
             var placement = new ItemPlacement(cell, inAir);
-            if (_layout.ItemMode == ItemMode.Fixed && _layout.Items.Contains(placement))
+            if (_draft.ItemMode == ItemMode.Fixed && _draft.Items.Contains(placement))
             {
                 return;
             }
 
-            Undo.RecordObject(_layout, "Place Item");
-            if (_layout.ItemMode != ItemMode.Fixed)
+            Undo.RecordObject(_draft, "Place Item");
+            if (_draft.ItemMode != ItemMode.Fixed)
             {
-                _layout.ItemMode = ItemMode.Fixed;
+                _draft.ItemMode = ItemMode.Fixed;
                 _status = "Switched the items to Fixed.";
             }
 
-            _layout.SetItems(_layout.Items.Where(item => item.Cell != cell).Append(placement).ToArray());
+            _draft.SetItems(_draft.Items.Where(item => item.Cell != cell).Append(placement).ToArray());
             MarkChanged();
         }
 
@@ -729,9 +830,9 @@ namespace MyGame.EditorTools.MapTool
                 }
             }
 
-            Undo.RecordObject(_layout, "Resize Layout");
-            _layout.SetTiles(resized);
-            _layout.SetItems(_layout.Items.Where(item => item.Cell.x < width && item.Cell.y < depth).ToArray());
+            Undo.RecordObject(_draft, "Resize Layout");
+            _draft.SetTiles(resized);
+            _draft.SetItems(_draft.Items.Where(item => item.Cell.x < width && item.Cell.y < depth).ToArray());
             MarkChanged(frame: true);
         }
 
@@ -752,11 +853,10 @@ namespace MyGame.EditorTools.MapTool
                 }
             }
 
-            Undo.RecordObject(_layout, "Shift Layout");
-            _layout.SetTiles(shifted);
-            _layout.SetItems(_layout.Items.Select(item => new ItemPlacement(Wrap(item.Cell), item.InAir)).ToArray());
+            Undo.RecordObject(_draft, "Shift Layout");
+            _draft.SetTiles(shifted);
+            _draft.SetItems(_draft.Items.Select(item => new ItemPlacement(Wrap(item.Cell), item.InAir)).ToArray());
             MarkChanged();
-            SaveLayout();
         }
 
         private void HandleShortcuts()
@@ -764,6 +864,17 @@ namespace MyGame.EditorTools.MapTool
             var current = Event.current;
             if (current.type != EventType.KeyDown || EditorGUIUtility.editingTextField)
             {
+                return;
+            }
+
+            if (current.control || current.command)
+            {
+                if (current.keyCode == KeyCode.S && _layout != null)
+                {
+                    Save(_layout);
+                    current.Use();
+                }
+
                 return;
             }
 
@@ -783,7 +894,7 @@ namespace MyGame.EditorTools.MapTool
 
         private void MarkChanged(bool frame = false)
         {
-            EditorUtility.SetDirty(_layout);
+            UpdateUnsavedState();
             Reload();
             RefreshPreview(frame);
             Repaint();
@@ -793,12 +904,12 @@ namespace MyGame.EditorTools.MapTool
         {
             _report = null;
             _tiles = null;
-            if (_layout == null)
+            if (_draft == null)
             {
                 return;
             }
 
-            if (_layout.TryGetTiles(out var tiles, out var error))
+            if (_draft.TryGetTiles(out var tiles, out var error))
             {
                 _tiles = tiles;
                 _parseError = null;
@@ -808,26 +919,156 @@ namespace MyGame.EditorTools.MapTool
                 _parseError = error;
             }
 
-            _report = MapLayoutValidator.Validate(_layout);
-        }
-
-        private void SaveLayout()
-        {
-            if (_layout != null)
-            {
-                AssetDatabase.SaveAssetIfDirty(_layout);
-            }
+            _report = MapLayoutValidator.Validate(_draft);
         }
 
         private void RefreshPreview(bool frame)
         {
-            if (!_preview || _layout == null || _tiles == null)
+            if (!_preview || _draft == null || _tiles == null)
             {
                 MapToolPreview.Clear();
                 return;
             }
 
-            MapToolPreview.Show(_layout, frame);
+            MapToolPreview.Show(_draft, frame);
+        }
+
+        // ---------- Drafts ----------
+
+        /// <summary>The in-memory copy the tool edits for <paramref name="asset"/>; created on first use.</summary>
+        private MapLayout GetDraft(MapLayout asset)
+        {
+            if (asset == null)
+            {
+                return null;
+            }
+
+            if (!_drafts.TryGetValue(asset, out var draft) || draft == null)
+            {
+                draft = Instantiate(asset);
+                draft.name = asset.name;
+                draft.hideFlags = HideFlags.DontSave;
+                _drafts[asset] = draft;
+                _savedJson[asset] = SavedJsonOf(asset);
+            }
+
+            return draft;
+        }
+
+        /// <summary>What a draft of <paramref name="asset"/> serializes to with no edits.</summary>
+        private static string SavedJsonOf(MapLayout asset)
+        {
+            var copy = Instantiate(asset);
+            copy.name = asset.name;
+            copy.hideFlags = HideFlags.DontSave;
+            var json = EditorJsonUtility.ToJson(copy);
+            DestroyImmediate(copy);
+            return json;
+        }
+
+        private void UpdateUnsavedState()
+        {
+            _modified.Clear();
+            foreach (var pair in _drafts)
+            {
+                if (pair.Key != null && pair.Value != null && EditorJsonUtility.ToJson(pair.Value) != _savedJson[pair.Key])
+                {
+                    _modified.Add(pair.Key);
+                }
+            }
+
+            hasUnsavedChanges = _modified.Count > 0;
+            Repaint();
+        }
+
+        private void Save(MapLayout asset)
+        {
+            if (!_drafts.TryGetValue(asset, out var draft) || !_modified.Contains(asset))
+            {
+                return;
+            }
+
+            asset.CopyFrom(draft);
+            EditorUtility.SetDirty(asset);
+            AssetDatabase.SaveAssetIfDirty(asset);
+            _savedJson[asset] = SavedJsonOf(asset);
+            _status = $"Saved {asset.name}.";
+            UpdateUnsavedState();
+        }
+
+        private void Discard(MapLayout asset)
+        {
+            if (!_drafts.TryGetValue(asset, out var draft))
+            {
+                return;
+            }
+
+            Undo.ClearUndo(draft);
+            draft.CopyFrom(asset);
+            _savedJson[asset] = SavedJsonOf(asset);
+            UpdateUnsavedState();
+            if (asset == _layout)
+            {
+                _status = null;
+                Reload();
+                RefreshPreview(frame: false);
+            }
+        }
+
+        private void ForgetDraft(MapLayout asset)
+        {
+            if (_drafts.TryGetValue(asset, out var draft) && draft != null)
+            {
+                Undo.ClearUndo(draft);
+                DestroyImmediate(draft);
+            }
+
+            _drafts.Remove(asset);
+            _savedJson.Remove(asset);
+            UpdateUnsavedState();
+        }
+
+        /// <summary>A script reload rebuilds the window; unsaved drafts wait in <c>SessionState</c>.</summary>
+        private void StashDrafts()
+        {
+            var guids = new List<string>();
+            foreach (var asset in _modified)
+            {
+                var guid = AssetDatabase.AssetPathToGUID(AssetDatabase.GetAssetPath(asset));
+                SessionState.SetString(DraftKeyPrefix + guid, EditorJsonUtility.ToJson(_drafts[asset]));
+                guids.Add(guid);
+            }
+
+            SessionState.SetString(DraftListKey, string.Join(";", guids));
+        }
+
+        private void RestoreDrafts()
+        {
+            foreach (var guid in SessionState.GetString(DraftListKey, string.Empty).Split(';', System.StringSplitOptions.RemoveEmptyEntries))
+            {
+                var asset = AssetDatabase.LoadAssetAtPath<MapLayout>(AssetDatabase.GUIDToAssetPath(guid));
+                var json = SessionState.GetString(DraftKeyPrefix + guid, string.Empty);
+                if (asset != null && json.Length > 0)
+                {
+                    var draft = GetDraft(asset);
+                    EditorJsonUtility.FromJsonOverwrite(json, draft);
+                    draft.name = asset.name;
+                    draft.hideFlags = HideFlags.DontSave;
+                }
+            }
+
+            EraseStash();
+            UpdateUnsavedState();
+        }
+
+        private static void EraseStash()
+        {
+            foreach (var guid in SessionState.GetString(DraftListKey, string.Empty).Split(';', System.StringSplitOptions.RemoveEmptyEntries))
+            {
+                SessionState.EraseString(DraftKeyPrefix + guid);
+            }
+
+            SessionState.EraseString(DraftListKey);
         }
 
         // ---------- Helpers ----------
