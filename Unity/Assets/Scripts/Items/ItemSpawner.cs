@@ -6,8 +6,8 @@ using UnityEngine;
 namespace MyGame.Items
 {
     /// <summary>
-    /// Places a layout's items (plan.md §5): on its fixed cells, or on random solid tiles. Start,
-    /// crumbling, and hole cells never hold an item.
+    /// Places a layout's items (plan.md §5): on its fixed cells, or on random cells that can hold one
+    /// (firm, still blocks other than the start).
     /// </summary>
     public class ItemSpawner : MonoBehaviour
     {
@@ -17,16 +17,16 @@ namespace MyGame.Items
         [SerializeField] private float _airHeight = 1.0f;
 
         public List<Item> Spawn(MapLayout layout) =>
-            layout.ItemMode == ItemMode.Fixed ? SpawnFixed(layout.Items) : SpawnRandom(layout.RandomItemCount);
+            layout.ItemMode == ItemMode.Fixed ? SpawnFixed(layout) : SpawnRandom(layout);
 
-        private List<Item> SpawnFixed(IReadOnlyList<ItemPlacement> placements)
+        private List<Item> SpawnFixed(MapLayout layout)
         {
-            var items = new List<Item>(placements.Count);
-            foreach (var placement in placements)
+            var items = new List<Item>(layout.Items.Count);
+            foreach (var placement in layout.Items)
             {
-                if (!_mapBuilder.TryGetTile(placement.Cell, out var tile) || tile.Spec.Type != TileType.Solid)
+                if (!_mapBuilder.TryGetTile(placement.Cell, out var tile) || !CanHoldItem(layout, tile))
                 {
-                    Debug.LogWarning($"[ItemSpawner] No solid tile at {placement.Cell}; item skipped.", this);
+                    Debug.LogWarning($"[ItemSpawner] No block that can hold an item at {placement.Cell}; item skipped.", this);
                     continue;
                 }
 
@@ -36,12 +36,13 @@ namespace MyGame.Items
             return items;
         }
 
-        private List<Item> SpawnRandom(int count)
+        private List<Item> SpawnRandom(MapLayout layout)
         {
-            var candidates = _mapBuilder.Tiles.Where(tile => tile.Spec.Type == TileType.Solid).ToList();
+            var count = layout.RandomItemCount;
+            var candidates = _mapBuilder.Tiles.Where(tile => CanHoldItem(layout, tile)).ToList();
             if (count > candidates.Count)
             {
-                Debug.LogWarning($"[ItemSpawner] {count} items requested, only {candidates.Count} solid tiles.", this);
+                Debug.LogWarning($"[ItemSpawner] {count} items requested, only {candidates.Count} cells can hold one.", this);
                 count = candidates.Count;
             }
 
@@ -58,9 +59,12 @@ namespace MyGame.Items
         private Item SpawnAt(Tile tile, bool inAir)
         {
             var height = inAir ? _airHeight : _groundHeight;
-            var position = MapMetrics.TopCenter(tile.Coordinates, tile.Spec.Level) + Vector3.up * height;
+            var position = MapMetrics.TopCenter(tile.Coordinates, tile.Spec.Height) + Vector3.up * height;
             return Instantiate(_itemPrefab, position, Quaternion.identity, transform);
         }
+
+        private static bool CanHoldItem(MapLayout layout, Tile tile) =>
+            tile.Spec.CanHoldItem && tile.Coordinates != layout.Start;
 
         private static void Shuffle<T>(IList<T> list)
         {

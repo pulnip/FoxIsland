@@ -107,6 +107,83 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M12</span></div>
+      <h2>맵툴: 높이 · 스킨 · 기타 브러시 분리</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>브러시를 세 줄로 나눔. 한 줄의 브러시는 다른 속성을 건드리지 않음
+          <ul>
+            <li><b>높이</b>: H(구멍), 0~6. 구멍에 칠하면 마지막에 쓴 스킨의 블록이 생김</li>
+            <li><b>스킨</b>: Shift+글자(⇧S 모래, ⇧M 초원, ⇧F 숲, ⇧R 바위, ⇧N 눈, ⇧I 얼음, ⇧W 물, ⇧B 빙산). 구멍에 칠하면 0층 블록</li>
+            <li><b>기타</b>: C 무너짐, V 단단함(무너짐 해제), T 시작 위치, G/A/E 아이템</li>
+          </ul>
+        </li>
+        <li>그리드: 칸 색은 스킨(높을수록 밝게), 글자는 높이(+무너짐이면 c), 시작 칸엔 파란 S 표시</li>
+        <li>아이템을 둘 수 없게 바뀐 칸(구멍, 무너짐, 빙산, 시작)의 아이템은 자동으로 지움</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Editor/MapTool/MapToolWindow.cs</code>, <code>MapToolPreview.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>창 조작은 직접 확인 필요 (플레이테스트 항목)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M12</span></div>
+      <h2>스킨별 머티리얼 · 장식, 기존 레벨 변환</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>MapBuilder</code>가 스킨 → (윗면, 옆면) 머티리얼 표(<code>SkinMaterials</code>)로 블록을 입힘. 새 머티리얼 5개: 모래, 사암, 물 바닥, 바위 윗면, 빙산 옆면</li>
+        <li>장식도 스킨 기준: 모래에 조개 · 자갈 · 유목(새로 추가), 숲은 기존 아고산대 장식, 바위는 돌 · 이끼, 눈은 이끼 · 쿠션식물 · 바위 · 바람 자국. 무너지는 블록은 어떤 스킨이든 갈라진 금만 표시</li>
+        <li>풀, 장식, 눈은 타일의 <code>Visual</code> 아래에 붙여서 무너지는 블록과 함께 흔들리고 가라앉음</li>
+        <li>시작 타일(파란 블록)과 그 머티리얼은 삭제. 시작 칸도 이제 자기 스킨으로 보임</li>
+        <li><code>LegacyLayoutConverter</code>가 Build All 때 옛 형식 레벨을 한 번만 변환: <code>0</code>~<code>2</code> → 초원, <code>3</code>~<code>4</code> → 숲, <code>5</code>~<code>6</code> → 눈, <code>C</code> → 무너지는 모래, <code>S</code> → 초원 + 시작 위치. Level01은 칸 배치 그대로 변환됨</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m12-skins.png" alt="스킨 8종"><figcaption>스킨 8종 확인용 맵: 모래(조개 · 유목) · 초원 · 숲 · 바위 · 눈 · 얼음 · 물(수면은 M13) · 빙산, 무너지는 칸의 갈라짐</figcaption></figure>
+        <figure><img src="images/m12-level01.png" alt="변환된 Level01"><figcaption>변환된 Level01: 무너지는 칸은 모래 + 갈라짐</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/MapBuilder.cs</code>, <code>SkinMaterials.cs</code>(새 파일), <code>Tile.cs</code>, <code>GrassField.cs</code>, <code>TerrainDecor.cs</code>, <code>SnowField.cs</code></li>
+        <li><code>Unity/Assets/Editor/MapAssetBuilder.cs</code>, <code>LegacyLayoutConverter.cs</code>(새 파일), <code>MainSceneSetup.cs</code></li>
+        <li>머티리얼 5개 추가, <code>Tile_Start.prefab</code> · <code>Tile_Start.mat</code> 삭제, <code>Level01.asset</code> 변환</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>검증용 임시 맵을 캡처하다가 씬을 열면 참조 없는 메모리 레이아웃이 언로드되는 걸 다시 겪음 (씬을 먼저 열고 레이아웃을 만들어야 함)</li>
+        <li>Build All 두 번 결과 동일</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M12</span></div>
+      <h2>블록 데이터: 높이 · 스킨 · 무너짐 분리</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>새 <code>CellSpec</code>: 구멍이거나, 높이(0~6) · 스킨 · 무너짐 여부를 따로 가진 블록. <code>TileSpec</code>, <code>TileType</code>, <code>ElevationZone</code>(높이로 겉모습을 정하던 방식)을 대체</li>
+        <li>토큰: 구멍 <code>.</code>, 블록 <code>&lt;높이&gt;&lt;스킨&gt;[c]</code>. 스킨 글자 s 모래, m 초원, f 숲, r 바위, n 눈, i 얼음, w 얕은 물, b 빙산. 예: <code>0s</code>, <code>2m</code>, <code>5i</code>, <code>0mc</code></li>
+        <li>시작 위치는 칸 종류가 아니라 레이아웃의 <code>_start</code> 필드. 시작 칸이 0층이 아니어도 됨</li>
+        <li>아이템을 둘 수 있는 칸: 단단하고 움직이지 않는 블록(구멍 · 무너짐 · 빙산 · 시작 제외)</li>
+        <li>검사기: 시작이 블록 위인지, 빙산은 0층만, 아이템 칸 규칙. 미끄러움은 얼음과 빙산 스킨 기준</li>
+        <li>검증: 파싱 · 거부 · 미끄러움 · Level01 변환 · 빙산/시작 오류 등 8개 검사 통과</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/CellSpec.cs</code>, <code>Skin.cs</code> (새 파일), <code>MapLayout.cs</code>, <code>MapLayoutValidator.cs</code> / 삭제: <code>TileSpec.cs</code>, <code>TileType.cs</code>, <code>ElevationZone.cs</code></li>
+        <li><code>ItemSpawner.cs</code>, <code>LevelLoader.cs</code>, <code>PlayerController.cs</code>, <code>FootprintEmitter.cs</code></li>
+        <li><code>docs/plan.md</code> — §1, §4.1~4.4, §4.6, §4.8, §4.9(스킨으로 다시 씀), §5 / <code>docs/TODO.md</code> — M12~M16</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>얕은 물 수면, 빙산 출렁임은 M13. 지금은 겉모습(머티리얼)만</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-10-06</time><span class="tag">M11</span></div>
       <h2>맵툴: 편집용 사본, 저장 · 변경 취소</h2>
       <h3>한 일</h3>

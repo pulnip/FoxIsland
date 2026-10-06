@@ -25,14 +25,13 @@ namespace MyGame.EditorTools.MapTool
         private const int MaxRandomItems = 32;
 
         private static readonly Color HoleColor = new(0.16f, 0.36f, 0.58f);
-        private static readonly Color[] LevelColors =
+        private static readonly Color[] SkinColors =
         {
-            new(0.38f, 0.60f, 0.26f), new(0.49f, 0.74f, 0.33f), new(0.64f, 0.86f, 0.46f),
-            new(0.20f, 0.40f, 0.32f), new(0.30f, 0.48f, 0.40f),
-            new(0.84f, 0.88f, 0.94f), new(0.97f, 0.98f, 1f),
+            new(0.90f, 0.81f, 0.58f), new(0.49f, 0.74f, 0.33f), new(0.24f, 0.42f, 0.33f), new(0.58f, 0.58f, 0.60f),
+            new(0.93f, 0.95f, 1f), new(0.62f, 0.85f, 0.94f), new(0.35f, 0.65f, 0.85f), new(0.80f, 0.92f, 0.98f),
         };
 
-        private static readonly Color IceColor = new(0.58f, 0.84f, 0.95f);
+        private static readonly Color HeightColor = new(0.55f, 0.55f, 0.55f);
         private static readonly Color DarkText = new(0.15f, 0.2f, 0.28f);
         private static readonly Color CrumblingColor = new(0.86f, 0.70f, 0.45f);
         private static readonly Color StartColor = new(0.42f, 0.62f, 0.86f);
@@ -42,23 +41,34 @@ namespace MyGame.EditorTools.MapTool
 
         private static readonly BrushInfo[] Brushes =
         {
-            new(Brush.Hole, "Hole", KeyCode.H, HoleColor),
-            new(Brush.Level0, "0", KeyCode.Alpha0, LevelColors[0]),
-            new(Brush.Level1, "1", KeyCode.Alpha1, LevelColors[1]),
-            new(Brush.Level2, "2", KeyCode.Alpha2, LevelColors[2]),
-            new(Brush.Level3, "3", KeyCode.Alpha3, LevelColors[3]),
-            new(Brush.Level4, "4", KeyCode.Alpha4, LevelColors[4]),
-            new(Brush.Level5, "5", KeyCode.Alpha5, LevelColors[5]),
-            new(Brush.Level6, "6", KeyCode.Alpha6, LevelColors[6]),
-            new(Brush.Ice, "Ice", KeyCode.I, IceColor),
-            new(Brush.Crumbling, "Crumbling", KeyCode.C, CrumblingColor),
-            new(Brush.Start, "Start", KeyCode.S, StartColor),
-            new(Brush.ItemGround, "Item", KeyCode.G, GemColor),
-            new(Brush.ItemAir, "Item (air)", KeyCode.A, GemColor),
-            new(Brush.EraseItem, "Erase item", KeyCode.E, Color.gray),
+            new(Brush.Hole, "Hole", KeyCode.H, false, HoleColor),
+            new(Brush.Height0, "0", KeyCode.Alpha0, false, HeightColor),
+            new(Brush.Height1, "1", KeyCode.Alpha1, false, HeightColor),
+            new(Brush.Height2, "2", KeyCode.Alpha2, false, HeightColor),
+            new(Brush.Height3, "3", KeyCode.Alpha3, false, HeightColor),
+            new(Brush.Height4, "4", KeyCode.Alpha4, false, HeightColor),
+            new(Brush.Height5, "5", KeyCode.Alpha5, false, HeightColor),
+            new(Brush.Height6, "6", KeyCode.Alpha6, false, HeightColor),
+            new(Brush.Sand, "Sand", KeyCode.S, true, SkinColors[(int)Skin.Sand]),
+            new(Brush.Meadow, "Meadow", KeyCode.M, true, SkinColors[(int)Skin.Meadow]),
+            new(Brush.Forest, "Forest", KeyCode.F, true, SkinColors[(int)Skin.Forest]),
+            new(Brush.Rock, "Rock", KeyCode.R, true, SkinColors[(int)Skin.Rock]),
+            new(Brush.Snow, "Snow", KeyCode.N, true, SkinColors[(int)Skin.Snow]),
+            new(Brush.Ice, "Ice", KeyCode.I, true, SkinColors[(int)Skin.Ice]),
+            new(Brush.Water, "Water", KeyCode.W, true, SkinColors[(int)Skin.Water]),
+            new(Brush.Iceberg, "Iceberg", KeyCode.B, true, SkinColors[(int)Skin.Iceberg]),
+            new(Brush.Crumbling, "Crumbling", KeyCode.C, false, CrumblingColor),
+            new(Brush.Firm, "Firm", KeyCode.V, false, Color.gray),
+            new(Brush.Start, "Start", KeyCode.T, false, StartColor),
+            new(Brush.ItemGround, "Item", KeyCode.G, false, GemColor),
+            new(Brush.ItemAir, "Item (air)", KeyCode.A, false, GemColor),
+            new(Brush.EraseItem, "Erase item", KeyCode.E, false, Color.gray),
         };
 
-        [SerializeField] private Brush _brush = Brush.Level0;
+        [SerializeField] private Brush _brush = Brush.Height0;
+
+        [Tooltip("Skin given to a hole when a height brush turns it into a block.")]
+        [SerializeField] private Skin _lastSkin = Skin.Meadow;
 
         private readonly Dictionary<MapLayout, MapLayout> _drafts = new();
         private readonly Dictionary<MapLayout, string> _savedJson = new();
@@ -68,7 +78,7 @@ namespace MyGame.EditorTools.MapTool
         private ReorderableList _list;
         private MapLayout _layout;
         private MapLayout _draft;
-        private TileSpec[,] _tiles;
+        private CellSpec[,] _cells;
         private string _parseError;
         private LayoutReport _report;
         private Vector2Int? _highlight;
@@ -83,15 +93,23 @@ namespace MyGame.EditorTools.MapTool
         private enum Brush
         {
             Hole,
-            Level0,
-            Level1,
-            Level2,
-            Level3,
-            Level4,
-            Level5,
-            Level6,
+            Height0,
+            Height1,
+            Height2,
+            Height3,
+            Height4,
+            Height5,
+            Height6,
+            Sand,
+            Meadow,
+            Forest,
+            Rock,
+            Snow,
             Ice,
+            Water,
+            Iceberg,
             Crumbling,
+            Firm,
             Start,
             ItemGround,
             ItemAir,
@@ -304,7 +322,8 @@ namespace MyGame.EditorTools.MapTool
         {
             var path = AssetDatabase.GenerateUniqueAssetPath($"{MapAssetBuilder.LevelFolder}/Level{_levels.Count + 1:00}.asset");
             var layout = CreateInstance<MapLayout>();
-            layout.SetRows(new[] { "0 0 0 0", "0 0 0 0", "0 0 0 0", "S 0 0 0" });
+            layout.SetRows(new[] { "0m 0m 0m 0m", "0m 0m 0m 0m", "0m 0m 0m 0m", "0m 0m 0m 0m" });
+            layout.Start = Vector2Int.zero;
             AssetDatabase.CreateAsset(layout, path);
             InsertLevel(layout, _levels.Count);
         }
@@ -389,13 +408,14 @@ namespace MyGame.EditorTools.MapTool
             }
 
             DrawHeader();
-            if (_tiles == null)
+            if (_cells == null)
             {
                 EditorGUILayout.HelpBox($"The rows do not parse: {_parseError}", MessageType.Error);
                 if (GUILayout.Button("Reset to a blank 4 × 4"))
                 {
                     Undo.RecordObject(_draft, "Reset Layout");
-                    _draft.SetRows(new[] { "0 0 0 0", "0 0 0 0", "0 0 0 0", "S 0 0 0" });
+                    _draft.SetRows(new[] { "0m 0m 0m 0m", "0m 0m 0m 0m", "0m 0m 0m 0m", "0m 0m 0m 0m" });
+                    _draft.Start = Vector2Int.zero;
                     MarkChanged();
                 }
 
@@ -488,8 +508,8 @@ namespace MyGame.EditorTools.MapTool
 
         private void DrawSizeControls()
         {
-            var width = _tiles.GetLength(0);
-            var depth = _tiles.GetLength(1);
+            var width = _cells.GetLength(0);
+            var depth = _cells.GetLength(1);
             using (new EditorGUILayout.HorizontalScope())
             {
                 EditorGUILayout.LabelField("Size", GUILayout.Width(40f));
@@ -566,21 +586,24 @@ namespace MyGame.EditorTools.MapTool
 
         private void DrawBrushes()
         {
-            EditorGUILayout.LabelField("Brush (key in brackets; drag to paint). Levels 0–2 lowland, 3–4 subalpine, 5–6 alpine snow; Ice on 5–6.",
+            EditorGUILayout.LabelField("Brushes (key in brackets, ⇧ = Shift; drag to paint). Height and skin are painted separately.",
                 EditorStyles.miniBoldLabel);
-            var itemStart = System.Array.FindIndex(Brushes, info => info.Brush == Brush.ItemGround);
-            DrawBrushRow(0, itemStart);
-            DrawBrushRow(itemStart, Brushes.Length);
+            var skinStart = System.Array.FindIndex(Brushes, info => info.Brush == Brush.Sand);
+            var otherStart = System.Array.FindIndex(Brushes, info => info.Brush == Brush.Crumbling);
+            DrawBrushRow("Height", 0, skinStart);
+            DrawBrushRow("Skin", skinStart, otherStart);
+            DrawBrushRow("Other", otherStart, Brushes.Length);
         }
 
-        private void DrawBrushRow(int from, int to)
+        private void DrawBrushRow(string title, int from, int to)
         {
             using (new EditorGUILayout.HorizontalScope())
             {
+                GUILayout.Label(title, GUILayout.Width(44f));
                 for (var i = from; i < to; i++)
                 {
                     var brush = Brushes[i];
-                    var label = $"[{KeyLabel(brush.Key)}] {brush.Label}";
+                    var label = $"[{KeyLabel(brush)}] {brush.Label}";
                     var rect = GUILayoutUtility.GetRect(new GUIContent(label), "Button", GUILayout.Height(30f), GUILayout.MinWidth(40f));
                     if (GUI.Toggle(rect, _brush == brush.Brush, label, "Button"))
                     {
@@ -596,8 +619,8 @@ namespace MyGame.EditorTools.MapTool
 
         private void DrawGrid()
         {
-            var width = _tiles.GetLength(0);
-            var depth = _tiles.GetLength(1);
+            var width = _cells.GetLength(0);
+            var depth = _cells.GetLength(1);
             GUILayout.Space(8f);
             var area = GUILayoutUtility.GetRect(AxisLabelSize + width * CellSize, AxisLabelSize * 2f + depth * CellSize);
             var origin = new Vector2(area.x + AxisLabelSize, area.y);
@@ -616,12 +639,18 @@ namespace MyGame.EditorTools.MapTool
                 for (var column = 0; column < width; column++)
                 {
                     var rect = CellRect(origin, depth, column, row);
-                    var spec = _tiles[column, row];
+                    var spec = _cells[column, row];
                     var color = ColorOf(spec);
                     EditorGUI.DrawRect(rect, color);
                     _cellStyle.normal.textColor = color.grayscale > 0.6f ? DarkText : Color.white;
                     GUI.Label(rect, LabelOf(spec), _cellStyle);
                     var cell = new Vector2Int(column, row);
+                    if (cell == _draft.Start)
+                    {
+                        EditorGUI.DrawRect(new Rect(rect.x + 2f, rect.y + 2f, 16f, 14f), StartColor);
+                        GUI.Label(new Rect(rect.x + 2f, rect.y + 1f, 16f, 14f), "S", EditorStyles.whiteMiniLabel);
+                    }
+
                     if (showItems && items.TryGetValue(cell, out var inAir))
                     {
                         GUI.Label(rect, inAir ? "◆ ↑" : "◆", _gemStyle);
@@ -717,20 +746,42 @@ namespace MyGame.EditorTools.MapTool
         private void PaintAt(Vector2Int cell)
         {
             _lastPainted = cell;
-            if (cell.x < 0 || cell.y < 0 || cell.x >= _tiles.GetLength(0) || cell.y >= _tiles.GetLength(1))
+            if (cell.x < 0 || cell.y < 0 || cell.x >= _cells.GetLength(0) || cell.y >= _cells.GetLength(1))
             {
                 return;
             }
 
             _status = null;
+            var spec = _cells[cell.x, cell.y];
             switch (_brush)
             {
+                case Brush.Hole:
+                    PaintCell(cell, CellSpec.Hole);
+                    break;
+                case >= Brush.Height0 and <= Brush.Height6:
+                    var height = _brush - Brush.Height0;
+                    PaintCell(cell, spec.IsBlock ? spec.WithHeight(height) : new CellSpec(height, _lastSkin));
+                    break;
+                case >= Brush.Sand and <= Brush.Iceberg:
+                    var skin = (Skin)(_brush - Brush.Sand);
+                    PaintCell(cell, spec.IsBlock ? spec.WithSkin(skin) : new CellSpec(0, skin));
+                    break;
+                case Brush.Crumbling:
+                case Brush.Firm:
+                    if (!spec.IsBlock)
+                    {
+                        _status = "Crumbling and Firm apply to blocks, not holes.";
+                        break;
+                    }
+
+                    PaintCell(cell, spec.WithCrumbling(_brush == Brush.Crumbling));
+                    break;
+                case Brush.Start:
+                    SetStart(cell);
+                    break;
                 case Brush.ItemGround:
                 case Brush.ItemAir:
                     PlaceItem(cell, _brush == Brush.ItemAir);
-                    break;
-                case Brush.Ice:
-                    PaintIce(cell);
                     break;
                 case Brush.EraseItem:
                     if (_draft.Items.Any(item => item.Cell == cell))
@@ -741,37 +792,21 @@ namespace MyGame.EditorTools.MapTool
                     }
 
                     break;
-                default:
-                    PaintTile(cell, SpecOf(_brush));
-                    break;
             }
         }
 
-        private void PaintTile(Vector2Int cell, TileSpec spec)
+        /// <summary>Writes one cell; an item left on a cell that can no longer hold it goes away.</summary>
+        private void PaintCell(Vector2Int cell, CellSpec spec)
         {
-            if (_tiles[cell.x, cell.y].Equals(spec))
+            if (_cells[cell.x, cell.y].Equals(spec))
             {
                 return;
             }
 
-            Undo.RecordObject(_draft, "Paint Tiles");
-            if (spec.Type == TileType.Start)
-            {
-                for (var column = 0; column < _tiles.GetLength(0); column++)
-                {
-                    for (var row = 0; row < _tiles.GetLength(1); row++)
-                    {
-                        if (_tiles[column, row].Type == TileType.Start)
-                        {
-                            _tiles[column, row] = new TileSpec(TileType.Solid, 0);
-                        }
-                    }
-                }
-            }
-
-            _tiles[cell.x, cell.y] = spec;
-            _draft.SetTiles(_tiles);
-            if (spec.Type != TileType.Solid && _draft.Items.Any(item => item.Cell == cell))
+            Undo.RecordObject(_draft, "Paint Cells");
+            _cells[cell.x, cell.y] = spec;
+            _draft.SetCells(_cells);
+            if (!MapLayoutValidator.CanHoldItem(_draft, _cells, cell) && _draft.Items.Any(item => item.Cell == cell))
             {
                 _draft.SetItems(_draft.Items.Where(item => item.Cell != cell).ToArray());
             }
@@ -779,24 +814,30 @@ namespace MyGame.EditorTools.MapTool
             MarkChanged();
         }
 
-        /// <summary>Turns a snow tile (level 5–6) to ice; paint a level brush over it to undo.</summary>
-        private void PaintIce(Vector2Int cell)
+        private void SetStart(Vector2Int cell)
         {
-            var spec = _tiles[cell.x, cell.y];
-            if (spec.Type != TileType.Solid || spec.Zone != ElevationZone.Alpine)
+            if (!_cells[cell.x, cell.y].IsBlock)
             {
-                _status = "Ice goes on solid tiles at levels 5–6.";
+                _status = "The start goes on a block.";
                 return;
             }
 
-            PaintTile(cell, new TileSpec(TileType.Solid, spec.Level, isIce: true));
+            if (_draft.Start == cell)
+            {
+                return;
+            }
+
+            Undo.RecordObject(_draft, "Move Start");
+            _draft.Start = cell;
+            _draft.SetItems(_draft.Items.Where(item => item.Cell != cell).ToArray());
+            MarkChanged();
         }
 
         private void PlaceItem(Vector2Int cell, bool inAir)
         {
-            if (_tiles[cell.x, cell.y].Type != TileType.Solid)
+            if (!MapLayoutValidator.CanHoldItem(_draft, _cells, cell))
             {
-                _status = "Items go on solid tiles (levels 0–6, snow or ice).";
+                _status = "Items go on firm blocks other than the start (no hole, crumbling, or iceberg).";
                 return;
             }
 
@@ -817,21 +858,21 @@ namespace MyGame.EditorTools.MapTool
             MarkChanged();
         }
 
-        /// <summary>Grows or crops from the (0, 0) corner; new cells are level 0.</summary>
+        /// <summary>Grows or crops from the (0, 0) corner; new cells are height-0 blocks of the last skin.</summary>
         private void Resize(int width, int depth)
         {
-            var resized = new TileSpec[width, depth];
+            var resized = new CellSpec[width, depth];
             for (var column = 0; column < width; column++)
             {
                 for (var row = 0; row < depth; row++)
                 {
-                    var inside = column < _tiles.GetLength(0) && row < _tiles.GetLength(1);
-                    resized[column, row] = inside ? _tiles[column, row] : new TileSpec(TileType.Solid, 0);
+                    var inside = column < _cells.GetLength(0) && row < _cells.GetLength(1);
+                    resized[column, row] = inside ? _cells[column, row] : new CellSpec(0, _lastSkin);
                 }
             }
 
             Undo.RecordObject(_draft, "Resize Layout");
-            _draft.SetTiles(resized);
+            _draft.SetCells(resized);
             _draft.SetItems(_draft.Items.Where(item => item.Cell.x < width && item.Cell.y < depth).ToArray());
             MarkChanged(frame: true);
         }
@@ -839,22 +880,23 @@ namespace MyGame.EditorTools.MapTool
         /// <summary>Moves everything one cell, wrapping around, so nothing is lost.</summary>
         private void Shift(Vector2Int direction)
         {
-            var width = _tiles.GetLength(0);
-            var depth = _tiles.GetLength(1);
+            var width = _cells.GetLength(0);
+            var depth = _cells.GetLength(1);
             Vector2Int Wrap(Vector2Int cell) => new((cell.x + direction.x + width) % width, (cell.y + direction.y + depth) % depth);
 
-            var shifted = new TileSpec[width, depth];
+            var shifted = new CellSpec[width, depth];
             for (var column = 0; column < width; column++)
             {
                 for (var row = 0; row < depth; row++)
                 {
                     var to = Wrap(new Vector2Int(column, row));
-                    shifted[to.x, to.y] = _tiles[column, row];
+                    shifted[to.x, to.y] = _cells[column, row];
                 }
             }
 
             Undo.RecordObject(_draft, "Shift Layout");
-            _draft.SetTiles(shifted);
+            _draft.SetCells(shifted);
+            _draft.Start = Wrap(_draft.Start);
             _draft.SetItems(_draft.Items.Select(item => new ItemPlacement(Wrap(item.Cell), item.InAir)).ToArray());
             MarkChanged();
         }
@@ -881,7 +923,7 @@ namespace MyGame.EditorTools.MapTool
             var key = current.keyCode >= KeyCode.Keypad0 && current.keyCode <= KeyCode.Keypad9
                 ? KeyCode.Alpha0 + (current.keyCode - KeyCode.Keypad0)
                 : current.keyCode;
-            var index = System.Array.FindIndex(Brushes, info => info.Key == key);
+            var index = System.Array.FindIndex(Brushes, info => info.Key == key && info.Shift == current.shift);
             if (index >= 0)
             {
                 _brush = Brushes[index].Brush;
@@ -903,15 +945,15 @@ namespace MyGame.EditorTools.MapTool
         private void Reload()
         {
             _report = null;
-            _tiles = null;
+            _cells = null;
             if (_draft == null)
             {
                 return;
             }
 
-            if (_draft.TryGetTiles(out var tiles, out var error))
+            if (_draft.TryGetCells(out var cells, out var error))
             {
-                _tiles = tiles;
+                _cells = cells;
                 _parseError = null;
             }
             else
@@ -924,7 +966,7 @@ namespace MyGame.EditorTools.MapTool
 
         private void RefreshPreview(bool frame)
         {
-            if (!_preview || _draft == null || _tiles == null)
+            if (!_preview || _draft == null || _cells == null)
             {
                 MapToolPreview.Clear();
                 return;
@@ -1087,42 +1129,29 @@ namespace MyGame.EditorTools.MapTool
             EditorGUI.DrawRect(new Rect(rect.xMax - thickness, rect.y, thickness, rect.height), color);
         }
 
-        private static Color ColorOf(TileSpec spec) => spec.Type switch
-        {
-            TileType.Hole => HoleColor,
-            TileType.Crumbling => CrumblingColor,
-            TileType.Start => StartColor,
-            _ when spec.IsIce => IceColor,
-            _ => LevelColors[Mathf.Clamp(spec.Level, 0, LevelColors.Length - 1)],
-        };
+        /// <summary>Skin color, a little lighter the higher the block.</summary>
+        private static Color ColorOf(CellSpec spec) => spec.IsBlock
+            ? Color.Lerp(SkinColors[(int)spec.Skin], Color.white, spec.Height * 0.05f)
+            : HoleColor;
 
-        private static string LabelOf(TileSpec spec) => spec.Type switch
-        {
-            TileType.Hole => string.Empty,
-            TileType.Crumbling => "C",
-            TileType.Start => "S",
-            _ => spec.ToToken(),
-        };
+        private static string LabelOf(CellSpec spec) => spec.IsBlock ? spec.Height + (spec.IsCrumbling ? "c" : string.Empty) : string.Empty;
 
-        private static TileSpec SpecOf(Brush brush) => brush switch
+        private static string KeyLabel(BrushInfo brush)
         {
-            Brush.Hole => new TileSpec(TileType.Hole, 0),
-            >= Brush.Level0 and <= Brush.Level6 => new TileSpec(TileType.Solid, brush - Brush.Level0),
-            Brush.Crumbling => new TileSpec(TileType.Crumbling, 0),
-            Brush.Start => new TileSpec(TileType.Start, 0),
-            _ => new TileSpec(TileType.Solid, 0),
-        };
-
-        private static string KeyLabel(KeyCode key) =>
-            key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9 ? ((char)('0' + (key - KeyCode.Alpha0))).ToString() : key.ToString();
+            var key = brush.Key >= KeyCode.Alpha0 && brush.Key <= KeyCode.Alpha9
+                ? ((char)('0' + (brush.Key - KeyCode.Alpha0))).ToString()
+                : brush.Key.ToString();
+            return brush.Shift ? "⇧" + key : key;
+        }
 
         private readonly struct BrushInfo
         {
-            public BrushInfo(Brush brush, string label, KeyCode key, Color color)
+            public BrushInfo(Brush brush, string label, KeyCode key, bool shift, Color color)
             {
                 Brush = brush;
                 Label = label;
                 Key = key;
+                Shift = shift;
                 Color = color;
             }
 
@@ -1131,6 +1160,9 @@ namespace MyGame.EditorTools.MapTool
             public string Label { get; }
 
             public KeyCode Key { get; }
+
+            /// <summary>The shortcut needs Shift (skins), so it never clashes with the other keys.</summary>
+            public bool Shift { get; }
 
             public Color Color { get; }
         }

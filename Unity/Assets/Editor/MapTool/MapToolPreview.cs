@@ -60,7 +60,7 @@ namespace MyGame.EditorTools.MapTool
             grass.Build();
             builder.GetComponent<TerrainDecor>().Build();
             builder.GetComponent<SnowField>().Build();
-            var bounds = MapMetrics.GridBounds(layout.Width, layout.Depth, layout.MaxLevel);
+            var bounds = MapMetrics.GridBounds(layout.Width, layout.Depth, layout.MaxHeight);
             water.transform.position = new Vector3(bounds.center.x, MapMetrics.WaterLevel, bounds.center.z);
             water.Build();
 

@@ -5,10 +5,10 @@ using UnityEngine.Rendering;
 namespace MyGame.Map
 {
     /// <summary>
-    /// Low voxel decorations for the subalpine and alpine belts (plan.md §4.9): dwarf shrubs and
-    /// needle litter on the conifer forest floor (level 3), wind-flattened krummholz mats and rocks
-    /// at the treeline (level 4), moss, lichen, and cushion plants poking through the snow
-    /// (level 5), and bare rock and wind ridges on the deepest snow (level 6). Ice stays clean.
+    /// Low voxel decorations by skin (plan.md §4.9): shells, pebbles, and driftwood on sand; dwarf
+    /// shrubs, needle litter, and wind-flattened krummholz on the forest floor; stones and moss on
+    /// rock; moss, cushion plants, rocks, and wind ridges on snow. Crumbling blocks show cracks
+    /// instead. Meadow grass is <see cref="GrassField"/>'s; ice, water, and icebergs stay clean.
     /// Seeded per tile; nothing is taller than 0.2, so the fox and gems stay visible.
     /// </summary>
     public class TerrainDecor : MonoBehaviour
@@ -29,6 +29,10 @@ namespace MyGame.Map
         private static readonly Color KrummholzDark = new(0.13f, 0.29f, 0.20f);
         private static readonly Color KrummholzLight = new(0.20f, 0.38f, 0.25f);
         private static readonly Color SnowWhite = new(0.95f, 0.97f, 1f);
+        private static readonly Color[] Shells = { new(0.97f, 0.93f, 0.86f), new(0.95f, 0.78f, 0.74f), new(0.92f, 0.86f, 0.70f) };
+        private static readonly Color[] Pebbles = { new(0.62f, 0.60f, 0.58f), new(0.50f, 0.48f, 0.46f), new(0.70f, 0.66f, 0.60f) };
+        private static readonly Color Driftwood = new(0.60f, 0.52f, 0.40f);
+        private static readonly Color CrackDark = new(0.20f, 0.16f, 0.13f);
 
         [SerializeField] private MapBuilder _mapBuilder;
         [SerializeField] private Material _material;
@@ -47,6 +51,10 @@ namespace MyGame.Map
             Moss,
             Cushion,
             WindRidge,
+            Shell,
+            Pebble,
+            Driftwood,
+            Crack,
         }
 
         private void Start() => Build();
@@ -73,33 +81,37 @@ namespace MyGame.Map
             foreach (var tile in _mapBuilder.Tiles)
             {
                 var spec = tile.Spec;
-                if (spec.Type != TileType.Solid || spec.Zone == ElevationZone.Lowland || spec.IsIce)
-                {
-                    continue;
-                }
-
                 var random = new System.Random(Seed + tile.Coordinates.x * 73856093 ^ tile.Coordinates.y * 19349663);
                 var placed = new List<Vector3>();
                 var surface = spec.IsSnow ? tile.TopY + MapMetrics.SnowDepth - 0.01f : tile.TopY;
-                switch (spec.Level)
+                if (spec.IsCrumbling)
                 {
-                    case 3:
-                        Scatter(tile, Kind.Shrub, random.Next(2, 5), surface, placed, random);
+                    Scatter(tile, Kind.Crack, random.Next(1, 3), surface + 0.002f, placed, random);
+                    continue;
+                }
+
+                switch (spec.Skin)
+                {
+                    case Skin.Sand:
+                        Scatter(tile, Kind.Shell, random.Next(1, 4), surface, placed, random);
+                        Scatter(tile, Kind.Pebble, random.Next(1, 3), surface, placed, random);
+                        Scatter(tile, Kind.Driftwood, random.Next(0, 2), surface, placed, random);
+                        break;
+                    case Skin.Forest:
+                        Scatter(tile, Kind.Shrub, random.Next(1, 4), surface, placed, random);
                         Scatter(tile, Kind.NeedleLitter, random.Next(2, 5), surface, placed, random);
-                        break;
-                    case 4:
-                        Scatter(tile, Kind.Krummholz, random.Next(1, 3), surface, placed, random);
-                        Scatter(tile, Kind.Rock, random.Next(1, 3), surface, placed, random);
-                        Scatter(tile, Kind.NeedleLitter, random.Next(0, 3), surface, placed, random);
-                        break;
-                    case 5:
-                        Scatter(tile, Kind.Moss, random.Next(2, 4), surface, placed, random);
-                        Scatter(tile, Kind.Cushion, random.Next(1, 3), surface, placed, random);
+                        Scatter(tile, Kind.Krummholz, random.Next(0, 2), surface, placed, random);
                         Scatter(tile, Kind.Rock, random.Next(0, 2), surface, placed, random);
                         break;
-                    default:
-                        Scatter(tile, Kind.Rock, random.Next(1, 3), surface, placed, random);
-                        Scatter(tile, Kind.WindRidge, random.Next(1, 3), surface, placed, random);
+                    case Skin.Rock:
+                        Scatter(tile, Kind.Rock, random.Next(1, 4), surface, placed, random);
+                        Scatter(tile, Kind.Moss, random.Next(1, 3), surface, placed, random);
+                        break;
+                    case Skin.Snow:
+                        Scatter(tile, Kind.Moss, random.Next(0, 3), surface, placed, random);
+                        Scatter(tile, Kind.Cushion, random.Next(0, 2), surface, placed, random);
+                        Scatter(tile, Kind.Rock, random.Next(0, 3), surface, placed, random);
+                        Scatter(tile, Kind.WindRidge, random.Next(0, 3), surface, placed, random);
                         break;
                 }
             }
@@ -129,7 +141,7 @@ namespace MyGame.Map
         private void AddDecor(Tile tile, string name, Mesh mesh, Vector3 localPosition, float yaw)
         {
             var decor = new GameObject(name);
-            decor.transform.SetParent(tile.transform, false);
+            decor.transform.SetParent(tile.Visual, false);
             decor.transform.SetLocalPositionAndRotation(localPosition, Quaternion.Euler(0f, yaw, 0f));
             decor.AddComponent<MeshFilter>().sharedMesh = mesh;
             var renderer = decor.AddComponent<MeshRenderer>();
@@ -230,6 +242,46 @@ namespace MyGame.Map
                     for (var i = 0; i < flowers; i++)
                     {
                         builder.AddBox(Around(random, 0.05f) + Vector3.up * Range(random, 0.04f, 0.07f), Vector3.one * 0.022f, 0f, Pick(Flowers, random));
+                    }
+
+                    break;
+                case Kind.Shell:
+                    // A few small shells, some cupped (two stacked boxes).
+                    var shells = random.Next(1, 4);
+                    for (var i = 0; i < shells; i++)
+                    {
+                        var at = Around(random, 0.08f);
+                        var color = Pick(Shells, random);
+                        builder.AddBox(at, new Vector3(0.05f, 0.015f, 0.04f), Range(random, 0f, 180f), color);
+                        builder.AddBox(at + Vector3.up * 0.015f, new Vector3(0.03f, 0.012f, 0.025f), 0f, color);
+                    }
+
+                    break;
+                case Kind.Pebble:
+                    var pebbles = random.Next(2, 5);
+                    for (var i = 0; i < pebbles; i++)
+                    {
+                        var size = Range(random, 0.03f, 0.06f);
+                        builder.AddBox(Around(random, 0.09f), new Vector3(size, size * 0.6f, size * Range(random, 0.8f, 1.3f)), Range(random, 0f, 90f), Pick(Pebbles, random));
+                    }
+
+                    break;
+                case Kind.Driftwood:
+                    builder.AddBox(Vector3.zero, new Vector3(0.05f, 0.04f, Range(random, 0.28f, 0.4f)), 0f, Driftwood);
+                    builder.AddBox(new Vector3(0.03f, 0f, Range(random, -0.08f, 0.08f)), new Vector3(0.1f, 0.03f, 0.03f), 25f, Driftwood);
+                    break;
+                case Kind.Crack:
+                    // A zigzag of dark lines warns that the block will give way.
+                    var segments = random.Next(3, 5);
+                    var point = Vector3.zero;
+                    var heading = Range(random, 0f, 360f);
+                    for (var i = 0; i < segments; i++)
+                    {
+                        var segment = Range(random, 0.12f, 0.2f);
+                        var direction = Quaternion.Euler(0f, heading, 0f) * Vector3.forward;
+                        builder.AddBox(point + direction * (segment * 0.5f), new Vector3(0.018f, 0.008f, segment), heading, CrackDark);
+                        point += direction * segment;
+                        heading += Range(random, -50f, 50f);
                     }
 
                     break;

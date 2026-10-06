@@ -60,7 +60,7 @@ namespace MyGame.Player
 
                 if (TryGetSurface(hit, out var tile))
                 {
-                    if (tile.Spec.IsIce)
+                    if (tile.Spec.IsSlippery)
                     {
                         continue;
                     }

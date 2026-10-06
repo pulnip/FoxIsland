@@ -5,7 +5,7 @@ using UnityEngine.Rendering;
 namespace MyGame.Map
 {
     /// <summary>
-    /// Scatters voxel grass tufts on solid tiles and feeds the <c>MyGame/Grass</c> shader, which bends
+    /// Scatters voxel grass tufts on meadow and forest blocks and feeds the <c>MyGame/Grass</c> shader, which bends
     /// every blade about its own base in the wind and away from the trampler's recent trail
     /// (plan.md §4.6). Placement is seeded by tile coordinates, so the field is the same every run.
     /// </summary>
@@ -30,13 +30,13 @@ namespace MyGame.Map
         [SerializeField] private MapBuilder _mapBuilder;
         [SerializeField] private Material _material;
 
-        [Tooltip("Darker, shorter grass for the subalpine belt (levels 3-4).")]
-        [SerializeField] private Material _subalpineMaterial;
-        [SerializeField] private float _subalpineScale = 0.7f;
+        [Tooltip("Darker, shorter grass between the shrubs of forest blocks.")]
+        [SerializeField] private Material _forestMaterial;
+        [SerializeField] private float _forestScale = 0.7f;
         [SerializeField] private Vector2 _bladeHeight = new(0.12f, 0.2f);
 
         [Header("Coverage")]
-        [Tooltip("Share of solid tiles left bare; the rest are split between full and sparse.")]
+        [Tooltip("Share of meadow blocks left bare; the rest are split between full and sparse.")]
         [SerializeField, Range(0f, 1f)] private float _bareShare = 0.25f;
         [SerializeField, Range(0f, 1f)] private float _fullShare = 0.35f;
         [SerializeField] private Vector2Int _sparseTufts = new(3, 5);
@@ -84,18 +84,18 @@ namespace MyGame.Map
             var tiles = new List<Tile>();
             foreach (var tile in _mapBuilder.Tiles)
             {
-                if (tile.Spec.Type != TileType.Solid)
+                if (tile.Spec.IsCrumbling)
                 {
                     continue;
                 }
 
-                switch (tile.Spec.Zone)
+                switch (tile.Spec.Skin)
                 {
-                    case ElevationZone.Lowland:
+                    case Skin.Meadow:
                         tiles.Add(tile);
                         break;
-                    case ElevationZone.Subalpine:
-                        PlaceSubalpine(tile);
+                    case Skin.Forest:
+                        PlaceForest(tile);
                         break;
                 }
             }
@@ -204,14 +204,14 @@ namespace MyGame.Map
             }
         }
 
-        /// <summary>A few short, dark tufts between the shrubs; fewer near the treeline (level 4).</summary>
-        private void PlaceSubalpine(Tile tile)
+        /// <summary>A few short, dark tufts between the forest-floor shrubs.</summary>
+        private void PlaceForest(Tile tile)
         {
             var random = new System.Random(Seed * 7 + tile.Coordinates.x * 73856093 ^ tile.Coordinates.y * 19349663);
-            var count = tile.Spec.Level == TileSpec.SubalpineMinLevel ? random.Next(2, 5) : random.Next(1, 3);
+            var count = random.Next(1, 4);
             for (var i = 0; i < count; i++)
             {
-                AddTuft(tile, RandomOnTop(random, EdgeMargin), random, _subalpineMaterial, _subalpineScale);
+                AddTuft(tile, RandomOnTop(random, EdgeMargin), random, _forestMaterial, _forestScale);
             }
         }
 
@@ -244,7 +244,7 @@ namespace MyGame.Map
         private void AddTuft(Tile tile, Vector3 localPosition, System.Random random, Material material, float scale)
         {
             var tuft = new GameObject("GrassTuft");
-            tuft.transform.SetParent(tile.transform, false);
+            tuft.transform.SetParent(tile.Visual, false);
             tuft.transform.localPosition = localPosition + Vector3.up * tile.TopY;
             tuft.transform.localRotation = Quaternion.Euler(0f, Range(random, 0f, 360f), 0f);
             tuft.transform.localScale = new Vector3(1f, scale, 1f);

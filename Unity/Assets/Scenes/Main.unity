@@ -507,12 +507,31 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.MapBuilder
   _solidPrefab: {fileID: 8306634025280069515, guid: 450e155b77519ca46b7d3b95d7527b2c, type: 3}
   _crumblingPrefab: {fileID: 4146322969919159193, guid: 8856a79457daab94ba2caebf72130303, type: 3}
-  _startPrefab: {fileID: 1448675756369339408, guid: 119dcd315f8c8694485cb6b162c30f0b, type: 3}
-  _subalpineTop: {fileID: 2100000, guid: d48f1a8f20226d748aa7cd9dece03bac, type: 2}
-  _subalpineBody: {fileID: 2100000, guid: bfa328ee8a1daf245a1977d92d078277, type: 2}
-  _snowTop: {fileID: 2100000, guid: 570e5823fe4cc1843baaddfdd9dd5224, type: 2}
-  _iceTop: {fileID: 2100000, guid: 16d4303b8f3bdc84eb2c985ce4b132c2, type: 2}
-  _alpineBody: {fileID: 2100000, guid: 31fbb539898f50f4eacf72d289285b12, type: 2}
+  _skins:
+  - _skin: 0
+    _top: {fileID: 2100000, guid: 25ab3739104ec4441b1adde9d3def1a3, type: 2}
+    _body: {fileID: 2100000, guid: 360c393039d3ff2429c17907e7bbcc27, type: 2}
+  - _skin: 1
+    _top: {fileID: 2100000, guid: 3834639ab3296c44aba7894f64d4c6b1, type: 2}
+    _body: {fileID: 2100000, guid: 881ef15b2745e3548a9fec93073cf2de, type: 2}
+  - _skin: 2
+    _top: {fileID: 2100000, guid: d48f1a8f20226d748aa7cd9dece03bac, type: 2}
+    _body: {fileID: 2100000, guid: bfa328ee8a1daf245a1977d92d078277, type: 2}
+  - _skin: 3
+    _top: {fileID: 2100000, guid: 9eea28d25ea9f1b4db76532647001404, type: 2}
+    _body: {fileID: 2100000, guid: 31fbb539898f50f4eacf72d289285b12, type: 2}
+  - _skin: 4
+    _top: {fileID: 2100000, guid: 570e5823fe4cc1843baaddfdd9dd5224, type: 2}
+    _body: {fileID: 2100000, guid: 31fbb539898f50f4eacf72d289285b12, type: 2}
+  - _skin: 5
+    _top: {fileID: 2100000, guid: 16d4303b8f3bdc84eb2c985ce4b132c2, type: 2}
+    _body: {fileID: 2100000, guid: 31fbb539898f50f4eacf72d289285b12, type: 2}
+  - _skin: 6
+    _top: {fileID: 2100000, guid: 72399b6633acdc6419f9cf257a86a5c2, type: 2}
+    _body: {fileID: 2100000, guid: 360c393039d3ff2429c17907e7bbcc27, type: 2}
+  - _skin: 7
+    _top: {fileID: 2100000, guid: 16d4303b8f3bdc84eb2c985ce4b132c2, type: 2}
+    _body: {fileID: 2100000, guid: 50d4f1f995078aa44a552a60833891dd, type: 2}
 --- !u!4 &577549369
 Transform:
   m_ObjectHideFlags: 0
@@ -542,8 +561,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.GrassField
   _mapBuilder: {fileID: 577549368}
   _material: {fileID: 2100000, guid: a7f69bba1475cdf4791ebd2dde5d6238, type: 2}
-  _subalpineMaterial: {fileID: 2100000, guid: d2c3d621b1988af48b0d597421a459d0, type: 2}
-  _subalpineScale: 0.7
+  _forestMaterial: {fileID: 2100000, guid: d2c3d621b1988af48b0d597421a459d0, type: 2}
+  _forestScale: 0.7
   _bladeHeight: {x: 0.12, y: 0.2}
   _bareShare: 0.25
   _fullShare: 0.35

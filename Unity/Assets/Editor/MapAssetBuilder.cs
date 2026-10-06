@@ -12,7 +12,6 @@ namespace MyGame.EditorTools
         public const string LevelListPath = "Assets/ScriptableObjects/LevelList.asset";
         public const string SolidPrefabPath = "Assets/Prefabs/Tiles/Tile_Solid.prefab";
         public const string CrumblingPrefabPath = "Assets/Prefabs/Tiles/Tile_Crumbling.prefab";
-        public const string StartPrefabPath = "Assets/Prefabs/Tiles/Tile_Start.prefab";
         public const string GrassBladeMaterialPath = "Assets/Art/Materials/Grass_Blade.mat";
         public const string WaterMaterialPath = "Assets/Art/Materials/Water.mat";
         public const string LakeBedMaterialPath = "Assets/Art/Materials/Lake_Bed.mat";
@@ -21,11 +20,13 @@ namespace MyGame.EditorTools
         public const string SnowTopMaterialPath = "Assets/Art/Materials/Tile_Snow.mat";
         public const string IceTopMaterialPath = "Assets/Art/Materials/Tile_Ice.mat";
         public const string RockMaterialPath = "Assets/Art/Materials/Tile_Rock.mat";
-        public const string SubalpineGrassMaterialPath = "Assets/Art/Materials/Grass_Subalpine.mat";
+        public const string ForestGrassMaterialPath = "Assets/Art/Materials/Grass_Subalpine.mat";
         public const string DecorMaterialPath = "Assets/Art/Materials/Decor_Voxel.mat";
         public const string SnowMaterialPath = "Assets/Art/Materials/Snow.mat";
 
         private const string LegacyLayoutPath = "Assets/ScriptableObjects/MapLayout_Main.asset";
+        private const string LegacyStartPrefabPath = "Assets/Prefabs/Tiles/Tile_Start.prefab";
+        private const string LegacyStartMaterialPath = "Assets/Art/Materials/Tile_Start.mat";
         private const string MaterialFolder = "Assets/Art/Materials";
         private const string GrassShaderName = "MyGame/Grass";
         private const string WaterShaderName = "MyGame/Water";
@@ -38,7 +39,6 @@ namespace MyGame.EditorTools
             var dirt = EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Dirt.mat", new Color(0.55f, 0.38f, 0.24f));
             var grass = EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Grass.mat", new Color(0.49f, 0.74f, 0.33f));
             var crumbling = EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Crumbling.mat", new Color(0.86f, 0.70f, 0.45f));
-            var start = EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Start.mat", new Color(0.42f, 0.62f, 0.86f));
             EditorAssetUtility.GetOrCreateMaterial(GrassBladeMaterialPath, GrassShaderName, new Color(0.64f, 0.86f, 0.36f), smoothness: 0f);
             EditorAssetUtility.GetOrCreateLitMaterial(LakeBedMaterialPath, new Color(0.78f, 0.70f, 0.50f));
             EditorAssetUtility.GetOrCreateLitMaterial(SubalpineTopMaterialPath, new Color(0.24f, 0.42f, 0.33f));
@@ -46,15 +46,22 @@ namespace MyGame.EditorTools
             EditorAssetUtility.GetOrCreateLitMaterial(SnowTopMaterialPath, new Color(0.90f, 0.93f, 0.98f), smoothness: 0.2f);
             EditorAssetUtility.GetOrCreateLitMaterial(IceTopMaterialPath, new Color(0.62f, 0.85f, 0.94f), smoothness: 0.85f);
             EditorAssetUtility.GetOrCreateLitMaterial(RockMaterialPath, new Color(0.47f, 0.47f, 0.50f));
-            EditorAssetUtility.GetOrCreateMaterial(SubalpineGrassMaterialPath, GrassShaderName, new Color(0.33f, 0.52f, 0.33f), smoothness: 0f);
+            EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Sand.mat", new Color(0.90f, 0.81f, 0.58f));
+            EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Sandstone.mat", new Color(0.78f, 0.64f, 0.44f));
+            EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_WaterBed.mat", new Color(0.72f, 0.68f, 0.52f));
+            EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_RockTop.mat", new Color(0.58f, 0.58f, 0.60f));
+            EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_IcebergBody.mat", new Color(0.80f, 0.92f, 0.98f), smoothness: 0.6f);
+            EditorAssetUtility.GetOrCreateMaterial(ForestGrassMaterialPath, GrassShaderName, new Color(0.33f, 0.52f, 0.33f), smoothness: 0f);
             EditorAssetUtility.GetOrCreateMaterial(DecorMaterialPath, VoxelLitShaderName, Color.white, smoothness: 0f);
             BuildSnowMaterial();
             BuildWaterMaterial();
 
             BuildTilePrefab(SolidPrefabPath, grass, dirt, isCrumbling: false);
             BuildTilePrefab(CrumblingPrefabPath, crumbling, dirt, isCrumbling: true);
-            BuildTilePrefab(StartPrefabPath, start, dirt, isCrumbling: false);
+            AssetDatabase.DeleteAsset(LegacyStartPrefabPath);
+            AssetDatabase.DeleteAsset(LegacyStartMaterialPath);
             EnsureLevels();
+            LegacyLayoutConverter.ConvertFolder(LevelFolder);
 
             AssetDatabase.SaveAssets();
             Debug.Log("[MapAssetBuilder] Map assets built.");
@@ -89,6 +96,19 @@ namespace MyGame.EditorTools
 
             EditorAssetUtility.SavePrefab(root, path);
         }
+
+        /// <summary>Slab (top) and pillar (body) material of every skin, as asset paths.</summary>
+        public static (Skin Skin, string Top, string Body)[] SkinMaterialPaths() => new[]
+        {
+            (Skin.Sand, $"{MaterialFolder}/Tile_Sand.mat", $"{MaterialFolder}/Tile_Sandstone.mat"),
+            (Skin.Meadow, $"{MaterialFolder}/Tile_Grass.mat", $"{MaterialFolder}/Tile_Dirt.mat"),
+            (Skin.Forest, SubalpineTopMaterialPath, DarkEarthMaterialPath),
+            (Skin.Rock, $"{MaterialFolder}/Tile_RockTop.mat", RockMaterialPath),
+            (Skin.Snow, SnowTopMaterialPath, RockMaterialPath),
+            (Skin.Ice, IceTopMaterialPath, RockMaterialPath),
+            (Skin.Water, $"{MaterialFolder}/Tile_WaterBed.mat", $"{MaterialFolder}/Tile_Sandstone.mat"),
+            (Skin.Iceberg, IceTopMaterialPath, $"{MaterialFolder}/Tile_IcebergBody.mat"),
+        };
 
         private static void BuildSnowMaterial()
         {

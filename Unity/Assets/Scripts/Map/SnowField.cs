@@ -47,7 +47,7 @@ namespace MyGame.Map
                 return;
             }
 
-            var bounds = MapMetrics.GridBounds(layout.Width, layout.Depth, layout.MaxLevel);
+            var bounds = MapMetrics.GridBounds(layout.Width, layout.Depth, layout.MaxHeight);
             _rect = Rect.MinMaxRect(bounds.min.x - RectPadding, bounds.min.z - RectPadding, bounds.max.x + RectPadding, bounds.max.z + RectPadding);
             if (_tracks == null)
             {
@@ -143,7 +143,7 @@ namespace MyGame.Map
         private void AddSlab(Tile tile)
         {
             var snow = new GameObject("Snow");
-            snow.transform.SetParent(tile.transform, false);
+            snow.transform.SetParent(tile.Visual, false);
             snow.transform.localPosition = Vector3.up * tile.TopY;
             snow.AddComponent<MeshFilter>().sharedMesh = _slab;
             var renderer = snow.AddComponent<MeshRenderer>();

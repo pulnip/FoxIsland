@@ -37,7 +37,7 @@ namespace MyGame.Player
         private float _lastGroundedTime = float.NegativeInfinity;
         private float _lastJumpPressedTime = float.NegativeInfinity;
         private Vector3 _horizontalVelocity;
-        private bool _groundIsIce;
+        private bool _groundIsSlippery;
         private bool _keepsSlideInAir;
         private bool _wasGrounded = true;
 
@@ -65,8 +65,8 @@ namespace MyGame.Player
         /// </summary>
         public float HorizontalSpeed { get; private set; }
 
-        /// <summary>Standing on an ice tile (plan.md §4.9): movement keeps momentum.</summary>
-        public bool IsOnIce => _controller.isGrounded && _groundIsIce;
+        /// <summary>Standing on ice or an iceberg (plan.md §4.9): movement keeps momentum.</summary>
+        public bool IsOnIce => _controller.isGrounded && _groundIsSlippery;
 
         /// <summary>
         /// Running is the default; the toggle-walk key switches between walking and running.
@@ -170,7 +170,7 @@ namespace MyGame.Player
         {
             if (hit.normal.y > 0.5f)
             {
-                _groundIsIce = hit.collider.TryGetComponent<Tile>(out var ground) && ground.Spec.IsIce;
+                _groundIsSlippery = hit.collider.TryGetComponent<Tile>(out var ground) && ground.Spec.IsSlippery;
             }
 
             if (hit.normal.y > 0.5f && hit.collider.TryGetComponent<CrumblingTile>(out var tile))

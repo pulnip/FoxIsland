@@ -138,3 +138,34 @@ Work top to bottom unless the user says otherwise.
 - [ ] Playtest: ice feel, snow prints, decorations never hiding the fox or gems — **user**
 - [x] Map tool edits drafts: `*` on unsaved levels, Save (Ctrl+S), Discard Changes, preview and test play of unsaved edits
 - [ ] Playtest the drafts: unsaved `*`, Save / Discard, close prompt, Ctrl+S, script reload keeps edits — **user**
+
+## M12. Block data: height, skin, flags
+
+- [x] `CellSpec` (hole or block: height 0–6, skin, crumbling) and `<height><skin>[c]` tokens; start as a layout field
+- [x] Skin materials and decorations (`MapBuilder._skins`, sand decor, cracks on crumbling); old layouts converted
+- [x] Map tool: height / skin / other brush rows (skins on Shift+letter), start badge
+- [ ] Playtest the map tool's height and skin brushes — **user**
+
+## M13. Skin behavior
+
+- [ ] Shallow water: water surface, slower movement, splashes, no prints
+- [ ] Iceberg: floats, bobs, sinks a little underfoot, slippery
+- [ ] Sand-colored footprints on sand
+
+## M14. Worlds, progress, title
+
+- [ ] `WorldList` (4 worlds × 5 stages), map tool grouped by world
+- [ ] Progress save (cleared stages, best times), world unlocking
+- [ ] Title Continue / Stages, stage select screen, clear flow across worlds
+
+## M15. Puzzle elements
+
+- [ ] Tide
+- [ ] Switches and rising blocks
+- [ ] Pushable crates
+- [ ] Springboards and moving platforms
+- [ ] Map tool brushes and validator support for the puzzle elements
+
+## M16. Stages
+
+- [ ] 20 stage drafts (beach, meadow, forest, mountain), no validator errors

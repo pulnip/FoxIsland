@@ -18,20 +18,26 @@ namespace MyGame.Map
 
         public Vector2Int Coordinates { get; private set; }
 
-        public TileSpec Spec { get; private set; }
+        public CellSpec Spec { get; private set; }
 
-        public float TopY => MapMetrics.TopY(Spec.Level);
+        public float TopY => MapMetrics.TopY(Spec.Height);
 
-        public void Initialize(Vector2Int coordinates, TileSpec spec)
+        /// <summary>
+        /// Parent for anything that sits on the tile (grass, decorations, snow): it moves with the
+        /// slab when a crumbling tile shakes and sinks.
+        /// </summary>
+        public Transform Visual => _top.parent;
+
+        public void Initialize(Vector2Int coordinates, CellSpec spec)
         {
             Coordinates = coordinates;
             Spec = spec;
-            name = $"Tile_{coordinates.x}_{coordinates.y}_{spec.Type}";
+            name = $"Tile_{coordinates.x}_{coordinates.y}_{spec.ToToken()}";
             transform.localPosition = MapMetrics.TopCenter(coordinates, 0);
-            ApplyLevel(spec.Level);
+            ApplyLevel(spec.Height);
         }
 
-        /// <summary>Swaps the slab and pillar materials; the map builder picks them by elevation zone.</summary>
+        /// <summary>Swaps the slab and pillar materials; the map builder picks them by skin.</summary>
         public void SetMaterials(Material top, Material body)
         {
             _top.GetComponent<MeshRenderer>().sharedMaterial = top;

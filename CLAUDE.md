@@ -1,8 +1,9 @@
 # MyGame — Fox Island, a voxel animal platformer
 
 Unity 6 3D game: a voxel animal (built with Blender Python) walks and jumps on small tile maps
-(levels up to 8×8, heights 0–6 through lowland, subalpine, and alpine snow/ice) standing in a
-lake, under a fixed quarter-view camera, collecting items.
+(levels up to 8×8; each block has its own height 0–6 and skin: sand, meadow, forest, rock,
+snow, ice, shallow water, iceberg) standing in a lake, under a fixed quarter-view camera,
+collecting items.
 Falling into the water = game over, all items = clear, R = restart.
 
 ## Key files

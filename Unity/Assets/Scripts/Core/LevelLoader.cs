@@ -53,7 +53,7 @@ namespace MyGame.Core
             _mapBuilder.Build(Layout);
             PlacePlayer();
 
-            var bounds = MapMetrics.FramedBounds(Layout.Width, Layout.Depth, Layout.MaxLevel, _player.JumpHeight);
+            var bounds = MapMetrics.FramedBounds(Layout.Width, Layout.Depth, Layout.MaxHeight, _player.JumpHeight);
             _camera.FramedBounds = bounds;
             _camera.Apply();
             _water.transform.position = new Vector3(bounds.center.x, MapMetrics.WaterLevel, bounds.center.z);
@@ -61,12 +61,17 @@ namespace MyGame.Core
 
         private void PlacePlayer()
         {
-            if (!Layout.TryGetStart(out var start))
+            var height = 0;
+            if (Layout.TryGetStart(out var start))
             {
-                Debug.LogError($"[LevelLoader] {Layout.name} has no start tile; spawning at (0, 0).", Layout);
+                height = Layout.GetCell(start).Height;
+            }
+            else
+            {
+                Debug.LogError($"[LevelLoader] {Layout.name}: the start {start} is not on a block.", Layout);
             }
 
-            var position = MapMetrics.TopCenter(start, 0) + Vector3.up * SpawnClearance;
+            var position = MapMetrics.TopCenter(start, height) + Vector3.up * SpawnClearance;
             var hasController = _player.TryGetComponent<CharacterController>(out var controller);
             if (hasController)
             {

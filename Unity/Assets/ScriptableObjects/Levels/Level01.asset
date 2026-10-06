@@ -13,7 +13,11 @@ MonoBehaviour:
   m_Name: Level01
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.MapLayout
   _rows:
-  - 1 . 2 2
-  - C 1 . C
-  - 0 . C 1
-  - S 0 0 .
+  - 1m . 2m 2m
+  - 0sc 1m . 0sc
+  - 0m . 0sc 1m
+  - 0m 0m 0m .
+  _start: {x: 0, y: 0}
+  _itemMode: 0
+  _randomItemCount: 4
+  _items: []

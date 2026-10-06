@@ -88,7 +88,7 @@ namespace MyGame.EditorTools
 
             var quarterView = EditorAssetUtility.GetOrAddComponent<QuarterViewCamera>(cameraObject);
             EditorAssetUtility.SetFloat(quarterView, "_screenFill", 0.85f);
-            quarterView.FramedBounds = MapMetrics.FramedBounds(layout.Width, layout.Depth, layout.MaxLevel, player.JumpHeight);
+            quarterView.FramedBounds = MapMetrics.FramedBounds(layout.Width, layout.Depth, layout.MaxHeight, player.JumpHeight);
             quarterView.Apply();
             return quarterView;
         }
@@ -124,13 +124,25 @@ namespace MyGame.EditorTools
             builder.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
             EditorAssetUtility.SetReference(builder, "_solidPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.SolidPrefabPath));
             EditorAssetUtility.SetReference(builder, "_crumblingPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.CrumblingPrefabPath));
-            EditorAssetUtility.SetReference(builder, "_startPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.StartPrefabPath));
-            EditorAssetUtility.SetReference(builder, "_subalpineTop", AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.SubalpineTopMaterialPath));
-            EditorAssetUtility.SetReference(builder, "_subalpineBody", AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.DarkEarthMaterialPath));
-            EditorAssetUtility.SetReference(builder, "_snowTop", AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.SnowTopMaterialPath));
-            EditorAssetUtility.SetReference(builder, "_iceTop", AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.IceTopMaterialPath));
-            EditorAssetUtility.SetReference(builder, "_alpineBody", AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.RockMaterialPath));
+            SetSkinMaterials(builder);
             return builder;
+        }
+
+        private static void SetSkinMaterials(MapBuilder builder)
+        {
+            var paths = MapAssetBuilder.SkinMaterialPaths();
+            var serializedObject = new SerializedObject(builder);
+            var skins = serializedObject.FindProperty("_skins");
+            skins.arraySize = paths.Length;
+            for (var i = 0; i < paths.Length; i++)
+            {
+                var element = skins.GetArrayElementAtIndex(i);
+                element.FindPropertyRelative("_skin").enumValueIndex = (int)paths[i].Skin;
+                element.FindPropertyRelative("_top").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>(paths[i].Top);
+                element.FindPropertyRelative("_body").objectReferenceValue = AssetDatabase.LoadAssetAtPath<Material>(paths[i].Body);
+            }
+
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
         }
 
         private static PlayerController SetupPlayer(MapLayout layout)
@@ -142,8 +154,8 @@ namespace MyGame.EditorTools
                 player = ((GameObject)PrefabUtility.InstantiatePrefab(prefab)).GetComponent<PlayerController>();
             }
 
-            var start = layout != null && layout.TryGetStart(out var coordinates) ? coordinates : Vector2Int.zero;
-            var position = MapMetrics.TopCenter(start, 0) + Vector3.up * SpawnClearance;
+            var hasStart = layout.TryGetStart(out var start);
+            var position = MapMetrics.TopCenter(start, hasStart ? layout.GetCell(start).Height : 0) + Vector3.up * SpawnClearance;
             player.transform.SetPositionAndRotation(position, Quaternion.Euler(0f, 45f, 0f));
             return player;
         }
@@ -154,7 +166,7 @@ namespace MyGame.EditorTools
             EditorAssetUtility.ResetToDefaults(grass);
             EditorAssetUtility.SetReference(grass, "_mapBuilder", mapBuilder);
             EditorAssetUtility.SetReference(grass, "_material", AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.GrassBladeMaterialPath));
-            EditorAssetUtility.SetReference(grass, "_subalpineMaterial", AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.SubalpineGrassMaterialPath));
+            EditorAssetUtility.SetReference(grass, "_forestMaterial", AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.ForestGrassMaterialPath));
             EditorAssetUtility.SetReference(grass, "_trampler", player.transform);
         }
 
@@ -186,7 +198,7 @@ namespace MyGame.EditorTools
             }
 
             EditorAssetUtility.ResetToDefaults(water);
-            var center = MapMetrics.GridBounds(layout.Width, layout.Depth, layout.MaxLevel).center;
+            var center = MapMetrics.GridBounds(layout.Width, layout.Depth, layout.MaxHeight).center;
             water.transform.SetPositionAndRotation(new Vector3(center.x, MapMetrics.WaterLevel, center.z), Quaternion.identity);
 
             var renderer = water.GetComponent<MeshRenderer>();
