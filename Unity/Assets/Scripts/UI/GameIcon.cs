@@ -13,6 +13,9 @@ namespace MyGame.UI
         Walk,
         Run,
         FoxMark,
+        Check,
+        Lock,
+        Stages,
     }
 
     /// <summary>
@@ -106,6 +109,23 @@ namespace MyGame.UI
                 case GameIconKind.Run:
                     StrokePolyline(painter, P(0.16f, 0.18f), P(0.48f, 0.5f), P(0.16f, 0.82f));
                     StrokePolyline(painter, P(0.52f, 0.18f), P(0.84f, 0.5f), P(0.52f, 0.82f));
+                    break;
+                case GameIconKind.Check:
+                    StrokePolyline(painter, P(0.18f, 0.52f), P(0.42f, 0.76f), P(0.84f, 0.26f));
+                    break;
+                case GameIconKind.Lock:
+                    painter.BeginPath();
+                    painter.Arc(P(0.5f, 0.44f), 0.2f * size, Angle.Degrees(180f), Angle.Degrees(360f));
+                    painter.Stroke();
+                    StrokePolyline(painter, P(0.3f, 0.44f), P(0.3f, 0.5f));
+                    StrokePolyline(painter, P(0.7f, 0.44f), P(0.7f, 0.5f));
+                    FillPolygon(painter, color, P(0.2f, 0.5f), P(0.8f, 0.5f), P(0.8f, 0.9f), P(0.2f, 0.9f));
+                    break;
+                case GameIconKind.Stages:
+                    FillPolygon(painter, color, P(0.14f, 0.14f), P(0.44f, 0.14f), P(0.44f, 0.44f), P(0.14f, 0.44f));
+                    FillPolygon(painter, color, P(0.56f, 0.14f), P(0.86f, 0.14f), P(0.86f, 0.44f), P(0.56f, 0.44f));
+                    FillPolygon(painter, color, P(0.14f, 0.56f), P(0.44f, 0.56f), P(0.44f, 0.86f), P(0.14f, 0.86f));
+                    FillPolygon(painter, color, P(0.56f, 0.56f), P(0.86f, 0.56f), P(0.86f, 0.86f), P(0.56f, 0.86f));
                     break;
                 case GameIconKind.FoxMark:
                     DrawFoxMark(painter, origin, size);

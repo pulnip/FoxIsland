@@ -4,8 +4,8 @@ using UnityEngine;
 namespace MyGame.Core
 {
     /// <summary>
-    /// Progress that survives scene reloads: which level to load and whether to open at the title.
-    /// Reset on every launch, since domain reload is off in the editor.
+    /// What survives scene reloads: which stage to load, whether to open at the title, and whether
+    /// to show the stage list there. Reset on every launch, since domain reload is off in the editor.
     /// </summary>
     public static class LevelSession
     {
@@ -22,8 +22,11 @@ namespace MyGame.Core
 
         public static bool OpenAtTitle { get; set; } = true;
 
-        /// <summary>Zero-based index into the <see cref="LevelList"/>.</summary>
-        public static int LevelIndex { get; set; }
+        /// <summary>The stage to load. At the title it is replaced by the Continue target.</summary>
+        public static StageRef Stage { get; set; }
+
+        /// <summary>Open the title on the stage list instead of its main buttons.</summary>
+        public static bool OpenStageSelect { get; set; }
 
         /// <summary>True while the map tool's "Play This Level" is running.</summary>
         public static bool IsTestPlay => TestLayout != null;
@@ -57,7 +60,8 @@ namespace MyGame.Core
         private static void ResetStatics()
         {
             OpenAtTitle = true;
-            LevelIndex = 0;
+            Stage = default;
+            OpenStageSelect = false;
         }
     }
 }

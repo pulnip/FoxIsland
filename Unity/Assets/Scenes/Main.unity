@@ -734,7 +734,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4092b983ffed06b4686755d124093d1d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Core.LevelLoader
-  _levels: {fileID: 11400000, guid: 61347a1d462b3ef449c0610b34d44bd4, type: 2}
+  _worlds: {fileID: 11400000, guid: 6d8bc68d00fbd1641a62111ef4f10a25, type: 2}
   _mapBuilder: {fileID: 577549368}
   _player: {fileID: 1162758536}
   _camera: {fileID: 330585548}

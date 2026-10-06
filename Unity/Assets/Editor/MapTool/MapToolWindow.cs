@@ -8,7 +8,7 @@ using UnityEngine;
 namespace MyGame.EditorTools.MapTool
 {
     /// <summary>
-    /// Tools/MyGame/Map Tool (plan.md §4.8): manages the level list and paints one layout on a
+    /// Tools/MyGame/Map Tool (plan.md §4.8): manages the worlds' stage lists and paints one layout on a
     /// top-down grid, with live checks, a Scene view preview, and test play. Layouts are edited as
     /// in-memory drafts; nothing reaches the asset until Save (unsaved levels show a *).
     /// </summary>
@@ -18,7 +18,8 @@ namespace MyGame.EditorTools.MapTool
         private const float CellGap = 2f;
         private const float AxisLabelSize = 18f;
         private const float ListWidth = 220f;
-        private const string SelectionKey = "FoxIsland.MapTool.Selected";
+        private const string WorldKey = "FoxIsland.MapTool.World";
+        private const string IndexKey = "FoxIsland.MapTool.Index";
         private const string PreviewKey = "FoxIsland.MapTool.Preview";
         private const string DraftListKey = "FoxIsland.MapTool.Drafts";
         private const string DraftKeyPrefix = "FoxIsland.MapTool.Draft.";
@@ -73,9 +74,12 @@ namespace MyGame.EditorTools.MapTool
         private readonly Dictionary<MapLayout, MapLayout> _drafts = new();
         private readonly Dictionary<MapLayout, string> _savedJson = new();
         private readonly HashSet<MapLayout> _modified = new();
-        private LevelList _levels;
-        private SerializedObject _levelsObject;
-        private ReorderableList _list;
+        private WorldList _worlds;
+        private SerializedObject _worldsObject;
+        private ReorderableList[] _lists;
+        private int _selectedWorld;
+        private int _selectedIndex;
+        private Vector2 _listScroll;
         private MapLayout _layout;
         private MapLayout _draft;
         private CellSpec[,] _cells;
@@ -126,7 +130,7 @@ namespace MyGame.EditorTools.MapTool
             _preview = SessionState.GetBool(PreviewKey, false);
             Undo.undoRedoPerformed += OnUndoRedo;
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
-            LoadLevels();
+            LoadWorlds();
         }
 
         private void OnDisable()
@@ -197,7 +201,7 @@ namespace MyGame.EditorTools.MapTool
 
         private void OnUndoRedo()
         {
-            _levelsObject?.Update();
+            _worldsObject?.Update();
             UpdateUnsavedState();
             Reload();
             RefreshPreview(frame: false);
@@ -217,12 +221,12 @@ namespace MyGame.EditorTools.MapTool
             _cellStyle ??= new GUIStyle(EditorStyles.boldLabel) { alignment = TextAnchor.MiddleCenter, fontSize = 16, normal = { textColor = Color.white } };
             _gemStyle ??= new GUIStyle(EditorStyles.boldLabel) { alignment = TextAnchor.LowerCenter, fontSize = 13, normal = { textColor = GemColor } };
 
-            if (_levels == null)
+            if (_worlds == null)
             {
-                EditorGUILayout.HelpBox($"No level list at {MapAssetBuilder.LevelListPath}. Run Tools/MyGame/Build All.", MessageType.Error);
+                EditorGUILayout.HelpBox($"No world list at {MapAssetBuilder.WorldListPath}. Run Tools/MyGame/Build All.", MessageType.Error);
                 if (GUILayout.Button("Reload"))
                 {
-                    LoadLevels();
+                    LoadWorlds();
                 }
 
                 return;
@@ -233,7 +237,7 @@ namespace MyGame.EditorTools.MapTool
             {
                 using (new EditorGUILayout.VerticalScope(GUILayout.Width(ListWidth)))
                 {
-                    DrawLevelList();
+                    DrawWorldLists();
                 }
 
                 using (var scroll = new EditorGUILayout.ScrollViewScope(_scroll))
@@ -244,73 +248,112 @@ namespace MyGame.EditorTools.MapTool
             }
         }
 
-        // ---------- Level list ----------
+        // ---------- World and stage lists ----------
 
-        private void LoadLevels()
+        private void LoadWorlds()
         {
-            _levels = AssetDatabase.LoadAssetAtPath<LevelList>(MapAssetBuilder.LevelListPath);
-            if (_levels == null)
+            _worlds = AssetDatabase.LoadAssetAtPath<WorldList>(MapAssetBuilder.WorldListPath);
+            if (_worlds == null)
             {
                 return;
             }
 
-            _levelsObject = new SerializedObject(_levels);
-            _list = new ReorderableList(_levelsObject, _levelsObject.FindProperty("_levels"), true, true, false, false)
+            _worldsObject = new SerializedObject(_worlds);
+            _lists = new ReorderableList[_worlds.Count];
+            var worldsProperty = _worldsObject.FindProperty("_worlds");
+            for (var w = 0; w < _worlds.Count; w++)
             {
-                drawHeaderCallback = rect => EditorGUI.LabelField(rect, "Levels (play order)"),
-                drawElementCallback = DrawLevelElement,
-                onSelectCallback = list => Select(list.index),
-            };
+                var world = w;
+                var stages = worldsProperty.GetArrayElementAtIndex(world).FindPropertyRelative("_stages");
+                _lists[world] = new ReorderableList(_worldsObject, stages, true, true, false, false)
+                {
+                    drawHeaderCallback = rect => DrawWorldHeader(rect, world),
+                    drawElementCallback = (rect, index, isActive, isFocused) => DrawStageElement(rect, world, index),
+                    onSelectCallback = list => Select(world, list.index),
+                };
+            }
 
             RestoreDrafts();
-            Select(Mathf.Clamp(SessionState.GetInt(SelectionKey, 0), 0, Mathf.Max(0, _levels.Count - 1)));
+            Select(SessionState.GetInt(WorldKey, 0), SessionState.GetInt(IndexKey, 0));
         }
 
-        private void DrawLevelElement(Rect rect, int index, bool isActive, bool isFocused)
+        private void DrawWorldHeader(Rect rect, int world)
         {
-            var level = _list.serializedProperty.GetArrayElementAtIndex(index).objectReferenceValue as MapLayout;
-            var label = level != null ? level.name + (_modified.Contains(level) ? " *" : string.Empty) : "(missing)";
-            EditorGUI.LabelField(rect, $"{index + 1}.  {label}");
+            EditorGUI.DrawRect(new Rect(rect.x, rect.y + 3f, 4f, rect.height - 6f), _worlds[world].Color);
+            EditorGUI.LabelField(new Rect(rect.x + 10f, rect.y, rect.width - 10f, rect.height), $"{world + 1}. {_worlds[world].Name}", EditorStyles.boldLabel);
         }
 
-        private void DrawLevelList()
+        private void DrawStageElement(Rect rect, int world, int index)
         {
-            _levelsObject.Update();
-            _list.DoLayoutList();
-            if (_levelsObject.ApplyModifiedProperties())
+            var stage = _lists[world].serializedProperty.GetArrayElementAtIndex(index).objectReferenceValue as MapLayout;
+            var label = stage != null ? stage.name + (_modified.Contains(stage) ? " *" : string.Empty) : "(missing)";
+            EditorGUI.LabelField(rect, $"{new StageRef(world, index).Label}   {label}");
+        }
+
+        private void DrawWorldLists()
+        {
+            _worldsObject.Update();
+            using (var scroll = new EditorGUILayout.ScrollViewScope(_listScroll))
             {
-                AssetDatabase.SaveAssetIfDirty(_levels);
-                Select(_list.index);
+                _listScroll = scroll.scrollPosition;
+                foreach (var list in _lists)
+                {
+                    list.DoLayoutList();
+                }
+            }
+
+            if (_worldsObject.ApplyModifiedProperties())
+            {
+                AssetDatabase.SaveAssetIfDirty(_worlds);
+                Select(_selectedWorld, _lists[_selectedWorld].index);
             }
 
             using (new EditorGUILayout.HorizontalScope())
             {
                 if (GUILayout.Button("New"))
                 {
-                    CreateLevel();
+                    CreateStage();
                 }
 
                 using (new EditorGUI.DisabledScope(_layout == null))
                 {
                     if (GUILayout.Button("Duplicate"))
                     {
-                        DuplicateLevel();
+                        DuplicateStage();
                     }
 
                     if (GUILayout.Button("Remove"))
                     {
-                        RemoveLevel();
+                        RemoveStage();
                     }
+                }
+            }
+
+            using (new EditorGUI.DisabledScope(_layout == null))
+            {
+                var names = _worlds.Worlds.Select(world => $"Move to {world.Name}").ToArray();
+                var target = EditorGUILayout.Popup(-1, names);
+                if (target >= 0 && target != _selectedWorld)
+                {
+                    MoveStage(target);
                 }
             }
         }
 
-        private void Select(int index)
+        private void Select(int world, int index)
         {
-            _layout = index >= 0 && index < _levels.Count ? _levels[index] : null;
+            _selectedWorld = Mathf.Clamp(world, 0, _worlds.Count - 1);
+            var stages = _worlds[_selectedWorld].Stages;
+            _selectedIndex = index >= 0 && index < stages.Count ? index : -1;
+            _layout = _selectedIndex >= 0 ? stages[_selectedIndex] : null;
+            for (var w = 0; w < _lists.Length; w++)
+            {
+                _lists[w].index = w == _selectedWorld ? _selectedIndex : -1;
+            }
+
+            SessionState.SetInt(WorldKey, _selectedWorld);
+            SessionState.SetInt(IndexKey, _selectedIndex);
             _draft = GetDraft(_layout);
-            _list.index = index;
-            SessionState.SetInt(SelectionKey, index);
             _highlight = null;
             _status = null;
             Reload();
@@ -318,17 +361,19 @@ namespace MyGame.EditorTools.MapTool
             Repaint();
         }
 
-        private void CreateLevel()
+        /// <summary>A blank 4 × 4 meadow stage at the end of the selected world.</summary>
+        private void CreateStage()
         {
-            var path = AssetDatabase.GenerateUniqueAssetPath($"{MapAssetBuilder.LevelFolder}/Level{_levels.Count + 1:00}.asset");
+            var world = _worlds[_selectedWorld];
+            var path = AssetDatabase.GenerateUniqueAssetPath($"{MapAssetBuilder.LevelFolder}/{world.Name}{world.Stages.Count + 1:00}.asset");
             var layout = CreateInstance<MapLayout>();
             layout.SetRows(new[] { "0m 0m 0m 0m", "0m 0m 0m 0m", "0m 0m 0m 0m", "0m 0m 0m 0m" });
             layout.Start = Vector2Int.zero;
             AssetDatabase.CreateAsset(layout, path);
-            InsertLevel(layout, _levels.Count);
+            InsertStage(_selectedWorld, layout, world.Stages.Count);
         }
 
-        private void DuplicateLevel()
+        private void DuplicateStage()
         {
             var source = AssetDatabase.GetAssetPath(_layout);
             var path = AssetDatabase.GenerateUniqueAssetPath(source);
@@ -346,55 +391,69 @@ namespace MyGame.EditorTools.MapTool
                 AssetDatabase.SaveAssetIfDirty(copy);
             }
 
-            InsertLevel(copy, _list.index + 1);
+            InsertStage(_selectedWorld, copy, _selectedIndex + 1);
         }
 
-        private void InsertLevel(MapLayout layout, int index)
+        private void InsertStage(int world, MapLayout layout, int index)
         {
-            var levels = _levels.Levels.ToList();
-            levels.Insert(Mathf.Clamp(index, 0, levels.Count), layout);
-            SetLevels(levels, "Add Level");
-            Select(levels.IndexOf(layout));
+            var stages = _worlds[world].Stages.ToList();
+            stages.Insert(Mathf.Clamp(index, 0, stages.Count), layout);
+            SetStages(world, stages, "Add Stage");
+            Select(world, stages.IndexOf(layout));
         }
 
-        private void RemoveLevel()
+        private void RemoveStage()
         {
-            if (_levels.Count <= 1)
+            if (_worlds.AllStages().Count() <= 1)
             {
-                EditorUtility.DisplayDialog("Remove Level", "The game needs at least one level.", "OK");
+                EditorUtility.DisplayDialog("Remove Stage", "The game needs at least one stage.", "OK");
                 return;
             }
 
             var choice = EditorUtility.DisplayDialogComplex(
-                "Remove Level", $"Remove {_layout.name} from the level list?", "Remove from List", "Cancel", "Remove and Delete Asset");
+                "Remove Stage", $"Remove {_layout.name} from {_worlds[_selectedWorld].Name}?", "Remove from World", "Cancel", "Remove and Delete Asset");
             if (choice == 1)
             {
                 return;
             }
 
             var removed = _layout;
-            var levels = _levels.Levels.ToList();
-            var index = levels.IndexOf(removed);
-            levels.RemoveAt(index);
+            var world = _selectedWorld;
+            var stages = _worlds[world].Stages.ToList();
+            var index = stages.IndexOf(removed);
+            stages.RemoveAt(index);
             ForgetDraft(removed);
             _layout = null;
             _draft = null;
-            SetLevels(levels, "Remove Level");
+            SetStages(world, stages, "Remove Stage");
             if (choice == 2)
             {
                 AssetDatabase.MoveAssetToTrash(AssetDatabase.GetAssetPath(removed));
             }
 
-            Select(Mathf.Min(index, levels.Count - 1));
+            Select(world, Mathf.Min(index, stages.Count - 1));
         }
 
-        private void SetLevels(List<MapLayout> levels, string undoName)
+        /// <summary>Moves the selected stage to the end of another world.</summary>
+        private void MoveStage(int target)
         {
-            Undo.RecordObject(_levels, undoName);
-            _levels.SetLevels(levels.ToArray());
-            EditorUtility.SetDirty(_levels);
-            AssetDatabase.SaveAssetIfDirty(_levels);
-            _levelsObject.Update();
+            var moved = _layout;
+            var from = _worlds[_selectedWorld].Stages.ToList();
+            from.Remove(moved);
+            SetStages(_selectedWorld, from, "Move Stage");
+            var to = _worlds[target].Stages.ToList();
+            to.Add(moved);
+            SetStages(target, to, "Move Stage");
+            Select(target, to.Count - 1);
+        }
+
+        private void SetStages(int world, List<MapLayout> stages, string undoName)
+        {
+            Undo.RecordObject(_worlds, undoName);
+            _worlds[world].SetStages(stages.ToArray());
+            EditorUtility.SetDirty(_worlds);
+            AssetDatabase.SaveAssetIfDirty(_worlds);
+            _worldsObject.Update();
         }
 
         // ---------- Layout editor ----------

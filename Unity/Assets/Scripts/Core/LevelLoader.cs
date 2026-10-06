@@ -6,9 +6,10 @@ using UnityEngine;
 namespace MyGame.Core
 {
     /// <summary>
-    /// Picks the level for this scene load (plan.md §8) and fits the scene to it: builds the map,
-    /// puts the player on the start tile, frames the camera, and centers the lake. Runs before
-    /// everything that reads the tiles.
+    /// Picks the stage for this scene load (plan.md §8) and fits the scene to it: builds the map,
+    /// puts the player on the start cell, frames the camera, and centers the lake. Runs before
+    /// everything that reads the tiles. At the title it loads the Continue target, so Continue
+    /// simply starts playing what is already on screen.
     /// </summary>
     [DefaultExecutionOrder(-50)]
     public class LevelLoader : MonoBehaviour
@@ -16,27 +17,34 @@ namespace MyGame.Core
         private const float SpawnClearance = 0.05f;
         private const float SpawnYaw = 45f;
 
-        [SerializeField] private LevelList _levels;
+        [SerializeField] private WorldList _worlds;
         [SerializeField] private MapBuilder _mapBuilder;
         [SerializeField] private PlayerController _player;
         [SerializeField] private QuarterViewCamera _camera;
         [SerializeField] private WaterSurface _water;
 
-        private int _levelIndex;
-
         public MapLayout Layout { get; private set; }
+
+        public WorldList Worlds => _worlds;
+
+        public PlayerProgress Progress { get; private set; }
+
+        public StageRef Stage { get; private set; }
 
         public bool IsTestPlay { get; private set; }
 
-        /// <summary>One-based, for display.</summary>
-        public int LevelNumber => _levelIndex + 1;
+        /// <summary>The world name and stage label, e.g. <c>Beach 1-3</c>.</summary>
+        public string StageTitle => IsTestPlay ? "Test Play" : $"{_worlds[Stage.World].Name} {Stage.Label}";
 
-        public int LevelCount => _levels.Count;
+        /// <summary>No stage follows this one.</summary>
+        public bool IsFinalStage => !IsTestPlay && !_worlds.TryGetNext(Stage, out _);
 
-        public bool HasNextLevel => !IsTestPlay && _levelIndex + 1 < LevelCount;
+        /// <summary>This is its world's last stage.</summary>
+        public bool IsLastStageOfWorld => !IsTestPlay && Stage.Index == _worlds[Stage.World].Stages.Count - 1;
 
         private void Awake()
         {
+            Progress = PlayerProgress.Load();
             var testLayout = LevelSession.TestLayout;
             IsTestPlay = testLayout != null;
             if (IsTestPlay)
@@ -45,9 +53,22 @@ namespace MyGame.Core
             }
             else
             {
-                _levelIndex = Mathf.Clamp(LevelSession.LevelIndex, 0, LevelCount - 1);
-                LevelSession.LevelIndex = _levelIndex;
-                Layout = _levels[_levelIndex];
+                var stage = LevelSession.OpenAtTitle ? Progress.ContinueTarget(_worlds) : LevelSession.Stage;
+                if (!_worlds.TryGetStage(stage, out var layout))
+                {
+                    stage = Progress.ContinueTarget(_worlds);
+                    _worlds.TryGetStage(stage, out layout);
+                }
+
+                Stage = stage;
+                LevelSession.Stage = stage;
+                Layout = layout;
+            }
+
+            if (Layout == null)
+            {
+                Debug.LogError("[LevelLoader] The world list has no stages.", this);
+                return;
             }
 
             _mapBuilder.Build(Layout);
@@ -58,6 +79,10 @@ namespace MyGame.Core
             _camera.Apply();
             _water.transform.position = new Vector3(bounds.center.x, MapMetrics.WaterLevel, bounds.center.z);
         }
+
+        /// <summary>The next stage, if there is one and its world is unlocked (ask after recording a clear).</summary>
+        public bool TryGetNextStage(out StageRef next) =>
+            _worlds.TryGetNext(Stage, out next) && !IsTestPlay && Progress.IsUnlocked(_worlds, next);
 
         private void PlacePlayer()
         {

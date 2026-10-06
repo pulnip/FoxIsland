@@ -44,14 +44,28 @@
                 <ui:Label text="FOX ISLAND" class="title__logo" picking-mode="Ignore" />
                 <ui:Button name="title-start" class="button button--wide">
                     <game:GameIcon kind="Play" class="icon button__icon" picking-mode="Ignore" />
-                    <ui:Label text="Press Start" class="button__label" picking-mode="Ignore" />
+                    <ui:Label name="title-start-label" text="Continue" class="button__label" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:Button name="title-stages" class="button button--wide">
+                    <game:GameIcon kind="Stages" class="icon button__icon" picking-mode="Ignore" />
+                    <ui:Label text="Stages" class="button__label" picking-mode="Ignore" />
                 </ui:Button>
                 <ui:VisualElement class="hint title__hint" picking-mode="Ignore">
                     <ui:Label text="Space" class="key" picking-mode="Ignore" />
-                    <ui:Label text="to start" class="hint__label" picking-mode="Ignore" />
+                    <ui:Label text="to continue" class="hint__label" picking-mode="Ignore" />
                 </ui:VisualElement>
                 <ui:Button name="title-quit" class="button button--quiet">
                     <ui:Label text="Quit" class="button__label" picking-mode="Ignore" />
+                </ui:Button>
+            </ui:VisualElement>
+        </ui:VisualElement>
+
+        <ui:VisualElement name="stages-panel" class="overlay hidden">
+            <ui:VisualElement class="card card--stages">
+                <ui:Label text="Stages" class="card__title" />
+                <ui:VisualElement name="stages-list" class="stages" />
+                <ui:Button name="stages-back" class="button button--quiet">
+                    <ui:Label text="Back (Esc)" class="button__label" picking-mode="Ignore" />
                 </ui:Button>
             </ui:VisualElement>
         </ui:VisualElement>
@@ -94,17 +108,18 @@
                     <game:GameIcon kind="Gem" class="icon stats__icon stats__icon--gap" picking-mode="Ignore" />
                     <ui:Label name="clear-items" text="0 / 0" class="stats__value" />
                 </ui:VisualElement>
+                <ui:Label name="clear-best" text="New best!" class="card__note" />
                 <ui:Button name="clear-next" class="button">
                     <game:GameIcon kind="Play" class="icon button__icon" picking-mode="Ignore" />
-                    <ui:Label text="Next Level (Space)" class="button__label" picking-mode="Ignore" />
+                    <ui:Label text="Next Stage (Space)" class="button__label" picking-mode="Ignore" />
                 </ui:Button>
                 <ui:Button name="clear-restart" class="button">
                     <game:GameIcon kind="Restart" class="icon button__icon" picking-mode="Ignore" />
                     <ui:Label text="Retry (R)" class="button__label" picking-mode="Ignore" />
                 </ui:Button>
-                <ui:Button name="clear-to-title" class="button">
-                    <game:GameIcon kind="Quit" class="icon button__icon" picking-mode="Ignore" />
-                    <ui:Label text="Back to Title (Space)" class="button__label" picking-mode="Ignore" />
+                <ui:Button name="clear-stages" class="button">
+                    <game:GameIcon kind="Stages" class="icon button__icon" picking-mode="Ignore" />
+                    <ui:Label name="clear-stages-label" text="Stages" class="button__label" picking-mode="Ignore" />
                 </ui:Button>
             </ui:VisualElement>
         </ui:VisualElement>

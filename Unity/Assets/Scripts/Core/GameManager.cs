@@ -10,7 +10,8 @@ namespace MyGame.Core
 {
     /// <summary>
     /// Owns the game state (plan.md §8): the title screen, pausing, spawning and counting items,
-    /// detecting the player touching the water, gating player input, and moving between levels.
+    /// detecting the player touching the water, gating player input, recording clears, and moving
+    /// between stages.
     /// Runs after <see cref="PlayerController"/>, so the key that starts the game from the title
     /// never reaches the player in the same frame.
     /// </summary>
@@ -42,6 +43,9 @@ namespace MyGame.Core
         public int CollectedCount { get; private set; }
 
         public int TotalCount { get; private set; }
+
+        /// <summary>The clear just recorded beat the stage's previous best (or was the first).</summary>
+        public bool IsNewBest { get; private set; }
 
         public float ElapsedTime => State switch
         {
@@ -146,32 +150,47 @@ namespace MyGame.Core
             }
         }
 
-        /// <summary>Reloads the current level straight into play.</summary>
+        /// <summary>Reloads the current stage straight into play.</summary>
         public void Restart() => Reload(openAtTitle: false);
 
-        public void NextLevel()
+        public void NextStage()
         {
-            if (!_levelLoader.HasNextLevel)
+            if (_levelLoader.TryGetNextStage(out var next))
+            {
+                LevelSession.Stage = next;
+                Reload(openAtTitle: false);
+            }
+        }
+
+        /// <summary>Plays <paramref name="stage"/> from the stage list, if its world is unlocked.</summary>
+        public void StartStage(StageRef stage)
+        {
+            if (!_levelLoader.Progress.IsUnlocked(_levelLoader.Worlds, stage))
             {
                 return;
             }
 
-            LevelSession.LevelIndex++;
+            if (State == GameState.Title && stage == _levelLoader.Stage)
+            {
+                StartGame();
+                return;
+            }
+
+            LevelSession.Stage = stage;
             Reload(openAtTitle: false);
         }
 
-        public void QuitToTitle()
-        {
-            LevelSession.LevelIndex = 0;
-            Reload(openAtTitle: true);
-        }
+        public void QuitToTitle() => Reload(openAtTitle: true);
 
-        /// <summary>Space on the clear card: the next level, a retry in test play, or the title after the last level.</summary>
+        /// <summary>Back to the title, opened on the stage list.</summary>
+        public void OpenStages() => Reload(openAtTitle: true, stageSelect: true);
+
+        /// <summary>Space on the clear card: the next stage, a retry in test play, or the stage list.</summary>
         public void ContinueAfterClear()
         {
-            if (_levelLoader.HasNextLevel)
+            if (_levelLoader.TryGetNextStage(out _))
             {
-                NextLevel();
+                NextStage();
             }
             else if (_levelLoader.IsTestPlay)
             {
@@ -179,7 +198,7 @@ namespace MyGame.Core
             }
             else
             {
-                QuitToTitle();
+                OpenStages();
             }
         }
 
@@ -192,9 +211,10 @@ namespace MyGame.Core
 #endif
         }
 
-        private static void Reload(bool openAtTitle)
+        private static void Reload(bool openAtTitle, bool stageSelect = false)
         {
             LevelSession.OpenAtTitle = openAtTitle;
+            LevelSession.OpenStageSelect = stageSelect;
             Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }
@@ -226,6 +246,12 @@ namespace MyGame.Core
             if (state == GameState.GameOver || state == GameState.Cleared)
             {
                 _endTime = Time.time;
+            }
+
+            if (state == GameState.Cleared && !_levelLoader.IsTestPlay)
+            {
+                IsNewBest = _levelLoader.Progress.RecordClear(_levelLoader.Layout, _endTime - _startTime);
+                _levelLoader.Progress.Save();
             }
 
             Time.timeScale = state == GameState.Paused ? 0f : 1f;

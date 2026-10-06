@@ -18,7 +18,8 @@ This file is the source of truth for implementation.
 | Character rig    | Armature with rigid parts: each body part is its own mesh, parented to one bone (no skin)  |
 | Animations       | `Idle`, `Walk`, `Run`, `Jump`, `Fall` — keyframed by the same Blender script, in FBX      |
 | Map              | Levels of 2×2 to 8×8 cells (1.5×1.5 units) standing in a lake; each cell is a hole or a block with its own height (0–6), skin, and crumbling flag |
-| Levels           | `LevelList` in play order; clearing one moves on to the next. Authored with Tools/MyGame/Map Tool (§4.8) |
+| Stages           | `WorldList`: 4 worlds (Beach, Meadow, Forest, Mountain) of stages in play order; clearing one moves on to the next. Authored with Tools/MyGame/Map Tool (§4.8) |
+| Progress         | Clears and best times saved locally; a world unlocks when every stage before it is cleared (§8.2) |
 | Items            | Per level: random solid tiles (reshuffled every load) or fixed cells                      |
 | Camera           | Fixed orthographic quarter view, whole map always visible                                 |
 | Controls         | WASD = run (camera-relative), Left Ctrl = toggle walk mode, Space = jump (and start from the title), R = restart, Esc = pause |
@@ -65,11 +66,11 @@ MyGame/
         ├── Input/                 # PlayerControls.inputactions
         ├── Prefabs/               # Player, Item, Tiles/Tile_{Solid,Crumbling,Start}, Effects/{PickupBurst,CrumbleDust,Footprints,Splash,TileSplash}
         ├── Scenes/Main.unity
-        ├── ScriptableObjects/     # LevelList, Levels/Level01… (MapLayout)
+        ├── ScriptableObjects/     # WorldList, Levels/Level01… (MapLayout)
         ├── UI/                    # GameUI.uxml/.uss, GameTheme.tss, GamePanelSettings, Fonts/Inter-Regular.ttf (+ OFL license)
         └── Scripts/
-            ├── Core/              # GameManager, GameState, LevelLoader, LevelSession
-            ├── Map/               # MapBuilder, MapLayout, MapLayoutValidator, LayoutReport, LevelList, ItemMode, ItemPlacement, MapMetrics, Tile, CellSpec, Skin, SkinMaterials, CrumblingTile, GrassField, TerrainDecor, SnowField, VoxelMeshBuilder, WaterSurface
+            ├── Core/              # GameManager, GameState, LevelLoader, LevelSession, PlayerProgress
+            ├── Map/               # MapBuilder, MapLayout, MapLayoutValidator, LayoutReport, World, WorldList, StageRef, ItemMode, ItemPlacement, MapMetrics, Tile, CellSpec, Skin, SkinMaterials, CrumblingTile, GrassField, TerrainDecor, SnowField, VoxelMeshBuilder, WaterSurface
             ├── Player/            # PlayerController, PlayerAnimator
             ├── Items/             # Item, ItemSpawner
             ├── CameraRig/         # QuarterViewCamera
@@ -83,7 +84,7 @@ Generated assets are rebuilt from code, never hand-edited. `Tools/MyGame/Build A
 | Menu                     | Class                | Produces                                                        |
 | ------------------------ | -------------------- | --------------------------------------------------------------- |
 | Build Effect Assets      | `EffectAssetBuilder` | `Effect_Voxel` material, `PickupBurst`, `CrumbleDust`, `Footprints`, `Splash`, `TileSplash` prefabs |
-| Build Map Assets         | `MapAssetBuilder`    | tile, grass, water, and lake bed materials, tile prefabs, `Levels/Level01` and `LevelList` (only if missing) |
+| Build Map Assets         | `MapAssetBuilder`    | tile, grass, water, and lake bed materials, tile prefabs, `Levels/Level01` and `WorldList` (only if missing; deletes the old `LevelList`) |
 | Build Character Assets   | `CharacterAssetBuilder` | `Fox.fbx` import settings, `Fox.controller` (only if its layout changed) |
 | Build Player Prefab      | `PlayerAssetBuilder` | player materials, `Player.prefab`                               |
 | Build Item Assets        | `ItemAssetBuilder`   | gem material, `Item.prefab`                                     |
@@ -92,7 +93,7 @@ Generated assets are rebuilt from code, never hand-edited. `Tools/MyGame/Build A
 | Setup Main Scene         | `MainSceneSetup`     | camera, light, `Map`, player, `Lake` (laid out for level 1), `Level` (`LevelLoader`), `GameManager`, `UI` |
 
 Builders overwrite assets in place, so GUIDs and references survive a rebuild.
-The levels (`Levels/*.asset`) and `LevelList` are the exceptions: created once, then edited
+The levels (`Levels/*.asset`) and `WorldList` are the exceptions: created once, then edited
 with the map tool. `MapAssetBuilder` moved the original `MapLayout_Main` to `Levels/Level01`
 (GUID kept).
 
@@ -219,7 +220,10 @@ row 0:  0m  0m  0m  .
   `SetCells` writes rows back; `MaxHeight` frames the camera.
 - Items per layout: `ItemMode` `Random` (`RandomItemCount`, default 4) or `Fixed` (`Items`:
   `ItemPlacement` = cell + `InAir`).
-- `LevelList` (`Assets/ScriptableObjects/LevelList.asset`): the layouts in play order.
+- `WorldList` (`Assets/ScriptableObjects/WorldList.asset`): the worlds in play order; each
+  `World` has a name, an accent color (stage list, map tool), and its stages (layouts) in order.
+  A `StageRef` (world, index) names a stage; its label is `w-s`, 1-based (`1-3`). `TryGetNext`
+  walks to the next stage, skipping empty worlds. A world may stay empty until its stages exist.
 - `LevelLoader` (§8) picks the layout at scene load and calls `MapBuilder.Build(layout)`;
   `MapBuilder` keeps a cell → tile lookup (`TryGetTile`). Blocks use `Tile_Solid` or, when
   crumbling, `Tile_Crumbling`; `MapBuilder._skins` (`SkinMaterials[]`, set by `MainSceneSetup`
@@ -323,7 +327,7 @@ row 0:  0m  0m  0m  .
 
 ### 4.8 Map tool
 
-`Tools/MyGame/Map Tool` (`Editor/MapTool/MapToolWindow`, IMGUI) edits `LevelList` and the
+`Tools/MyGame/Map Tool` (`Editor/MapTool/MapToolWindow`, IMGUI) edits `WorldList` and the
 layouts.
 
 - **Drafts**: each opened layout is edited as an in-memory copy (`Instantiate`, `DontSave`);
@@ -334,14 +338,17 @@ layouts.
   name field; the window sets `hasUnsavedChanges`, so closing it asks Save / Discard / Cancel
   for all of them. Drafts switch with the selection and keep their edits. A script reload
   stashes unsaved drafts in `SessionState` and restores them. When the window regains focus,
-  clean drafts reload from their assets (so a `git checkout` shows up). Level list operations
+  clean drafts reload from their assets (so a `git checkout` shows up). Stage list operations
   (order, New, Duplicate, Remove, rename) still apply to the assets at once; Duplicate copies
   what is on screen, unsaved edits included.
 
-- **Level list** (left): reorderable play order; New (blank 4×4 at level 0, start at (0, 0),
-  `Levels/LevelNN.asset`), Duplicate (copy inserted after the selection), Remove (from the list,
-  or also move the asset to the trash after a confirmation; the list keeps at least one level).
-  Name field renames the asset.
+- **Stage lists** (left): one reorderable list per world (header with the world's color bar,
+  rows `w-s  name`); dragging reorders within a world. New (blank 4×4 meadow at height 0, start
+  at (0, 0), `Levels/<World>NN.asset`, added at the end of the selected world), Duplicate (copy
+  inserted after the selection), Remove (from the world, or also move the asset to the trash
+  after a confirmation; the game keeps at least one stage), "Move to <World>" (appends the stage
+  to another world). Name field renames the asset, which also drops its saved clear (§8.2).
+  The selection survives script reloads (`SessionState`).
 - **Grid** (top-down): row 0 at the bottom (camera side), column 0 on the left, axis numbers
   match the check messages. Cell color = skin (lighter the higher), label = height plus `c` when
   crumbling, a blue `S` badge on the start; `◆` / `◆ ↑` = fixed item on the ground / in the air.
@@ -527,22 +534,28 @@ Crumbling blocks of any skin show only dark cracks.
 ## 8. Game flow
 
 ```
-first launch ──▶ Title ──(Space or Press Start)──▶ Playing (level 1) ◀──(Esc / Resume)──▶ Paused
+launch ──▶ Title (Continue target loaded) ──(Space / Continue)──▶ Playing ◀──(Esc / Resume)──▶ Paused
+Title ──(Stages)──▶ stage list ──(unlocked stage)──▶ reload ──▶ Playing (that stage)
                                                      │
-                     ┌──(all items collected)────────┼──▶ Cleared
+                     ┌──(all items collected)────────┼──▶ Cleared (clear recorded)
                      │                               └──(player.y < WaterLevel)──▶ GameOver
-Cleared ──(Space / Next Level)──▶ reload ──▶ Playing (next level)
-Cleared on the last level ("All Clear!") ──(Space / Back to Title)──▶ Title
-R, Restart, Retry ──▶ reload ──▶ Playing (same level)
-Quit to Title (pause menu) ──▶ reload ──▶ Title (level 1)
+Cleared ──(Space / Next Stage)──▶ reload ──▶ Playing (next stage, crossing worlds)
+Cleared with no playable next stage ──(Space / Stages)──▶ reload ──▶ Title, stage list open
+R, Restart, Retry ──▶ reload ──▶ Playing (same stage)
+Quit to Title (pause menu) ──▶ reload ──▶ Title (Continue target)
 ```
 
 - `LevelSession` (static, reset by `RuntimeInitializeOnLoadMethod` because domain reload is off)
-  carries `OpenAtTitle` and `LevelIndex` across reloads, and in the editor `TestLayout` (§4.8).
-- `LevelLoader` (`Level` object, `[DefaultExecutionOrder(-50)]`) in `Awake`: takes the test
-  layout or `LevelList[LevelIndex]` (clamped), builds the map, moves the player to the start tile
-  (controller off while moving, yaw 45°), sets the camera's `FramedBounds`, and centers the lake.
-  Exposes `Layout`, `LevelNumber`, `LevelCount`, `HasNextLevel`, `IsTestPlay`.
+  carries `OpenAtTitle`, `Stage` (`StageRef`), and `OpenStageSelect` across reloads, and in the
+  editor `TestLayout` (§4.8).
+- `LevelLoader` (`Level` object, `[DefaultExecutionOrder(-50)]`) in `Awake`: loads
+  `PlayerProgress`, then takes the test layout, or at the title the Continue target (so Continue
+  just starts what is on screen), or else `LevelSession.Stage` (falling back to the Continue
+  target if it no longer exists); builds the map, moves the player to the start tile (controller
+  off while moving, yaw 45°), sets the camera's `FramedBounds`, and centers the lake. Exposes
+  `Layout`, `Worlds`, `Progress`, `Stage`, `StageTitle` (`Beach 1-3`), `IsFinalStage`,
+  `IsLastStageOfWorld`, `IsTestPlay`, and `TryGetNextStage` (the next stage, only if its world
+  is unlocked).
 
 - `GameManager` (single instance in the scene, `GameManager` object) owns the state,
   item counts (`CollectedCount`, `TotalCount`), and `ElapsedTime` (0 at the title, counting from
@@ -552,10 +565,14 @@ Quit to Title (pause menu) ──▶ reload ──▶ Title (level 1)
   - `[DefaultExecutionOrder(5)]`, after `PlayerController`: the Space press that leaves the
     title is not also read as a jump.
   - `Awake` picks the first state from `LevelSession.OpenAtTitle` (test play always skips the
-    title). `Restart()` reloads the same level straight into play; `NextLevel()` advances
-    `LevelIndex` and reloads into play; `QuitToTitle()` resets to level 1 and opens the title;
-    `ContinueAfterClear()` (Space on the clear card) picks next level, retry in test play, or
-    the title after the last level. `QuitApplication()` quits (stops play mode in the editor).
+    title). `Restart()` reloads the same stage straight into play; `NextStage()` moves to the
+    next stage and reloads into play; `StartStage(stage)` plays an unlocked stage from the list
+    (the one already loaded at the title just starts); `QuitToTitle()` opens the title;
+    `OpenStages()` opens the title on the stage list; `ContinueAfterClear()` (Space on the clear
+    card) picks the next stage, a retry in test play, or the stage list. `QuitApplication()`
+    quits (stops play mode in the editor).
+  - On `Cleared` outside test play: `PlayerProgress.RecordClear(layout, ElapsedTime)` and `Save`;
+    `IsNewBest` tells the clear card.
     Items spawn behind the title too.
   - Holds a reference to the scene's `PlayerController` (no singleton); sets
     `PlayerController.InputEnabled` from the state (only in `Playing`). Gravity keeps applying
@@ -582,20 +599,39 @@ No `EventSystem` is needed; UI input comes from the Input System's default UI ac
   `Painter2D` in the element's USS `color`: `Gem` (three gold faces), `Clock`, `Play`,
   `Restart`, `Quit`, `Walk` (›), `Run` (»), `FoxMark` (the app icon's fox head, eyes cut out).
 - **HUD** (hidden at the title): top-left pill with gem + `n / total` (bumps to 112% for 0.12 s
-  on a pickup), top-center pill `LEVEL n / m` (`TEST PLAY` in test play), top-right pill with `m:ss`. Bottom-left hint row (fades out outside `Playing`):
+  on a pickup), top-center pill with the stage title, `BEACH 1-3` (`TEST PLAY` in test play), top-right pill with `m:ss`. Bottom-left hint row (fades out outside `Playing`):
   `» fox RUNNING` / `› fox WALKING`, `[Ctrl] Walk / Run`, `[R] Restart`, `[Esc] Pause`, with key
   caps and thin separators.
 - **Title**: light dim over the live scene; fox mark, `FOX ISLAND` (120 px, letter-spaced),
-  `▶ Press Start` button, `[Space] to start`, and a quiet `Quit` button.
+  `▶ Continue 1-3` (`Start 1-1` before the first clear), `Stages`, `[Space] to continue`, and a
+  quiet `Quit` button.
+- **Stage list** (title only): card "Stages", one row per world: accent bar in the world's color,
+  name, a lock icon while locked, then stage cards `w-s` with a green check and the best time
+  (`m:ss.s`) once cleared, `—` otherwise. The Continue target has a gold outline; locked worlds'
+  cards are dimmed and disabled. Clicking an unlocked card plays it. `Back (Esc)` closes the list.
 - **Pause**: card "Paused" with Resume, Restart, Quit to Title.
 - **Game Over**: card "Game Over" with `Restart (R)`.
-- **Clear**: card "Clear!", divider, clock + `m:ss.s` and gem + `n / total`, then
-  `▶ Next Level (Space)` (if there is one) and `Retry (R)`. On the last level the title is
-  "All Clear!" with only `Back to Title (Space)`; in test play only `Retry (R)`.
+- **Clear**: card "Clear!" ("World Clear!" on a world's last stage, "All Clear!" on the last
+  stage), divider, clock + `m:ss.s` and gem + `n / total`, `New best!` or `Best m:ss.s`, then
+  `▶ Next Stage (Space)` (if a next stage is playable), `Retry (R)`, and `Stages` (`Stages
+  (Space)` when there is no next stage). In test play only `Retry (R)`, no best time.
 - Buttons act only in the state that shows them (a hidden button can keep focus and Space
   would submit it), and focus is cleared on every state change.
 - Motion: overlays fade (opacity 0.3 s; `.overlay.hidden` hides by opacity + visibility so the
   transition can run), cards scale in from 94%, buttons brighten on hover and press to 98%.
+
+### 8.2 Worlds and progress
+
+- `PlayerProgress` (plain C#) keeps the best clear time per stage, keyed by the layout's asset
+  name, in `Application.persistentDataPath/progress.json` (`JsonUtility`; a missing or broken file
+  means a fresh start). Test play never records. Renaming a stage drops its record.
+- A stage is cleared once it has a best time. World 1 is always unlocked; world n unlocks when
+  every stage of world n−1 is cleared and world n−1 is itself unlocked (an empty world counts as
+  cleared). Locking is per world: every stage of an unlocked world can be played in any order.
+- Continue target: the first uncleared stage of an unlocked world, in play order; after
+  everything is cleared, the last stage.
+- Editor: `Tools/MyGame/Reset Progress` deletes the file (with a confirmation), `Show Progress
+  File` reveals it.
 
 ## 9. Milestones
 

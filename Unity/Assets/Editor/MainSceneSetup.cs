@@ -43,16 +43,16 @@ namespace MyGame.EditorTools
 
             // Load assets after opening the scene: opening it unloads unreferenced assets.
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
-            var levels = AssetDatabase.LoadAssetAtPath<LevelList>(MapAssetBuilder.LevelListPath);
-            if (levels == null || levels.Count == 0 || levels[0] == null)
+            var worlds = AssetDatabase.LoadAssetAtPath<WorldList>(MapAssetBuilder.WorldListPath);
+            var first = worlds != null ? worlds.AllStages().FirstOrDefault(stage => worlds.TryGetStage(stage, out _)) : default;
+            if (worlds == null || !worlds.TryGetStage(first, out var layout))
             {
-                Debug.LogError($"[MainSceneSetup] {MapAssetBuilder.LevelListPath} needs at least one level.");
+                Debug.LogError($"[MainSceneSetup] {MapAssetBuilder.WorldListPath} needs at least one stage.");
                 return;
             }
 
-            // The scene is laid out for level 1 so it reads right in edit mode; LevelLoader refits
-            // it to the loaded level at runtime.
-            var layout = levels[0];
+            // The scene is laid out for the first stage so it reads right in edit mode; LevelLoader
+            // refits it to the loaded stage at runtime.
             SetupLight();
             var mapBuilder = SetupMap();
             var player = SetupPlayer(layout);
@@ -61,7 +61,7 @@ namespace MyGame.EditorTools
             var water = SetupLake(layout);
             var quarterView = SetupCamera(layout, player);
             var itemSpawner = SetupItems(mapBuilder);
-            var levelLoader = SetupLevelLoader(levels, mapBuilder, player, quarterView, water);
+            var levelLoader = SetupLevelLoader(worlds, mapBuilder, player, quarterView, water);
             var gameManager = SetupGameManager(levelLoader, player, itemSpawner);
             SetupUI(gameManager, player);
             EditorSceneManager.MarkSceneDirty(scene);
@@ -236,7 +236,7 @@ namespace MyGame.EditorTools
         }
 
         private static LevelLoader SetupLevelLoader(
-            LevelList levels, MapBuilder mapBuilder, PlayerController player, QuarterViewCamera quarterView, WaterSurface water)
+            WorldList worlds, MapBuilder mapBuilder, PlayerController player, QuarterViewCamera quarterView, WaterSurface water)
         {
             var loader = Object.FindObjectsByType<LevelLoader>().FirstOrDefault();
             if (loader == null)
@@ -244,7 +244,7 @@ namespace MyGame.EditorTools
                 loader = new GameObject("Level").AddComponent<LevelLoader>();
             }
 
-            EditorAssetUtility.SetReference(loader, "_levels", levels);
+            EditorAssetUtility.SetReference(loader, "_worlds", worlds);
             EditorAssetUtility.SetReference(loader, "_mapBuilder", mapBuilder);
             EditorAssetUtility.SetReference(loader, "_player", player);
             EditorAssetUtility.SetReference(loader, "_camera", quarterView);

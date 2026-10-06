@@ -60,7 +60,9 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
 - `Tools/MyGame/Build All` (`MainSceneSetup.BuildAll`) rebuilds every generated asset and the
   scene (plan.md §2.1). To change a generated prefab or material, change its builder and rerun;
   hand edits are lost on the next build. The levels (`Assets/ScriptableObjects/Levels/`) and
-  `LevelList` are content, never overwritten by builders; edit them with `Tools/MyGame/Map Tool`.
+  `WorldList` are content, never overwritten by builders; edit them with `Tools/MyGame/Map Tool`.
+  Play progress lives outside the project (`progress.json` in `Application.persistentDataPath`);
+  a test that writes it must back it up and restore it.
   Builders must be deterministic: running Build All twice must leave `git status` clean.
   Scene components whose tuning lives in code (`GrassField`) are reset to their script defaults
   by `EditorAssetUtility.ResetToDefaults`; changing a code default alone does not update a

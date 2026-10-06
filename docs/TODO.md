@@ -155,9 +155,10 @@ Work top to bottom unless the user says otherwise.
 
 ## M14. Worlds, progress, title
 
-- [ ] `WorldList` (4 worlds × 5 stages), map tool grouped by world
-- [ ] Progress save (cleared stages, best times), world unlocking
-- [ ] Title Continue / Stages, stage select screen, clear flow across worlds
+- [x] `WorldList` (4 worlds × 5 stages), map tool grouped by world
+- [x] Progress save (cleared stages, best times), world unlocking
+- [x] Title Continue / Stages, stage select screen, clear flow across worlds
+- [ ] Playtest: Continue / Stages, stage list locking, clear card across worlds, map tool world lists
 
 ## M15. Puzzle elements
 

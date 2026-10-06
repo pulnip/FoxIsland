@@ -9,7 +9,7 @@ namespace MyGame.EditorTools
     {
         public const string LevelFolder = "Assets/ScriptableObjects/Levels";
         public const string FirstLevelPath = LevelFolder + "/Level01.asset";
-        public const string LevelListPath = "Assets/ScriptableObjects/LevelList.asset";
+        public const string WorldListPath = "Assets/ScriptableObjects/WorldList.asset";
         public const string SolidPrefabPath = "Assets/Prefabs/Tiles/Tile_Solid.prefab";
         public const string CrumblingPrefabPath = "Assets/Prefabs/Tiles/Tile_Crumbling.prefab";
         public const string GrassBladeMaterialPath = "Assets/Art/Materials/Grass_Blade.mat";
@@ -26,6 +26,7 @@ namespace MyGame.EditorTools
         public const string SnowMaterialPath = "Assets/Art/Materials/Snow.mat";
 
         private const string LegacyLayoutPath = "Assets/ScriptableObjects/MapLayout_Main.asset";
+        private const string LegacyLevelListPath = "Assets/ScriptableObjects/LevelList.asset";
         private const string LegacyStartPrefabPath = "Assets/Prefabs/Tiles/Tile_Start.prefab";
         private const string LegacyStartMaterialPath = "Assets/Art/Materials/Tile_Start.mat";
         private const string MaterialFolder = "Assets/Art/Materials";
@@ -62,7 +63,7 @@ namespace MyGame.EditorTools
             BuildTilePrefab(CrumblingPrefabPath, crumbling, dirt, isCrumbling: true);
             AssetDatabase.DeleteAsset(LegacyStartPrefabPath);
             AssetDatabase.DeleteAsset(LegacyStartMaterialPath);
-            EnsureLevels();
+            EnsureWorlds();
             LegacyLayoutConverter.ConvertFolder(LevelFolder);
 
             AssetDatabase.SaveAssets();
@@ -146,10 +147,10 @@ namespace MyGame.EditorTools
         }
 
         /// <summary>
-        /// Creates the first level and the level list only when missing: both are edited with the
-        /// map tool and never overwritten. The original single layout moves (GUID kept) to Level01.
+        /// Creates the first level and the world list only when missing: both are edited with the
+        /// map tool and never overwritten. The flat level list of earlier builds is replaced.
         /// </summary>
-        private static void EnsureLevels()
+        private static void EnsureWorlds()
         {
             EditorAssetUtility.EnsureFolder(LevelFolder);
             if (AssetDatabase.LoadAssetAtPath<MapLayout>(LegacyLayoutPath) != null
@@ -162,7 +163,7 @@ namespace MyGame.EditorTools
                 }
             }
 
-            if (AssetDatabase.LoadAssetAtPath<LevelList>(LevelListPath) != null)
+            if (AssetDatabase.LoadAssetAtPath<WorldList>(WorldListPath) != null)
             {
                 return;
             }
@@ -174,9 +175,19 @@ namespace MyGame.EditorTools
                 AssetDatabase.CreateAsset(firstLevel, FirstLevelPath);
             }
 
-            var levels = ScriptableObject.CreateInstance<LevelList>();
-            levels.SetLevels(new[] { firstLevel });
-            AssetDatabase.CreateAsset(levels, LevelListPath);
+            // The original level is a meadow; it opens the Meadow world until the stages are made.
+            var meadow = new World("Meadow", new Color(0.49f, 0.74f, 0.33f));
+            meadow.SetStages(new[] { firstLevel });
+            var worlds = ScriptableObject.CreateInstance<WorldList>();
+            worlds.SetWorlds(new[]
+            {
+                new World("Beach", new Color(0.95f, 0.80f, 0.45f)),
+                meadow,
+                new World("Forest", new Color(0.24f, 0.50f, 0.36f)),
+                new World("Mountain", new Color(0.72f, 0.80f, 0.92f)),
+            });
+            AssetDatabase.CreateAsset(worlds, WorldListPath);
+            AssetDatabase.DeleteAsset(LegacyLevelListPath);
         }
     }
 }

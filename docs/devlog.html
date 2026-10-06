@@ -107,6 +107,81 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M14</span></div>
+      <h2>타이틀 Continue · 스테이지 목록 · 월드 넘어가는 클리어 흐름</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>타이틀: <code>Continue 1-2</code>(처음엔 <code>Start 1-1</code>) · <code>Stages</code> · <code>Quit</code>. 타이틀 뒤에는 Continue 대상 스테이지가 미리 깔려 있어서 Space 누르면 바로 시작</li>
+        <li>스테이지 목록: 월드마다 한 줄(색 막대, 이름, 잠기면 자물쇠), 스테이지 카드에 체크 + 최고 기록. Continue 대상은 금색 테두리, 잠긴 월드는 흐리게 + 클릭 불가. Back(Esc)로 닫기</li>
+        <li>클리어 카드: 월드 마지막이면 "World Clear!", 전체 마지막이면 "All Clear!". <code>New best!</code> 또는 <code>Best m:ss.s</code> 표시. 버튼은 Next Stage(Space) · Retry(R) · Stages, 다음 스테이지가 없으면 Stages가 Space</li>
+        <li>HUD 가운데는 <code>BEACH 1-2</code>처럼 월드 이름 + 번호</li>
+        <li>새 아이콘: 체크, 자물쇠, 스테이지 목록</li>
+        <li>검증(플레이 모드 캡처): 해변 1-1 클리어 상태로 타이틀/목록 → 1-2 클리어 시 World Clear! + New best! + 다음 스테이지 2-1 → 목록에서 초원 해금, Continue 대상 2-1</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m14-title.png" alt="타이틀"><figcaption>타이틀: Continue 1-2, Stages</figcaption></figure>
+        <figure><img src="images/m14-stages.png" alt="스테이지 목록"><figcaption>1-1만 클리어: 해변만 열림</figcaption></figure>
+        <figure><img src="images/m14-clear-world.png" alt="월드 클리어"><figcaption>해변 마지막 스테이지 클리어</figcaption></figure>
+        <figure><img src="images/m14-stages-after.png" alt="해금 후 목록"><figcaption>초원 해금, Continue 대상 2-1</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/UI/GameUI.uxml</code>, <code>GameUI.uss</code>, <code>Unity/Assets/Scripts/UI/GameUI.cs</code>, <code>GameIcon.cs</code></li>
+        <li><code>Unity/Assets/Scripts/Core/GameManager.cs</code> (<code>NextStage</code>, <code>StartStage</code>, <code>OpenStages</code>), <code>LevelSession.cs</code> (<code>Stage</code>, <code>OpenStageSelect</code>)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>캡처용 테스트 스테이지는 임시로 만들고 지웠음. 실제 월드에는 아직 Level01(초원 2-1 자리)만 있어서, 지금 실행하면 빈 해변을 건너뛰고 초원 첫 스테이지가 Continue 대상</li>
+        <li>캡처의 1-2 기록 0:00.0은 테스트에서 즉시 클리어시킨 결과</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M14</span></div>
+      <h2>진행 저장 · 월드 잠금</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>새 <code>PlayerProgress</code>: 스테이지별 최고 클리어 시간을 <code>Application.persistentDataPath/progress.json</code>에 저장. 기록이 있으면 클리어로 간주. 테스트 플레이는 기록 안 함</li>
+        <li>월드 잠금: 1월드는 항상 열림, 이전 월드를 전부 깨면 다음 월드가 열림. 비어 있는 월드는 깬 것으로 취급. 열린 월드 안에서는 순서 상관없이 플레이 가능</li>
+        <li>Continue 대상: 열린 월드 중 처음으로 안 깬 스테이지, 다 깼으면 마지막 스테이지</li>
+        <li>에디터 메뉴: <code>Tools/MyGame/Reset Progress</code>(확인 후 삭제), <code>Show Progress File</code></li>
+        <li>검증: 잠금, 최고 기록 갱신(느린 기록은 무시), Continue 대상, 빈 월드 건너뛰기, 저장 → 다시 읽기 등 12개 항목 통과</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Core/PlayerProgress.cs</code> (새 파일), <code>LevelLoader.cs</code></li>
+        <li><code>Unity/Assets/Editor/ProgressMenu.cs</code> (새 파일)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>클래스 이름이 <code>Progress</code>면 <code>UnityEditor.Progress</code>와 겹쳐서 <code>PlayerProgress</code>로 지음</li>
+        <li>기록은 레이아웃 에셋 이름으로 저장 → 맵 툴에서 스테이지 이름을 바꾸면 그 기록은 사라짐</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M14</span></div>
+      <h2>WorldList: 월드 4개, 맵 툴 월드별 목록</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>LevelList</code>(한 줄 목록)를 <code>WorldList</code>로 교체: 해변 · 초원 · 숲 · 산, 월드마다 이름 · 색 · 스테이지 목록. 스테이지는 <code>StageRef</code>(월드, 번호), 표시는 <code>1-3</code></li>
+        <li>다음 스테이지는 빈 월드를 건너뜀. 기존 Level01은 초원 월드 첫 스테이지로 들어감(해변 · 숲 · 산은 M16에서 채움)</li>
+        <li>맵 툴: 월드마다 목록(머리에 월드 색 막대), 월드 안에서 드래그로 순서 변경. New는 선택한 월드 끝에 <code>&lt;World&gt;NN</code>으로 생성, "Move to &lt;World&gt;"로 다른 월드로 옮기기. 선택은 스크립트 리로드 후에도 유지</li>
+        <li>Build All은 <code>WorldList</code>가 없을 때만 만들고, 옛 <code>LevelList.asset</code>은 지움. 두 번 돌려도 결과 동일</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/WorldList.cs</code>, <code>World.cs</code>, <code>StageRef.cs</code> (새 파일), <code>LevelList.cs</code> (삭제)</li>
+        <li><code>Unity/Assets/ScriptableObjects/WorldList.asset</code> (새 에셋), <code>LevelList.asset</code> (삭제)</li>
+        <li><code>Unity/Assets/Editor/MapAssetBuilder.cs</code>, <code>MainSceneSetup.cs</code>, <code>MapTool/MapToolWindow.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li><code>WorldList</code>는 레벨처럼 콘텐츠라서 빌더가 덮어쓰지 않음</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-10-06</time><span class="tag">M13</span></div>
       <h2>모래 · 바위 발자국 색</h2>
       <h3>한 일</h3>
