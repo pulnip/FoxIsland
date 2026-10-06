@@ -1,5 +1,3 @@
-using System.IO;
-using MyGame.Core;
 using MyGame.Items;
 using UnityEditor;
 using UnityEngine;
@@ -9,7 +7,6 @@ namespace MyGame.EditorTools
     public static class ItemAssetBuilder
     {
         public const string ItemPrefabPath = "Assets/Prefabs/Item.prefab";
-        public const string GameConfigPath = "Assets/ScriptableObjects/GameConfig.asset";
 
         private const string MaterialFolder = "Assets/Art/Materials";
         private const float TriggerRadius = 0.3f;
@@ -37,23 +34,8 @@ namespace MyGame.EditorTools
                 AssetDatabase.LoadAssetAtPath<ParticleSystem>(EffectAssetBuilder.PickupBurstPath));
 
             EditorAssetUtility.SavePrefab(root, ItemPrefabPath);
-            EnsureGameConfig();
             AssetDatabase.SaveAssets();
             Debug.Log("[ItemAssetBuilder] Item assets built.");
-        }
-
-        /// <summary>
-        /// Creates the config only when missing, so tuned values are never overwritten.
-        /// </summary>
-        private static void EnsureGameConfig()
-        {
-            if (AssetDatabase.LoadAssetAtPath<GameConfig>(GameConfigPath) != null)
-            {
-                return;
-            }
-
-            EditorAssetUtility.EnsureFolder(Path.GetDirectoryName(GameConfigPath).Replace('\\', '/'));
-            AssetDatabase.CreateAsset(ScriptableObject.CreateInstance<GameConfig>(), GameConfigPath);
         }
     }
 }

@@ -43,6 +43,8 @@ namespace MyGame.Player
 
         public float VerticalSpeed => _verticalSpeed;
 
+        public float JumpHeight => _jumpHeight;
+
         public float HorizontalSpeed { get; private set; }
 
         /// <summary>

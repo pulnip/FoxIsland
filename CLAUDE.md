@@ -57,7 +57,8 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
   `-batchmode -quit -projectPath Unity -executeMethod <Class.Method>`.
 - `Tools/MyGame/Build All` (`MainSceneSetup.BuildAll`) rebuilds every generated asset and the
   scene (plan.md §2.1). To change a generated prefab or material, change its builder and rerun;
-  hand edits are lost on the next build. `MapLayout_Main` is never overwritten.
+  hand edits are lost on the next build. The levels (`Assets/ScriptableObjects/Levels/`) and
+  `LevelList` are content, never overwritten by builders; edit them with `Tools/MyGame/Map Tool`.
   Builders must be deterministic: running Build All twice must leave `git status` clean.
   Scene components whose tuning lives in code (`GrassField`) are reset to their script defaults
   by `EditorAssetUtility.ResetToDefaults`; changing a code default alone does not update a
@@ -73,6 +74,10 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
   `targetTexture` (clear to transparent), composite that over a camera render, then
   `EditorApplication.Exit(0)`.
 
+- Map tool checks run without the window: `MapLayoutValidator.Validate(layout)` is plain C#, so a
+  temporary batch script can assert on its `LayoutReport`. The preview objects are `DontSave`;
+  a scene saved with the preview on must stay byte-identical.
+
 ## Environment
 
 - Windows PowerShell 5.1 reads BOM-less UTF-8 as the ANSI code page (CP949) and corrupts
@@ -83,7 +88,8 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
 - Unity editor: `C:\Program Files\Unity\Hub\Editor\6000.6.3f1\Editor\Unity.exe`.
   The project at `Unity/` was created in batch mode from the bundled
   `com.unity.template.urp-blank` template.
-- Git: the repository root is `MyGame/`; `.gitignore` there covers `Unity/` paths.
+- Git: the repository root is `FoxIsland/` (formerly `MyGame/`); `.gitignore` there covers
+  `Unity/` paths.
   Commit only when the user says to; the user decides when.
 - `.gitattributes` forces LF for all text files and routes binary assets (models, images,
   audio, fonts, `LightingData.asset`) through Git LFS. When adding a new binary file type,

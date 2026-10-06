@@ -10,17 +10,14 @@ namespace MyGame.Core
 {
     /// <summary>
     /// Owns the game state (plan.md §8): the title screen, pausing, spawning and counting items,
-    /// detecting the player touching the water, gating player input, and reloading the scene.
+    /// detecting the player touching the water, gating player input, and moving between levels.
     /// Runs after <see cref="PlayerController"/>, so the key that starts the game from the title
     /// never reaches the player in the same frame.
     /// </summary>
     [DefaultExecutionOrder(5)]
     public class GameManager : MonoBehaviour
     {
-        /// <summary>Whether the next scene load opens at the title; a restart skips it.</summary>
-        private static bool _openAtTitle = true;
-
-        [SerializeField] private GameConfig _config;
+        [SerializeField] private LevelLoader _levelLoader;
         [SerializeField] private PlayerController _player;
         [SerializeField] private ItemSpawner _itemSpawner;
         [SerializeField] private ParticleSystem _splashEffect;
@@ -38,7 +35,9 @@ namespace MyGame.Core
         /// </summary>
         public event Action ItemCountChanged;
 
-        public GameState State { get; private set; } = _openAtTitle ? GameState.Title : GameState.Playing;
+        public GameState State { get; private set; }
+
+        public LevelLoader Level => _levelLoader;
 
         public int CollectedCount { get; private set; }
 
@@ -51,8 +50,9 @@ namespace MyGame.Core
             _ => _endTime - _startTime,
         };
 
-        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
-        private static void ResetStatics() => _openAtTitle = true;
+        /// <summary>Test play from the map tool always skips the title.</summary>
+        private void Awake() =>
+            State = LevelSession.OpenAtTitle && !_levelLoader.IsTestPlay ? GameState.Title : GameState.Playing;
 
         private void OnEnable()
         {
@@ -72,7 +72,7 @@ namespace MyGame.Core
             _startTime = Time.time;
             _player.InputEnabled = State == GameState.Playing;
 
-            var items = _itemSpawner.Spawn(_config.ItemCount);
+            var items = _itemSpawner.Spawn(_levelLoader.Layout);
             foreach (var item in items)
             {
                 item.Collected += OnItemCollected;
@@ -97,6 +97,12 @@ namespace MyGame.Core
             if (_restartAction.WasPressedThisFrame())
             {
                 Restart();
+                return;
+            }
+
+            if (State == GameState.Cleared && _startAction.WasPressedThisFrame())
+            {
+                ContinueAfterClear();
                 return;
             }
 
@@ -140,10 +146,42 @@ namespace MyGame.Core
             }
         }
 
-        /// <summary>Reloads the scene straight into play.</summary>
+        /// <summary>Reloads the current level straight into play.</summary>
         public void Restart() => Reload(openAtTitle: false);
 
-        public void QuitToTitle() => Reload(openAtTitle: true);
+        public void NextLevel()
+        {
+            if (!_levelLoader.HasNextLevel)
+            {
+                return;
+            }
+
+            LevelSession.LevelIndex++;
+            Reload(openAtTitle: false);
+        }
+
+        public void QuitToTitle()
+        {
+            LevelSession.LevelIndex = 0;
+            Reload(openAtTitle: true);
+        }
+
+        /// <summary>Space on the clear card: the next level, a retry in test play, or the title after the last level.</summary>
+        public void ContinueAfterClear()
+        {
+            if (_levelLoader.HasNextLevel)
+            {
+                NextLevel();
+            }
+            else if (_levelLoader.IsTestPlay)
+            {
+                Restart();
+            }
+            else
+            {
+                QuitToTitle();
+            }
+        }
 
         public void QuitApplication()
         {
@@ -156,7 +194,7 @@ namespace MyGame.Core
 
         private static void Reload(bool openAtTitle)
         {
-            _openAtTitle = openAtTitle;
+            LevelSession.OpenAtTitle = openAtTitle;
             Time.timeScale = 1f;
             SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
         }

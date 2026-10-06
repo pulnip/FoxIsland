@@ -1,10 +1,20 @@
+using System;
+using System.Collections.Generic;
+using System.Text;
 using UnityEngine;
 
 namespace MyGame.Map
 {
+    /// <summary>
+    /// One level (plan.md §4.3): tile rows in the §4.2 text notation plus its item setup.
+    /// Edited with Tools/MyGame/Map Tool; <see cref="MapLayoutValidator"/> checks it.
+    /// </summary>
     [CreateAssetMenu(menuName = "MyGame/Map Layout", fileName = "MapLayout")]
     public class MapLayout : ScriptableObject
     {
+        public const int MinSize = 2;
+        public const int MaxSize = 8;
+
         [Tooltip("First row is the farthest from the camera. Space-separated tokens: " +
                  ". hole, 0-2 solid level, C crumbling, S start.")]
         [SerializeField] private string[] _rows =
@@ -15,11 +25,32 @@ namespace MyGame.Map
             "S 0 0 .",
         };
 
+        [SerializeField] private ItemMode _itemMode = ItemMode.Random;
+        [SerializeField, Min(0)] private int _randomItemCount = 4;
+        [SerializeField] private ItemPlacement[] _items = Array.Empty<ItemPlacement>();
+
         private TileSpec[,] _tiles;
 
         public int Width => Tiles.GetLength(0);
 
         public int Depth => Tiles.GetLength(1);
+
+        public IReadOnlyList<string> Rows => _rows;
+
+        public ItemMode ItemMode
+        {
+            get => _itemMode;
+            set => _itemMode = value;
+        }
+
+        public int RandomItemCount
+        {
+            get => _randomItemCount;
+            set => _randomItemCount = Mathf.Max(0, value);
+        }
+
+        /// <summary>Used when <see cref="ItemMode"/> is <see cref="Map.ItemMode.Fixed"/>.</summary>
+        public IReadOnlyList<ItemPlacement> Items => _items;
 
         private TileSpec[,] Tiles
         {
@@ -61,12 +92,48 @@ namespace MyGame.Map
             return false;
         }
 
+        /// <summary>A fresh copy of the tiles, indexed [column, row], for editing.</summary>
+        public bool TryGetTiles(out TileSpec[,] tiles, out string error) => TryParse(_rows, out tiles, out error);
+
         public void SetRows(string[] rows)
         {
             _rows = rows;
             _tiles = null;
         }
 
+        /// <summary>Writes <paramref name="tiles"/> ([column, row]) back as text rows.</summary>
+        public void SetTiles(TileSpec[,] tiles)
+        {
+            var width = tiles.GetLength(0);
+            var depth = tiles.GetLength(1);
+            var rows = new string[depth];
+            var builder = new StringBuilder();
+            for (var i = 0; i < depth; i++)
+            {
+                builder.Clear();
+                var row = depth - 1 - i;
+                for (var column = 0; column < width; column++)
+                {
+                    if (column > 0)
+                    {
+                        builder.Append(' ');
+                    }
+
+                    builder.Append(tiles[column, row].ToToken());
+                }
+
+                rows[i] = builder.ToString();
+            }
+
+            SetRows(rows);
+        }
+
+        public void SetItems(ItemPlacement[] items) => _items = items;
+
+        /// <summary>
+        /// Checks the text shape only (tokens, rectangular rows). Content rules such as the single
+        /// start tile belong to <see cref="MapLayoutValidator"/>, so a layout mid-edit still loads.
+        /// </summary>
         private static bool TryParse(string[] rows, out TileSpec[,] tiles, out string error)
         {
             tiles = null;
@@ -78,10 +145,9 @@ namespace MyGame.Map
 
             var depth = rows.Length;
             var width = -1;
-            var startCount = 0;
             for (var i = 0; i < depth; i++)
             {
-                var tokens = (rows[i] ?? string.Empty).Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+                var tokens = (rows[i] ?? string.Empty).Split(' ', StringSplitOptions.RemoveEmptyEntries);
                 if (width < 0)
                 {
                     width = tokens.Length;
@@ -102,11 +168,6 @@ namespace MyGame.Map
                         return false;
                     }
 
-                    if (spec.Type == TileType.Start)
-                    {
-                        startCount++;
-                    }
-
                     tiles[column, row] = spec;
                 }
             }
@@ -114,12 +175,6 @@ namespace MyGame.Map
             if (width == 0)
             {
                 error = "layout rows are empty";
-                return false;
-            }
-
-            if (startCount != 1)
-            {
-                error = $"layout needs exactly one start tile (S), found {startCount}";
                 return false;
             }
 
@@ -132,9 +187,12 @@ namespace MyGame.Map
         private void OnValidate()
         {
             _tiles = null;
-            if (!TryParse(_rows, out _, out var error))
+            foreach (var issue in MapLayoutValidator.Validate(this).Issues)
             {
-                Debug.LogWarning($"[MapLayout] {name}: {error}", this);
+                if (issue.Severity == IssueSeverity.Error)
+                {
+                    Debug.LogWarning($"[MapLayout] {name}: {issue.Message}", this);
+                }
             }
         }
     }

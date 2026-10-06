@@ -7,7 +7,9 @@ namespace MyGame.EditorTools
 {
     public static class MapAssetBuilder
     {
-        public const string LayoutPath = "Assets/ScriptableObjects/MapLayout_Main.asset";
+        public const string LevelFolder = "Assets/ScriptableObjects/Levels";
+        public const string FirstLevelPath = LevelFolder + "/Level01.asset";
+        public const string LevelListPath = "Assets/ScriptableObjects/LevelList.asset";
         public const string SolidPrefabPath = "Assets/Prefabs/Tiles/Tile_Solid.prefab";
         public const string CrumblingPrefabPath = "Assets/Prefabs/Tiles/Tile_Crumbling.prefab";
         public const string StartPrefabPath = "Assets/Prefabs/Tiles/Tile_Start.prefab";
@@ -15,6 +17,7 @@ namespace MyGame.EditorTools
         public const string WaterMaterialPath = "Assets/Art/Materials/Water.mat";
         public const string LakeBedMaterialPath = "Assets/Art/Materials/Lake_Bed.mat";
 
+        private const string LegacyLayoutPath = "Assets/ScriptableObjects/MapLayout_Main.asset";
         private const string MaterialFolder = "Assets/Art/Materials";
         private const string GrassShaderName = "MyGame/Grass";
         private const string WaterShaderName = "MyGame/Water";
@@ -33,7 +36,7 @@ namespace MyGame.EditorTools
             BuildTilePrefab(SolidPrefabPath, grass, dirt, isCrumbling: false);
             BuildTilePrefab(CrumblingPrefabPath, crumbling, dirt, isCrumbling: true);
             BuildTilePrefab(StartPrefabPath, start, dirt, isCrumbling: false);
-            EnsureLayout();
+            EnsureLevels();
 
             AssetDatabase.SaveAssets();
             Debug.Log("[MapAssetBuilder] Map assets built.");
@@ -88,17 +91,37 @@ namespace MyGame.EditorTools
         }
 
         /// <summary>
-        /// Creates the layout only when missing, so hand-tuned layouts are never overwritten.
+        /// Creates the first level and the level list only when missing: both are edited with the
+        /// map tool and never overwritten. The original single layout moves (GUID kept) to Level01.
         /// </summary>
-        private static void EnsureLayout()
+        private static void EnsureLevels()
         {
-            if (AssetDatabase.LoadAssetAtPath<MapLayout>(LayoutPath) != null)
+            EditorAssetUtility.EnsureFolder(LevelFolder);
+            if (AssetDatabase.LoadAssetAtPath<MapLayout>(LegacyLayoutPath) != null
+                && AssetDatabase.LoadAssetAtPath<MapLayout>(FirstLevelPath) == null)
+            {
+                var error = AssetDatabase.MoveAsset(LegacyLayoutPath, FirstLevelPath);
+                if (!string.IsNullOrEmpty(error))
+                {
+                    Debug.LogError($"[MapAssetBuilder] Could not move {LegacyLayoutPath}: {error}");
+                }
+            }
+
+            if (AssetDatabase.LoadAssetAtPath<LevelList>(LevelListPath) != null)
             {
                 return;
             }
 
-            EditorAssetUtility.EnsureFolder(Path.GetDirectoryName(LayoutPath).Replace('\\', '/'));
-            AssetDatabase.CreateAsset(ScriptableObject.CreateInstance<MapLayout>(), LayoutPath);
+            var firstLevel = AssetDatabase.LoadAssetAtPath<MapLayout>(FirstLevelPath);
+            if (firstLevel == null)
+            {
+                firstLevel = ScriptableObject.CreateInstance<MapLayout>();
+                AssetDatabase.CreateAsset(firstLevel, FirstLevelPath);
+            }
+
+            var levels = ScriptableObject.CreateInstance<LevelList>();
+            levels.SetLevels(new[] { firstLevel });
+            AssetDatabase.CreateAsset(levels, LevelListPath);
         }
     }
 }

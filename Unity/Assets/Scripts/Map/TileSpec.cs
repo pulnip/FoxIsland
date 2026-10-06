@@ -48,6 +48,15 @@ namespace MyGame.Map
             }
         }
 
+        /// <summary>The layout token that <see cref="TryParse"/> reads back as this spec.</summary>
+        public string ToToken() => Type switch
+        {
+            TileType.Hole => ".",
+            TileType.Crumbling => "C",
+            TileType.Start => "S",
+            _ => ((char)('0' + Level)).ToString(),
+        };
+
         public bool Equals(TileSpec other) => Type == other.Type && Level == other.Level;
 
         public override bool Equals(object obj) => obj is TileSpec other && Equals(other);

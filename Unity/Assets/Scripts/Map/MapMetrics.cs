@@ -35,5 +35,16 @@ namespace MyGame.Map
                 new Vector3((width - 1) * TileSize + half, TopY(TileSpec.MaxLevel), (depth - 1) * TileSize + half));
             return bounds;
         }
+
+        /// <summary>
+        /// What the camera keeps on screen: <see cref="GridBounds"/> raised by
+        /// <paramref name="headroom"/> (the player's jump height) above the highest level.
+        /// </summary>
+        public static Bounds FramedBounds(int width, int depth, float headroom)
+        {
+            var bounds = GridBounds(width, depth);
+            bounds.SetMinMax(bounds.min, bounds.max + Vector3.up * headroom);
+            return bounds;
+        }
     }
 }

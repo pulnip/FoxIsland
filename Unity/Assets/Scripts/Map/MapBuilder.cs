@@ -3,36 +3,42 @@ using UnityEngine;
 
 namespace MyGame.Map
 {
+    /// <summary>
+    /// Instantiates tile prefabs for a layout. <see cref="Core.LevelLoader"/> calls
+    /// <see cref="Build"/> at scene load; the map tool's preview calls it in edit mode.
+    /// </summary>
     public class MapBuilder : MonoBehaviour
     {
-        [SerializeField] private MapLayout _layout;
         [SerializeField] private Tile _solidPrefab;
         [SerializeField] private Tile _crumblingPrefab;
         [SerializeField] private Tile _startPrefab;
 
         private readonly List<Tile> _tiles = new();
+        private readonly Dictionary<Vector2Int, Tile> _tilesByCell = new();
 
-        public MapLayout Layout => _layout;
+        /// <summary>The layout last passed to <see cref="Build"/>.</summary>
+        public MapLayout Layout { get; private set; }
 
         public IReadOnlyList<Tile> Tiles => _tiles;
 
-        private void Awake() => Build();
+        public bool TryGetTile(Vector2Int coordinates, out Tile tile) => _tilesByCell.TryGetValue(coordinates, out tile);
 
-        public void Build()
+        public void Build(MapLayout layout)
         {
             Clear();
-            if (_layout == null)
+            Layout = layout;
+            if (layout == null)
             {
-                Debug.LogError("[MapBuilder] No layout assigned.", this);
+                Debug.LogError("[MapBuilder] No layout to build.", this);
                 return;
             }
 
-            for (var row = 0; row < _layout.Depth; row++)
+            for (var row = 0; row < layout.Depth; row++)
             {
-                for (var column = 0; column < _layout.Width; column++)
+                for (var column = 0; column < layout.Width; column++)
                 {
                     var coordinates = new Vector2Int(column, row);
-                    var spec = _layout.GetTile(coordinates);
+                    var spec = layout.GetTile(coordinates);
                     var prefab = GetPrefab(spec.Type);
                     if (prefab == null)
                     {
@@ -42,6 +48,7 @@ namespace MyGame.Map
                     var tile = Instantiate(prefab, transform);
                     tile.Initialize(coordinates, spec);
                     _tiles.Add(tile);
+                    _tilesByCell.Add(coordinates, tile);
                 }
             }
         }
@@ -49,6 +56,7 @@ namespace MyGame.Map
         public void Clear()
         {
             _tiles.Clear();
+            _tilesByCell.Clear();
             for (var i = transform.childCount - 1; i >= 0; i--)
             {
                 var child = transform.GetChild(i).gameObject;

@@ -10,7 +10,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2b319efc4194e314ba0f3e30702da04e, type: 3}
-  m_Name: MapLayout_Main
+  m_Name: Level01
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.MapLayout
   _rows:
   - 1 . 2 2

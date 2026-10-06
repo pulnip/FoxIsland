@@ -6,7 +6,8 @@ using UnityEngine;
 namespace MyGame.Items
 {
     /// <summary>
-    /// Places items on random solid tiles (plan.md §5). Start, crumbling, and hole cells are skipped.
+    /// Places a layout's items (plan.md §5): on its fixed cells, or on random solid tiles. Start,
+    /// crumbling, and hole cells never hold an item.
     /// </summary>
     public class ItemSpawner : MonoBehaviour
     {
@@ -15,7 +16,27 @@ namespace MyGame.Items
         [SerializeField] private float _groundHeight = 0.4f;
         [SerializeField] private float _airHeight = 1.0f;
 
-        public List<Item> Spawn(int count)
+        public List<Item> Spawn(MapLayout layout) =>
+            layout.ItemMode == ItemMode.Fixed ? SpawnFixed(layout.Items) : SpawnRandom(layout.RandomItemCount);
+
+        private List<Item> SpawnFixed(IReadOnlyList<ItemPlacement> placements)
+        {
+            var items = new List<Item>(placements.Count);
+            foreach (var placement in placements)
+            {
+                if (!_mapBuilder.TryGetTile(placement.Cell, out var tile) || tile.Spec.Type != TileType.Solid)
+                {
+                    Debug.LogWarning($"[ItemSpawner] No solid tile at {placement.Cell}; item skipped.", this);
+                    continue;
+                }
+
+                items.Add(SpawnAt(tile, placement.InAir));
+            }
+
+            return items;
+        }
+
+        private List<Item> SpawnRandom(int count)
         {
             var candidates = _mapBuilder.Tiles.Where(tile => tile.Spec.Type == TileType.Solid).ToList();
             if (count > candidates.Count)
@@ -28,13 +49,17 @@ namespace MyGame.Items
             var items = new List<Item>(count);
             for (var i = 0; i < count; i++)
             {
-                var tile = candidates[i];
-                var height = Random.value < 0.5f ? _groundHeight : _airHeight;
-                var position = MapMetrics.TopCenter(tile.Coordinates, tile.Spec.Level) + Vector3.up * height;
-                items.Add(Instantiate(_itemPrefab, position, Quaternion.identity, transform));
+                items.Add(SpawnAt(candidates[i], inAir: Random.value < 0.5f));
             }
 
             return items;
+        }
+
+        private Item SpawnAt(Tile tile, bool inAir)
+        {
+            var height = inAir ? _airHeight : _groundHeight;
+            var position = MapMetrics.TopCenter(tile.Coordinates, tile.Spec.Level) + Vector3.up * height;
+            return Instantiate(_itemPrefab, position, Quaternion.identity, transform);
         }
 
         private static void Shuffle<T>(IList<T> list)

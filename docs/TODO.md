@@ -118,3 +118,12 @@ Work top to bottom unless the user says otherwise.
 - [x] Set the chosen icon as the default app icon (`PlayerSettingsBuilder`)
 - [x] Game name: Fox Island (`productName` and the title screen)
 - [ ] Store packaging: Windows build, MSIX / Store listing assets from `AppIcon.png`
+
+## M10. Map tool and levels
+
+- [x] Level data: `LevelList`, `Levels/Level01` (moved from `MapLayout_Main`), per-level items (random count or fixed cells), `GameConfig` removed
+- [x] `LevelLoader`: per-level map, start position, camera framing, lake; next level / all clear / retry flow and `LEVEL n / m` HUD
+- [x] `MapLayoutValidator`: errors, warnings, approximate reachability from the start tile
+- [x] Map tool window: level list, painting brushes, resize and shift, item mode, checks panel
+- [x] Map tool: Scene view 3D preview (never saved) and Play This Level
+- [ ] Playtest the map tool: painting, resize, undo, preview with scene save, Play This Level; then the level flow in game — **user**

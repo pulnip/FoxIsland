@@ -107,6 +107,152 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M10</span></div>
+      <h2>맵툴: 씬 뷰 3D 미리보기와 "Play This Level"</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><b>3D 미리보기</b>(<code>MapToolPreview</code>): Main 씬에 <code>[Map Preview]</code>를 만들고, 씬의 맵 · 잔디 · 물 설정을 복사해서 편집 중인 레벨을 그대로 세움. 칠할 때마다 다시 만들고 씬 뷰가 맵을 비춤</li>
+        <li>미리보기의 모든 오브젝트에 <code>HideFlags.DontSave</code>를 걸어서 씬 파일에는 절대 저장되지 않음. 창을 닫거나, 토글을 끄거나, 플레이 모드에 들어가면 지워짐 (프로젝트가 씬 리로드를 끈 상태라 직접 지움)</li>
+        <li><b>Play This Level</b>(<code>MapToolPlayMode</code>): 저장 → Main 씬 열기 → <code>SessionState</code>에 레이아웃 GUID → 플레이 모드. <code>LevelSession.TestLayout</code>이 그 레이아웃을 넘겨주고, 타이틀을 건너뛰고, HUD에 <code>TEST PLAY</code>, 클리어 카드는 Retry만. 플레이 모드를 나가면 키를 지움</li>
+        <li>검증 (배치 모드):
+          <ul>
+            <li>6×5 임시 레벨 미리보기: 타일 23개 생성</li>
+            <li>미리보기를 켠 채 씬을 저장해도 씬 파일이 바이트 단위로 동일함</li>
+            <li>미리보기 정리 확인</li>
+            <li>테스트 플레이 캡처</li>
+          </ul>
+        </li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m10-test-play.png" alt="테스트 플레이 HUD"><figcaption>6×5 임시 레벨 테스트 플레이: 고정 아이템 3개, 프레이밍 · 호수 · 시작 위치 자동</figcaption></figure>
+        <figure><img src="images/m10-test-clear.png" alt="테스트 플레이 클리어"><figcaption>테스트 플레이 클리어: Retry만</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Editor/MapTool/MapToolPreview.cs</code>, <code>MapToolPlayMode.cs</code> (새 파일)</li>
+        <li><code>Unity/Assets/Editor/MainSceneSetup.cs</code> — <code>ScenePath</code> 공개</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>창 자체의 조작(칠하기, Undo, 미리보기 토글)은 배치 모드에서 화면 캡처를 할 수 없어서 플레이테스트 항목으로 남김</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M10</span></div>
+      <h2>맵툴 창 (Tools → MyGame → Map Tool)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><b>왼쪽 레벨 목록</b>: 드래그로 플레이 순서 변경, New(빈 4×4), Duplicate, Remove(목록에서만 빼기 / 에셋까지 휴지통, 확인창). 레벨은 최소 하나 유지. 이름 칸에서 에셋 이름 바꾸기</li>
+        <li><b>그리드</b>: 위에서 본 모습으로 0행이 아래(카메라 쪽), 0열이 왼쪽. 축 번호가 검사 메시지의 좌표와 같음. 색은 타일 종류와 높이, 글자는 높이 / <code>C</code> / <code>S</code>, <code>◆</code>는 고정 아이템(<code>◆ ↑</code>는 공중)</li>
+        <li><b>브러시</b>: 구멍, 높이 0/1/2, 무너짐, 시작, 아이템, 아이템(공중), 아이템 지우기. 숫자키 1~9로 고르고 왼쪽 드래그로 칠함
+          <ul>
+            <li>시작 칸은 하나만 유지 (새로 찍으면 이전 시작 칸은 높이 0)</li>
+            <li>일반 타일이 아닌 걸로 덮으면 그 칸 아이템 삭제</li>
+            <li>아이템 브러시를 쓰면 아이템 모드가 Fixed로 바뀜</li>
+          </ul>
+        </li>
+        <li><b>크기</b>: 가로 × 세로 2~8, (0,0) 모서리 기준으로 늘리기/자르기. ◀▶▲▼는 전체를 한 칸씩 밀고 넘친 칸은 반대편으로 돌아와서 내용이 사라지지 않음</li>
+        <li><b>아이템</b>: Random(개수 슬라이더) 또는 Fixed(개수 표시, 전체 지우기)</li>
+        <li><b>검사 패널</b>: 편집할 때마다 다시 검사. 메시지를 누르면 해당 칸이 흰 테두리로 강조. 그리드에서는 도달 불가 칸이 빨강, 두 칸 점프 칸이 주황 테두리. 오류가 있으면 Play This Level 비활성</li>
+        <li>모든 편집은 Undo 가능, 한 번의 드래그가 Undo 한 번. 드래그가 끝나면 에셋 저장</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Editor/MapTool/MapToolWindow.cs</code> (새 파일)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>IMGUI로 만듦. 그리드를 직접 그리고 드래그로 칠하는 데 가장 단순한 방식</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M10</span></div>
+      <h2>레이아웃 검사기 (MapLayoutValidator)</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>창과 상관없는 순수 C#으로 만들어서 맵툴, <code>MapLayout.OnValidate</code>, 배치 테스트가 같이 씀. 결과는 이슈 목록 + 칸별 도달 가능 여부(<code>LayoutReport</code>)</li>
+        <li><b>오류</b>: 줄 파싱 실패, 크기 2~8 밖, 시작 칸이 1개가 아님, 고정 아이템이 일반 타일 밖이거나 한 칸에 둘, 아이템 0개</li>
+        <li><b>경고</b>: 랜덤 개수가 일반 타일 수보다 많음, 랜덤 아이템이 못 가는 칸에 생길 수 있음, 못 가는 칸 · 고정 아이템, 두 칸 높이 점프가 필요한 칸</li>
+        <li><b>도달 판정</b> (plan §4.5 수치 근사): 시작 칸에서 상하좌우로 탐색. 한 칸 위는 쉬움, 두 칸 위는 "아슬아슬"(도달은 함), 내려가는 건 자유, 구멍 하나는 같거나 낮은 칸으로만 달리기 점프. 공중 아이템은 칸에 가면 먹을 수 있다고 봄 (점프 높이 1.2 &gt; 1.0)</li>
+        <li>배치 스크립트로 7개 경우 확인, 전부 통과: 시작 칸 없음, 구멍 너머 높은 칸, 구멍 너머 같은 높이, 두 칸 점프, 고립된 아이템, 구멍 위 아이템, 9×9 크기</li>
+        <li>Level01 검사 결과: 뒤쪽 높이 2 타일 두 칸이 "두 칸 점프" 경고 (직접 플레이할 때 아슬아슬하게 올라가던 곳과 일치)</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/MapLayoutValidator.cs</code>, <code>LayoutReport.cs</code> (새 파일)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>근사 판정이라 툴 화면에도 그렇게 표시. 대각선 이동이나 무너지는 타일의 시간 제한은 고려하지 않음</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M10</span></div>
+      <h2>LevelLoader와 레벨 진행</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>새 <code>LevelLoader</code>: 씬을 불러올 때 레벨을 골라 맵 생성, 플레이어를 시작 칸으로, 카메라 프레이밍(<code>MapMetrics.FramedBounds</code>), 호수를 그리드 가운데로. 지금까지 빌드 때 씬에 고정되던 것들이라 크기가 다른 레벨이 가능해짐</li>
+        <li>새 <code>LevelSession</code>: 씬을 다시 불러와도 유지되는 현재 레벨 번호와 "타이틀로 열지" 값. 도메인 리로드가 꺼져 있어서 실행할 때마다 초기화</li>
+        <li><code>GameManager</code>:
+          <ul>
+            <li>Next Level, 같은 레벨 Retry, 타이틀로 나가기(레벨 1로 되돌림)</li>
+            <li>클리어 화면의 Space는 다음 레벨 / 테스트 플레이면 재시도 / 마지막 레벨이면 타이틀</li>
+            <li>시작 상태 결정은 <code>Awake</code>로 옮김 (생성자에서는 에셋 접근이 안 됨)</li>
+          </ul>
+        </li>
+        <li>UI: 위쪽 가운데 <code>LEVEL n / m</code> 알약. 클리어 카드는 Next Level (Space) + Retry (R), 마지막 레벨이면 "All Clear!" + Back to Title (Space)</li>
+        <li>배치 플레이 모드로 확인: 레벨 1 클리어 → Next Level → 6×5 레벨 2 로드 → All Clear</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m10-clear-next.png" alt="다음 레벨이 있는 클리어"><figcaption>레벨 1/2 클리어 (캡처용으로 바로 수집해서 시간 0초)</figcaption></figure>
+        <figure><img src="images/m10-all-clear.png" alt="All Clear"><figcaption>마지막 레벨: All Clear!</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Core/LevelLoader.cs</code>, <code>LevelSession.cs</code> (새 파일), <code>GameManager.cs</code></li>
+        <li><code>Unity/Assets/Scripts/Map/MapBuilder.cs</code> — <code>Awake</code> 자동 빌드 대신 <code>Build(layout)</code>, 칸 → 타일 조회</li>
+        <li><code>Unity/Assets/Scripts/Map/MapMetrics.cs</code> — <code>FramedBounds</code></li>
+        <li><code>Unity/Assets/Scripts/Player/PlayerController.cs</code> — <code>JumpHeight</code></li>
+        <li><code>Unity/Assets/Scripts/UI/GameUI.cs</code>, <code>GameUI.uxml</code>, <code>GameUI.uss</code></li>
+        <li><code>Unity/Assets/Editor/MainSceneSetup.cs</code>, <code>Main.unity</code> — <code>Level</code> 오브젝트 연결, 편집 화면은 레벨 1 기준</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>문제: 씬을 Single로 열면 참조 없는 에셋이 언로드돼서 그 전에 불러둔 <code>LevelList</code> 참조가 null로 저장됨 → 씬을 연 다음에 불러오도록 수정</li>
+        <li>진행 저장과 레벨 선택은 이번 범위 밖 (plan §10 열린 질문)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M10</span></div>
+      <h2>레벨 데이터: LevelList, 레벨별 아이템</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>새 <code>LevelList</code> 에셋에 레벨을 플레이 순서대로 담음. 기존 <code>MapLayout_Main</code>은 <code>Levels/Level01</code>로 이동 (GUID 유지라 참조 안 깨짐)</li>
+        <li><code>MapLayout</code>에 레벨별 아이템 설정: Random(개수, 기본 4) 또는 Fixed(칸 + 공중 여부). 그래서 <code>GameConfig</code>(아이템 개수 하나뿐)는 삭제</li>
+        <li>줄 파싱은 모양(토큰, 줄 길이)만 검사하도록 바꿔서, 편집 중 시작 칸이 잠깐 없어도 레이아웃이 열림. 내용 검사는 검사기로 옮김</li>
+        <li><code>TileSpec.ToToken()</code>, <code>MapLayout.SetTiles()</code>로 칸 배열을 텍스트 줄로 되돌려 저장 (git diff로 보기 쉬운 형식 유지)</li>
+        <li><code>ItemSpawner</code>는 레이아웃을 받아서 고정 칸 또는 랜덤으로 배치</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/LevelList.cs</code>, <code>ItemMode.cs</code>, <code>ItemPlacement.cs</code> (새 파일), <code>MapLayout.cs</code>, <code>TileSpec.cs</code></li>
+        <li><code>Unity/Assets/Scripts/Items/ItemSpawner.cs</code></li>
+        <li><code>Unity/Assets/ScriptableObjects/LevelList.asset</code>, <code>Levels/Level01.asset</code> (이동) / 삭제: <code>GameConfig.cs</code>, <code>GameConfig.asset</code></li>
+        <li><code>Unity/Assets/Editor/MapAssetBuilder.cs</code> (<code>EnsureLevels</code>), <code>ItemAssetBuilder.cs</code></li>
+        <li><code>docs/plan.md</code> — §1, §2, §2.1, §4.2~4.4, 새 §4.8 맵툴, §5, §7, §8, §8.1, §10 / <code>CLAUDE.md</code> — 레벨 에셋 규칙, 저장소 경로, 맵툴 검증 방법</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>레벨과 목록은 builder가 덮어쓰지 않는 콘텐츠. 맵툴로만 편집</li>
+        <li>Build All 두 번 돌려 결과 동일 확인</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-09-29</time><span class="tag">M9</span></div>
       <h2>앱 아이콘 확정, 게임 이름 Fox Island</h2>
       <h3>한 일</h3>

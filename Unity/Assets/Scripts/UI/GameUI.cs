@@ -24,6 +24,7 @@ namespace MyGame.UI
         private VisualElement _hudItems;
         private Label _hudItemsLabel;
         private Label _hudTime;
+        private Label _hudLevel;
         private VisualElement _hints;
         private GameIcon _modeIcon;
         private Label _modeLabel;
@@ -31,8 +32,12 @@ namespace MyGame.UI
         private VisualElement _pausePanel;
         private VisualElement _gameOverPanel;
         private VisualElement _clearPanel;
+        private Label _clearTitle;
         private Label _clearTime;
         private Label _clearItems;
+        private VisualElement _clearNext;
+        private VisualElement _clearRestart;
+        private VisualElement _clearToTitle;
         private int _shownSeconds = -1;
 
         private void OnEnable()
@@ -42,6 +47,7 @@ namespace MyGame.UI
             _hudItems = _root.Q<VisualElement>("hud-items");
             _hudItemsLabel = _root.Q<Label>("hud-items-label");
             _hudTime = _root.Q<Label>("hud-time");
+            _hudLevel = _root.Q<Label>("hud-level");
             _hints = _root.Q<VisualElement>("hud-hints");
             _modeIcon = _root.Q<GameIcon>("hud-mode-icon");
             _modeLabel = _root.Q<Label>("hud-mode");
@@ -49,8 +55,12 @@ namespace MyGame.UI
             _pausePanel = _root.Q<VisualElement>("pause-panel");
             _gameOverPanel = _root.Q<VisualElement>("game-over-panel");
             _clearPanel = _root.Q<VisualElement>("clear-panel");
+            _clearTitle = _root.Q<Label>("clear-title");
             _clearTime = _root.Q<Label>("clear-time");
             _clearItems = _root.Q<Label>("clear-items");
+            _clearNext = _root.Q<VisualElement>("clear-next");
+            _clearRestart = _root.Q<VisualElement>("clear-restart");
+            _clearToTitle = _root.Q<VisualElement>("clear-to-title");
 
             Bind("title-start", GameState.Title, _gameManager.StartGame);
             Bind("title-quit", GameState.Title, _gameManager.QuitApplication);
@@ -58,11 +68,20 @@ namespace MyGame.UI
             Bind("pause-restart", GameState.Paused, _gameManager.Restart);
             Bind("pause-quit", GameState.Paused, _gameManager.QuitToTitle);
             Bind("game-over-restart", GameState.GameOver, _gameManager.Restart);
+            Bind("clear-next", GameState.Cleared, _gameManager.NextLevel);
             Bind("clear-restart", GameState.Cleared, _gameManager.Restart);
+            Bind("clear-to-title", GameState.Cleared, _gameManager.QuitToTitle);
 
             _gameManager.StateChanged += OnStateChanged;
             _gameManager.ItemCountChanged += OnItemCountChanged;
             _player.RunningChanged += OnRunningChanged;
+        }
+
+        /// <summary>After every Awake, so the game manager has picked its first state and level.</summary>
+        private void Start()
+        {
+            var level = _gameManager.Level;
+            _hudLevel.text = level.IsTestPlay ? "TEST PLAY" : $"LEVEL {level.LevelNumber} / {level.LevelCount}";
             OnStateChanged(_gameManager.State);
             OnItemCountChanged();
             OnRunningChanged(_player.IsRunning);
@@ -115,6 +134,13 @@ namespace MyGame.UI
                 var minutes = Mathf.FloorToInt(time / 60f);
                 _clearTime.text = $"{minutes}:{time - minutes * 60f:00.0}";
                 _clearItems.text = $"{_gameManager.CollectedCount} / {_gameManager.TotalCount}";
+
+                var level = _gameManager.Level;
+                var isLastLevel = !level.HasNextLevel && !level.IsTestPlay;
+                _clearTitle.text = isLastLevel ? "All Clear!" : "Clear!";
+                _clearNext.EnableInClassList(HiddenClass, !level.HasNextLevel);
+                _clearRestart.EnableInClassList(HiddenClass, isLastLevel);
+                _clearToTitle.EnableInClassList(HiddenClass, !isLastLevel);
             }
         }
 

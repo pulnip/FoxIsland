@@ -16,7 +16,7 @@ namespace MyGame.EditorTools
 {
     public static class MainSceneSetup
     {
-        private const string ScenePath = "Assets/Scenes/Main.unity";
+        public const string ScenePath = "Assets/Scenes/Main.unity";
         private const float SpawnClearance = 0.05f;
         private const float LakeBedThickness = 0.2f;
 
@@ -41,16 +41,27 @@ namespace MyGame.EditorTools
                 return;
             }
 
+            // Load assets after opening the scene: opening it unloads unreferenced assets.
             var scene = EditorSceneManager.OpenScene(ScenePath, OpenSceneMode.Single);
+            var levels = AssetDatabase.LoadAssetAtPath<LevelList>(MapAssetBuilder.LevelListPath);
+            if (levels == null || levels.Count == 0 || levels[0] == null)
+            {
+                Debug.LogError($"[MainSceneSetup] {MapAssetBuilder.LevelListPath} needs at least one level.");
+                return;
+            }
+
+            // The scene is laid out for level 1 so it reads right in edit mode; LevelLoader refits
+            // it to the loaded level at runtime.
+            var layout = levels[0];
             SetupLight();
             var mapBuilder = SetupMap();
-            var layout = mapBuilder.Layout;
             var player = SetupPlayer(layout);
             SetupGrass(mapBuilder, player);
-            SetupLake(layout);
-            SetupCamera(layout, player);
+            var water = SetupLake(layout);
+            var quarterView = SetupCamera(layout, player);
             var itemSpawner = SetupItems(mapBuilder);
-            var gameManager = SetupGameManager(player, itemSpawner);
+            var levelLoader = SetupLevelLoader(levels, mapBuilder, player, quarterView, water);
+            var gameManager = SetupGameManager(levelLoader, player, itemSpawner);
             SetupUI(gameManager, player);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -60,7 +71,7 @@ namespace MyGame.EditorTools
         /// <summary>
         /// Frames the whole grid plus the player's jump height above the highest level.
         /// </summary>
-        private static void SetupCamera(MapLayout layout, PlayerController player)
+        private static QuarterViewCamera SetupCamera(MapLayout layout, PlayerController player)
         {
             var cameraObject = GameObject.FindWithTag("MainCamera");
             if (cameraObject == null)
@@ -74,14 +85,11 @@ namespace MyGame.EditorTools
             camera.backgroundColor = new Color(0.12f, 0.36f, 0.56f);
             camera.GetUniversalAdditionalCameraData().requiresDepthOption = CameraOverrideOption.On;
 
-            var jumpHeight = new SerializedObject(player).FindProperty("_jumpHeight").floatValue;
-            var bounds = MapMetrics.GridBounds(layout.Width, layout.Depth);
-            bounds.SetMinMax(bounds.min, bounds.max + Vector3.up * jumpHeight);
-
             var quarterView = EditorAssetUtility.GetOrAddComponent<QuarterViewCamera>(cameraObject);
             EditorAssetUtility.SetFloat(quarterView, "_screenFill", 0.85f);
-            quarterView.FramedBounds = bounds;
+            quarterView.FramedBounds = MapMetrics.FramedBounds(layout.Width, layout.Depth, player.JumpHeight);
             quarterView.Apply();
+            return quarterView;
         }
 
         private static void SetupLight()
@@ -113,8 +121,6 @@ namespace MyGame.EditorTools
             }
 
             builder.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
-            var layout = AssetDatabase.LoadAssetAtPath<MapLayout>(MapAssetBuilder.LayoutPath);
-            EditorAssetUtility.SetReference(builder, "_layout", layout);
             EditorAssetUtility.SetReference(builder, "_solidPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.SolidPrefabPath));
             EditorAssetUtility.SetReference(builder, "_crumblingPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.CrumblingPrefabPath));
             EditorAssetUtility.SetReference(builder, "_startPrefab", AssetDatabase.LoadAssetAtPath<Tile>(MapAssetBuilder.StartPrefabPath));
@@ -150,7 +156,7 @@ namespace MyGame.EditorTools
         /// tile pillars stand on. The water shader reads the camera depth texture for its depth
         /// tint and foam.
         /// </summary>
-        private static void SetupLake(MapLayout layout)
+        private static WaterSurface SetupLake(MapLayout layout)
         {
             var water = Object.FindObjectsByType<WaterSurface>().FirstOrDefault();
             if (water == null)
@@ -178,6 +184,7 @@ namespace MyGame.EditorTools
             bed.localPosition = Vector3.up * (MapMetrics.LakeBedY - MapMetrics.WaterLevel - LakeBedThickness * 0.5f);
             bed.localRotation = Quaternion.identity;
             bed.localScale = new Vector3(size, LakeBedThickness, size);
+            return water;
         }
 
         private static ItemSpawner SetupItems(MapBuilder mapBuilder)
@@ -194,7 +201,24 @@ namespace MyGame.EditorTools
             return spawner;
         }
 
-        private static GameManager SetupGameManager(PlayerController player, ItemSpawner itemSpawner)
+        private static LevelLoader SetupLevelLoader(
+            LevelList levels, MapBuilder mapBuilder, PlayerController player, QuarterViewCamera quarterView, WaterSurface water)
+        {
+            var loader = Object.FindObjectsByType<LevelLoader>().FirstOrDefault();
+            if (loader == null)
+            {
+                loader = new GameObject("Level").AddComponent<LevelLoader>();
+            }
+
+            EditorAssetUtility.SetReference(loader, "_levels", levels);
+            EditorAssetUtility.SetReference(loader, "_mapBuilder", mapBuilder);
+            EditorAssetUtility.SetReference(loader, "_player", player);
+            EditorAssetUtility.SetReference(loader, "_camera", quarterView);
+            EditorAssetUtility.SetReference(loader, "_water", water);
+            return loader;
+        }
+
+        private static GameManager SetupGameManager(LevelLoader levelLoader, PlayerController player, ItemSpawner itemSpawner)
         {
             var gameManager = Object.FindObjectsByType<GameManager>().FirstOrDefault();
             if (gameManager == null)
@@ -202,7 +226,7 @@ namespace MyGame.EditorTools
                 gameManager = new GameObject("GameManager").AddComponent<GameManager>();
             }
 
-            EditorAssetUtility.SetReference(gameManager, "_config", AssetDatabase.LoadAssetAtPath<GameConfig>(ItemAssetBuilder.GameConfigPath));
+            EditorAssetUtility.SetReference(gameManager, "_levelLoader", levelLoader);
             EditorAssetUtility.SetReference(gameManager, "_player", player);
             EditorAssetUtility.SetReference(gameManager, "_itemSpawner", itemSpawner);
             EditorAssetUtility.SetReference(gameManager, "_splashEffect", AssetDatabase.LoadAssetAtPath<ParticleSystem>(EffectAssetBuilder.SplashPath));

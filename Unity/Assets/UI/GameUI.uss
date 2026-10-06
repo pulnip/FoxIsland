@@ -52,6 +52,27 @@
     right: 36px;
 }
 
+.hud__center {
+    position: absolute;
+    top: 36px;
+    left: 0;
+    right: 0;
+    flex-direction: row;
+    justify-content: center;
+}
+
+.pill--inline {
+    position: relative;
+    top: 0;
+    height: 56px;
+    padding: 0 24px;
+}
+
+.pill__label--level {
+    font-size: 24px;
+    letter-spacing: 4px;
+}
+
 .pill__icon {
     width: 34px;
     height: 34px;

@@ -6,6 +6,11 @@
                 <game:GameIcon kind="Gem" class="icon pill__icon" picking-mode="Ignore" />
                 <ui:Label name="hud-items-label" text="0 / 0" class="pill__label" picking-mode="Ignore" />
             </ui:VisualElement>
+            <ui:VisualElement class="hud__center" picking-mode="Ignore">
+                <ui:VisualElement class="pill pill--inline" picking-mode="Ignore">
+                    <ui:Label name="hud-level" text="LEVEL 1 / 1" class="pill__label pill__label--level" picking-mode="Ignore" />
+                </ui:VisualElement>
+            </ui:VisualElement>
             <ui:VisualElement class="pill hud__time" picking-mode="Ignore">
                 <ui:Label name="hud-time" text="0:00" class="pill__label" picking-mode="Ignore" />
             </ui:VisualElement>
@@ -81,7 +86,7 @@
 
         <ui:VisualElement name="clear-panel" class="overlay hidden">
             <ui:VisualElement class="card">
-                <ui:Label text="Clear!" class="card__title" />
+                <ui:Label name="clear-title" text="Clear!" class="card__title" />
                 <ui:VisualElement class="card__divider" />
                 <ui:VisualElement class="stats">
                     <game:GameIcon kind="Clock" class="icon stats__icon" picking-mode="Ignore" />
@@ -89,9 +94,17 @@
                     <game:GameIcon kind="Gem" class="icon stats__icon stats__icon--gap" picking-mode="Ignore" />
                     <ui:Label name="clear-items" text="0 / 0" class="stats__value" />
                 </ui:VisualElement>
-                <ui:Button name="clear-restart" class="button">
+                <ui:Button name="clear-next" class="button">
                     <game:GameIcon kind="Play" class="icon button__icon" picking-mode="Ignore" />
-                    <ui:Label text="Play Again (R)" class="button__label" picking-mode="Ignore" />
+                    <ui:Label text="Next Level (Space)" class="button__label" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:Button name="clear-restart" class="button">
+                    <game:GameIcon kind="Restart" class="icon button__icon" picking-mode="Ignore" />
+                    <ui:Label text="Retry (R)" class="button__label" picking-mode="Ignore" />
+                </ui:Button>
+                <ui:Button name="clear-to-title" class="button">
+                    <game:GameIcon kind="Quit" class="icon button__icon" picking-mode="Ignore" />
+                    <ui:Label text="Back to Title (Space)" class="button__label" picking-mode="Ignore" />
                 </ui:Button>
             </ui:VisualElement>
         </ui:VisualElement>
