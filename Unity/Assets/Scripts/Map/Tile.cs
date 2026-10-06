@@ -46,12 +46,13 @@ namespace MyGame.Map
 
         /// <summary>
         /// Sizes the slab, pillar, and collider for <paramref name="level"/>; the pillar reaches down
-        /// to <paramref name="bodyBottom"/> (the lake bed, or less for a floating iceberg).
+        /// to <paramref name="bodyBottom"/> (the lake bed, or less for a floating iceberg) and the
+        /// collider to <paramref name="colliderBottom"/>, both in the tile's local space.
         /// </summary>
-        public void ApplyLevel(int level, float bodyBottom = MapMetrics.LakeBedY)
+        public void ApplyLevel(int level, float bodyBottom = MapMetrics.LakeBedY, float colliderBottom = MapMetrics.TileBottom)
         {
             var top = MapMetrics.TopY(level);
-            var height = top - MapMetrics.TileBottom;
+            var height = top - colliderBottom;
             var visualWidth = MapMetrics.TileSize - VisualInset;
 
             _top.localPosition = new Vector3(0f, top - TopThickness * 0.5f, 0f);
@@ -62,7 +63,7 @@ namespace MyGame.Map
             _body.localScale = new Vector3(visualWidth, bodyHeight, visualWidth);
 
             var collider = GetComponent<BoxCollider>();
-            collider.center = new Vector3(0f, MapMetrics.TileBottom + height * 0.5f, 0f);
+            collider.center = new Vector3(0f, colliderBottom + height * 0.5f, 0f);
             collider.size = new Vector3(MapMetrics.TileSize, height, MapMetrics.TileSize);
         }
     }

@@ -68,6 +68,45 @@
     padding: 0 24px;
 }
 
+.hud__tide {
+    margin-left: 16px;
+    padding: 0 20px;
+}
+
+.tide__icon {
+    width: 30px;
+    height: 30px;
+    margin-right: 14px;
+    color: rgb(150, 215, 255);
+}
+
+.tide__track {
+    width: 140px;
+    height: 10px;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.16);
+    overflow: hidden;
+}
+
+.tide__fill {
+    height: 100%;
+    width: 0;
+    border-radius: 5px;
+    background-color: rgb(120, 200, 255);
+}
+
+.tide__arrow {
+    width: 22px;
+    height: 22px;
+    margin-left: 10px;
+    color: rgb(150, 215, 255);
+    rotate: 90deg;
+}
+
+.tide__arrow.tide__arrow--rising {
+    rotate: -90deg;
+}
+
 .pill__label--level {
     font-size: 24px;
     letter-spacing: 4px;

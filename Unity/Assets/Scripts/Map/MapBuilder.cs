@@ -15,6 +15,9 @@ namespace MyGame.Map
         [SerializeField] private Tile _crumblingPrefab;
         [SerializeField] private SkinMaterials[] _skins = Array.Empty<SkinMaterials>();
 
+        [Tooltip("Icebergs float on it; optional.")]
+        [SerializeField] private Tide _tide;
+
         private readonly List<Tile> _tiles = new();
         private readonly Dictionary<Vector2Int, Tile> _tilesByCell = new();
 
@@ -51,7 +54,7 @@ namespace MyGame.Map
                     ApplySkin(tile);
                     if (spec.Skin == Skin.Iceberg)
                     {
-                        tile.gameObject.AddComponent<FloatingBlock>();
+                        tile.gameObject.AddComponent<FloatingBlock>().Tide = _tide;
                     }
 
                     _tiles.Add(tile);

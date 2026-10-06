@@ -21,6 +21,7 @@ namespace MyGame.UI
         private const string NextStageClass = "stage-card--next";
         private const string EmptyStageClass = "stage-card--empty";
         private const string BestClass = "card__note--best";
+        private const string TideRisingClass = "tide__arrow--rising";
         private const long BumpDurationMs = 120;
 
         [SerializeField] private GameManager _gameManager;
@@ -32,6 +33,9 @@ namespace MyGame.UI
         private Label _hudItemsLabel;
         private Label _hudTime;
         private Label _hudLevel;
+        private VisualElement _hudTide;
+        private VisualElement _hudTideFill;
+        private VisualElement _hudTideArrow;
         private VisualElement _hints;
         private GameIcon _modeIcon;
         private Label _modeLabel;
@@ -61,6 +65,9 @@ namespace MyGame.UI
             _hudItemsLabel = _root.Q<Label>("hud-items-label");
             _hudTime = _root.Q<Label>("hud-time");
             _hudLevel = _root.Q<Label>("hud-level");
+            _hudTide = _root.Q<VisualElement>("hud-tide");
+            _hudTideFill = _root.Q<VisualElement>("hud-tide-fill");
+            _hudTideArrow = _root.Q<VisualElement>("hud-tide-arrow");
             _hints = _root.Q<VisualElement>("hud-hints");
             _modeIcon = _root.Q<GameIcon>("hud-mode-icon");
             _modeLabel = _root.Q<Label>("hud-mode");
@@ -102,6 +109,7 @@ namespace MyGame.UI
         {
             var level = _gameManager.Level;
             _hudLevel.text = level.StageTitle.ToUpperInvariant();
+            _hudTide.EnableInClassList(HiddenClass, _gameManager.Tide == null || !_gameManager.Tide.IsEnabled);
             var anyCleared = level.Worlds.AllStages().Any(stage => level.Worlds.TryGetStage(stage, out var layout) && level.Progress.IsCleared(layout));
             _titleStartLabel.text = $"{(anyCleared ? "Continue" : "Start")}  {level.Stage.Label}";
             _stagesOpen = LevelSession.OpenStageSelect && _gameManager.State == GameState.Title;
@@ -135,6 +143,21 @@ namespace MyGame.UI
                 _shownSeconds = seconds;
                 _hudTime.text = $"{seconds / 60}:{seconds % 60:00}";
             }
+
+            UpdateTideGauge();
+        }
+
+        /// <summary>The tide gauge: how high the lake stands now, and which way it is going.</summary>
+        private void UpdateTideGauge()
+        {
+            var tide = _gameManager.Tide;
+            if (tide == null || !tide.IsEnabled)
+            {
+                return;
+            }
+
+            _hudTideFill.style.width = Length.Percent(tide.Amount * 100f);
+            _hudTideArrow.EnableInClassList(TideRisingClass, tide.IsRising);
         }
 
         /// <summary>

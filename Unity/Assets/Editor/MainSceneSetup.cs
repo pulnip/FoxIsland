@@ -4,6 +4,7 @@ using MyGame.Core;
 using MyGame.Items;
 using MyGame.Map;
 using MyGame.Player;
+using MyGame.Puzzle;
 using MyGame.UI;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -25,6 +26,7 @@ namespace MyGame.EditorTools
         {
             EffectAssetBuilder.Run();
             MapAssetBuilder.Run();
+            PuzzleAssetBuilder.Run();
             CharacterAssetBuilder.Run();
             PlayerAssetBuilder.Run();
             ItemAssetBuilder.Run();
@@ -59,10 +61,13 @@ namespace MyGame.EditorTools
             SetupGrass(mapBuilder, player);
             SetupAlpine(mapBuilder);
             var water = SetupLake(layout);
+            var tide = EditorAssetUtility.GetOrAddComponent<Tide>(water.gameObject);
+            EditorAssetUtility.SetReference(mapBuilder, "_tide", tide);
+            var puzzles = SetupPuzzles(mapBuilder);
             var quarterView = SetupCamera(layout, player);
             var itemSpawner = SetupItems(mapBuilder);
-            var levelLoader = SetupLevelLoader(worlds, mapBuilder, player, quarterView, water);
-            var gameManager = SetupGameManager(levelLoader, player, itemSpawner);
+            var levelLoader = SetupLevelLoader(worlds, mapBuilder, puzzles, player, quarterView, water, tide);
+            var gameManager = SetupGameManager(levelLoader, player, itemSpawner, tide);
             SetupUI(gameManager, player);
             EditorSceneManager.MarkSceneDirty(scene);
             EditorSceneManager.SaveScene(scene);
@@ -221,6 +226,37 @@ namespace MyGame.EditorTools
             return water;
         }
 
+        /// <summary>The puzzle elements' parent; LevelLoader builds them at scene load (plan.md §4.10).</summary>
+        private static PuzzleBoard SetupPuzzles(MapBuilder mapBuilder)
+        {
+            var board = Object.FindObjectsByType<PuzzleBoard>().FirstOrDefault();
+            if (board == null)
+            {
+                board = new GameObject("Puzzles").AddComponent<PuzzleBoard>();
+            }
+
+            board.transform.SetPositionAndRotation(Vector3.zero, Quaternion.identity);
+            EditorAssetUtility.SetReference(board, "_mapBuilder", mapBuilder);
+            EditorAssetUtility.SetReference(board, "_switchPrefab", AssetDatabase.LoadAssetAtPath<FloorSwitch>(PuzzleAssetBuilder.SwitchPrefabPath));
+            EditorAssetUtility.SetReference(board, "_risingMarkerPrefab", AssetDatabase.LoadAssetAtPath<GameObject>(PuzzleAssetBuilder.RisingMarkerPrefabPath));
+            EditorAssetUtility.SetReference(board, "_cratePrefab", AssetDatabase.LoadAssetAtPath<Crate>(PuzzleAssetBuilder.CratePrefabPath));
+            EditorAssetUtility.SetReference(board, "_springboardPrefab", AssetDatabase.LoadAssetAtPath<Springboard>(PuzzleAssetBuilder.SpringboardPrefabPath));
+            EditorAssetUtility.SetReference(board, "_platformPrefab", AssetDatabase.LoadAssetAtPath<MovingPlatform>(PuzzleAssetBuilder.PlatformPrefabPath));
+            EditorAssetUtility.SetReference(board, "_splashEffect", AssetDatabase.LoadAssetAtPath<ParticleSystem>(EffectAssetBuilder.TileSplashPath));
+
+            var materials = PuzzleAssetBuilder.GroupMaterials();
+            var serializedObject = new SerializedObject(board);
+            var property = serializedObject.FindProperty("_groupMaterials");
+            property.arraySize = materials.Length;
+            for (var i = 0; i < materials.Length; i++)
+            {
+                property.GetArrayElementAtIndex(i).objectReferenceValue = materials[i];
+            }
+
+            serializedObject.ApplyModifiedPropertiesWithoutUndo();
+            return board;
+        }
+
         private static ItemSpawner SetupItems(MapBuilder mapBuilder)
         {
             var spawner = Object.FindObjectsByType<ItemSpawner>().FirstOrDefault();
@@ -236,7 +272,8 @@ namespace MyGame.EditorTools
         }
 
         private static LevelLoader SetupLevelLoader(
-            WorldList worlds, MapBuilder mapBuilder, PlayerController player, QuarterViewCamera quarterView, WaterSurface water)
+            WorldList worlds, MapBuilder mapBuilder, PuzzleBoard puzzles, PlayerController player, QuarterViewCamera quarterView,
+            WaterSurface water, Tide tide)
         {
             var loader = Object.FindObjectsByType<LevelLoader>().FirstOrDefault();
             if (loader == null)
@@ -249,10 +286,12 @@ namespace MyGame.EditorTools
             EditorAssetUtility.SetReference(loader, "_player", player);
             EditorAssetUtility.SetReference(loader, "_camera", quarterView);
             EditorAssetUtility.SetReference(loader, "_water", water);
+            EditorAssetUtility.SetReference(loader, "_tide", tide);
+            EditorAssetUtility.SetReference(loader, "_puzzles", puzzles);
             return loader;
         }
 
-        private static GameManager SetupGameManager(LevelLoader levelLoader, PlayerController player, ItemSpawner itemSpawner)
+        private static GameManager SetupGameManager(LevelLoader levelLoader, PlayerController player, ItemSpawner itemSpawner, Tide tide)
         {
             var gameManager = Object.FindObjectsByType<GameManager>().FirstOrDefault();
             if (gameManager == null)
@@ -263,6 +302,7 @@ namespace MyGame.EditorTools
             EditorAssetUtility.SetReference(gameManager, "_levelLoader", levelLoader);
             EditorAssetUtility.SetReference(gameManager, "_player", player);
             EditorAssetUtility.SetReference(gameManager, "_itemSpawner", itemSpawner);
+            EditorAssetUtility.SetReference(gameManager, "_tide", tide);
             EditorAssetUtility.SetReference(gameManager, "_splashEffect", AssetDatabase.LoadAssetAtPath<ParticleSystem>(EffectAssetBuilder.SplashPath));
             return gameManager;
         }

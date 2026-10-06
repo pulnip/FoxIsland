@@ -1,5 +1,6 @@
 using System.Linq;
 using MyGame.Map;
+using MyGame.Puzzle;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -8,7 +9,7 @@ namespace MyGame.EditorTools.MapTool
 {
     /// <summary>
     /// Shows the edited layout in the Scene view: a <c>[Map Preview]</c> hierarchy in the Main scene
-    /// with its own map, grass, and water, copied from the scene's originals. Everything in it is
+    /// with its own map, grass, puzzle elements (at rest), and water, copied from the scene's originals. Everything in it is
     /// <see cref="HideFlags.DontSave"/>, so it never reaches the scene file.
     /// </summary>
     internal static class MapToolPreview
@@ -47,6 +48,12 @@ namespace MyGame.EditorTools.MapTool
             }
 
             var root = FindRoot();
+            if (root != null && root.GetComponentInChildren<PuzzleBoard>() == null)
+            {
+                Object.DestroyImmediate(root);
+                root = null;
+            }
+
             if (root == null)
             {
                 root = CreateRoot();
@@ -60,6 +67,7 @@ namespace MyGame.EditorTools.MapTool
             grass.Build();
             builder.GetComponent<TerrainDecor>().Build();
             builder.GetComponent<SnowField>().Build();
+            root.GetComponentInChildren<PuzzleBoard>().Build(layout);
             var bounds = MapMetrics.GridBounds(layout.Width, layout.Depth, layout.MaxHeight);
             water.transform.position = new Vector3(bounds.center.x, MapMetrics.WaterLevel, bounds.center.z);
             water.Build();
@@ -96,6 +104,17 @@ namespace MyGame.EditorTools.MapTool
             CopyFromScene<GrassField>(map, builder);
             CopyFromScene<TerrainDecor>(map, builder);
             CopyFromScene<SnowField>(map, builder);
+
+            var puzzles = EditorUtility.CreateGameObjectWithHideFlags("Puzzles", HideFlags.DontSave, typeof(PuzzleBoard));
+            puzzles.transform.SetParent(root.transform, false);
+            var board = puzzles.GetComponent<PuzzleBoard>();
+            var sourceBoard = FindSource<PuzzleBoard>();
+            if (sourceBoard != null)
+            {
+                EditorUtility.CopySerialized(sourceBoard, board);
+            }
+
+            EditorAssetUtility.SetReference(board, "_mapBuilder", builder);
 
             var water = EditorUtility.CreateGameObjectWithHideFlags("Water", HideFlags.DontSave, typeof(WaterSurface));
             water.transform.SetParent(root.transform, false);

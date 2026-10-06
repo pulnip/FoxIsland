@@ -107,6 +107,133 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M15</span></div>
+      <h2>맵툴 퍼즐 브러시 · 검사기 확장</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>브러시 "Puzzle" 줄 추가: <code>K</code> 스위치, <code>U</code> 승강 블록, <code>X</code> 상자, <code>J</code> 점프대, <code>P</code> 발판(한쪽 끝 클릭 → 같은 행/열의 다른 끝 클릭, Esc 취소)</li>
+        <li>옵션 줄: 그룹 A/B/C(<code>Q</code>로 순환), 승강 블록 "Rise to"(0~6), 발판 높이·주기. 밀물 설정 줄(켜기, 상승 높이 0.3~1.0, 주기 6~12초)</li>
+        <li>그리드 표시: 승강 블록은 그룹 색 테두리 + <code>↑n</code>, 스위치/상자/점프대는 왼쪽 아래 배지, 밀물 때 잠기는 칸은 <code>≈</code>, 발판은 경로 막대 + 양 끝 <code>P높이</code></li>
+        <li><code>E</code>는 이제 아이템과 그 칸의 퍼즐 요소를 모두 지움. 구멍·무너짐·빙산으로 칠하면 그 칸의 퍼즐 요소도 사라짐. 크기 조절·이동(Shift 화살표)도 퍼즐 요소를 함께 처리</li>
+        <li>검사기: 퍼즐 요소 위치 오류(단단한 블록이 아님, 한 칸에 둘, 시작 칸 위 상자/점프대 등), 짝 없는 그룹 경고, 블록을 뚫고 지나가는 발판 경고, 밀물 때 잠기는 칸 경고</li>
+        <li>도달 판정: 칸마다 설 수 있는 높이 여러 개(승강 블록의 두 높이, 상자 위, 지나가는 발판). 점프대에서는 4층까지, 발판은 경로의 칸들을 이어줌. 밀물은 썰물 기준</li>
+        <li>3D 미리보기에 퍼즐 요소도 표시(정지 상태)</li>
+        <li>검증: 승강 블록 · 점프대 · 발판 · 상자 덕분에 닿게 되는 칸, 밀물에 잠기는 칸, 오류 판정 등 14개 항목 통과. Level01은 여전히 오류 0개</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Editor/MapTool/MapToolWindow.cs</code>, <code>MapToolPreview.cs</code></li>
+        <li><code>Unity/Assets/Scripts/Map/MapLayoutValidator.cs</code>, <code>LayoutReport.cs</code> (<code>Flooded</code>)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>움직이는 요소의 도달 판정은 근사치라서 툴에 그렇게 표시함. 상자를 밀어서 생기는 길은 상자의 시작 칸만 반영</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M15</span></div>
+      <h2>점프대 · 움직이는 발판</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>점프대: 블록 위 주황 패드. 밟으면 2.4 높이로 튀어 올라 4층 위 블록까지 닿음. 튈 때 패드가 출렁임</li>
+        <li>움직이는 발판: 같은 행/열의 두 칸 사이를 왕복, 양 끝에서 잠깐 멈춤. 높이·주기는 레벨마다 설정</li>
+        <li>여우가 밟고 있는 물체(발판, 승강 블록, 상자, 빙산)를 따라 같이 움직이게 함</li>
+        <li>검증: 점프대 위로 걸어가면 튀어 올라 높이 4 블록 위에 착지. 발판에 올려두면 반대쪽 끝(x=4.5)까지 실려 가고, 내려서 건너편 블록으로 이동</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m15-springboard.png" alt="점프대"><figcaption>점프대로 4층 블록에 올라가는 중</figcaption></figure>
+        <figure><img src="images/m15-platform.png" alt="움직이는 발판"><figcaption>발판에 실려 물 위를 건너는 중</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Puzzle/Springboard.cs</code>, <code>MovingPlatform.cs</code> (새 파일)</li>
+        <li><code>Unity/Assets/Scripts/Player/PlayerController.cs</code> (<code>Launch</code>, 밟은 물체 따라가기)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>물리 자동 동기화가 꺼져 있어서, 여우가 움직이기 전에 <code>Physics.SyncTransforms()</code>로 움직인 충돌체 위치를 맞춤</li>
+        <li>배치 테스트의 최고 높이 2.24는 프레임이 느린 탓에 실제보다 낮게 잡힌 값</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M15</span></div>
+      <h2>밀 수 있는 상자</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>한 층 높이 나무 상자. 옆면을 축 방향으로 0.2초 밀면 한 칸 미끄러짐. 앞 칸이 더 높거나, 다른 상자·점프대·무너지는 블록·빙산이 있거나, 여우가 있으면 막힘</li>
+        <li>낮은 칸으로 밀면 떨어지고, 얼음 위에서는 계속 미끄러지고, 구멍에 빠지면 물보라와 함께 그 칸을 메우는 0층 바닥이 됨</li>
+        <li>상자는 밑의 블록을 따라 움직이고(승강 블록), 스위치를 눌러둘 수 있음</li>
+        <li>검증: 상자를 밀어 스위치에 올리면 승강 블록이 올라감 → 다시 밀어 구멍에 빠뜨리면 구멍이 메워지고 스위치가 풀려 블록이 내려감 → 여우가 메운 칸을 건너감</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m15-crate-switch.png" alt="스위치 위 상자"><figcaption>상자가 스위치를 눌러 승강 블록(빨간 테두리)이 올라감</figcaption></figure>
+        <figure><img src="images/m15-crate-filled.png" alt="구멍을 메운 상자"><figcaption>구멍을 메운 상자, 스위치가 풀려 블록이 내려감</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Puzzle/Crate.cs</code> (새 파일), <code>PuzzleBoard.cs</code></li>
+        <li><code>Unity/Assets/Scripts/Player/PlayerController.cs</code> (상자 밀기)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>상자 프리팹의 기둥 4개가 같은 이름이라 빌드할 때마다 파일 ID가 바뀌었음 → 이름을 다르게 해서 Build All 결과가 다시 동일해짐</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M15</span></div>
+      <h2>스위치 · 승강 블록</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>스위치: 블록 위 발판형 버튼(그룹 A 빨강, B 파랑, C 보라). 여우가 서 있거나 상자가 올라가 있는 동안 눌림</li>
+        <li>승강 블록: 같은 그룹 스위치가 눌린 동안 0.4초에 걸쳐 정해진 높이로 이동(더 낮게 정하면 가라앉음). 기둥은 늘 호수 바닥까지 이어지고, 윗면에 그룹 색 테두리</li>
+        <li>검증: 스위치에 올라서면 블록이 3층(1.5) 올라가고, 내려오면 다시 내려감</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m15-switch.png" alt="스위치와 승강 블록"><figcaption>스위치를 밟아 승강 블록이 올라옴</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Puzzle/PuzzleBoard.cs</code>, <code>FloorSwitch.cs</code>, <code>RisingBlock.cs</code> (새 파일)</li>
+        <li><code>Unity/Assets/Scripts/Map/SwitchPlacement.cs</code>, <code>RisingBlockPlacement.cs</code>, <code>PuzzleGroup.cs</code> (새 파일), <code>MapLayout.cs</code>, <code>Tile.cs</code></li>
+        <li><code>Unity/Assets/Editor/PuzzleAssetBuilder.cs</code> (새 파일, 퍼즐 프리팹 · 머티리얼), <code>MainSceneSetup.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>스위치와 점프대는 충돌체가 없음(여우 발 높이 0.1 넘는 턱은 못 넘기 때문). 여우는 블록 위에 서고 버튼/패드만 눌림</li>
+        <li>승강 블록 칸에는 아이템이 안 생김</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M15</span></div>
+      <h2>밀물 · 썰물</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>레벨마다 밀물 설정(켜기, 상승 높이 0.3~1.0, 주기 6~12초). 썰물에서 시작해 호수 수면이 부드럽게 오르내림. 타이틀에서는 멈춰 있음</li>
+        <li>게임 오버 판정이 움직이는 수면을 따름 → 밀물 때 낮은 블록에 있으면 빠짐. 빙산은 수면을 따라 함께 뜸</li>
+        <li>HUD: 밀물 스테이지에만 스테이지 이름 옆에 물결 아이콘 + 수위 막대 + 오르는지/내리는지 화살표</li>
+        <li>검증: 상승 0.9에서 3초 뒤 수면 0.60(만조), 높이 2 블록 위 여우는 무사. 높이 0에 서 있으면 수면이 발(0.02)을 넘는 순간 게임 오버</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m15-tide-high.png" alt="만조"><figcaption>만조: 0·1층 블록이 잠기고 HUD 수위 막대가 가득 참</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/Tide.cs</code>, <code>TideSettings.cs</code> (새 파일), <code>FloatingBlock.cs</code>, <code>MapBuilder.cs</code></li>
+        <li><code>Unity/Assets/Scripts/Core/GameManager.cs</code> (<code>WaterLevel</code>), <code>LevelLoader.cs</code></li>
+        <li><code>Unity/Assets/UI/GameUI.uxml</code>, <code>GameUI.uss</code>, <code>Unity/Assets/Scripts/UI/GameUI.cs</code>, <code>GameIcon.cs</code> (<code>Wave</code>)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>잠긴 블록 윗면에 물 셰이더의 거품이 하얗게 비침. 얕은 여울처럼 보여서 일단 둠</li>
+        <li>씬을 다시 불러올 때 첫 프레임이 길면 그만큼 밀물 시계가 앞서감(배치 모드에서 약 0.6초)</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-10-06</time><span class="tag">M14</span></div>
       <h2>타이틀 Continue · 스테이지 목록 · 월드 넘어가는 클리어 흐름</h2>
       <h3>한 일</h3>

@@ -9,8 +9,8 @@ namespace MyGame.EditorTools.MapTool
 {
     /// <summary>
     /// Tools/MyGame/Map Tool (plan.md §4.8): manages the worlds' stage lists and paints one layout on a
-    /// top-down grid, with live checks, a Scene view preview, and test play. Layouts are edited as
-    /// in-memory drafts; nothing reaches the asset until Save (unsaved levels show a *).
+    /// top-down grid, with puzzle elements, live checks, a Scene view preview, and test play. Layouts
+    /// are edited as in-memory drafts; nothing reaches the asset until Save (unsaved levels show a *).
     /// </summary>
     internal sealed class MapToolWindow : EditorWindow
     {
@@ -39,6 +39,10 @@ namespace MyGame.EditorTools.MapTool
         private static readonly Color GemColor = new(1f, 0.82f, 0.22f);
         private static readonly Color UnreachableColor = new(0.95f, 0.25f, 0.2f);
         private static readonly Color HardJumpColor = new(1f, 0.6f, 0.1f);
+        private static readonly Color CrateColor = new(0.62f, 0.42f, 0.24f);
+        private static readonly Color SpringColor = new(1f, 0.58f, 0.16f);
+        private static readonly Color PlatformColor = new(0.86f, 0.89f, 0.93f);
+        private static readonly Color FloodColor = new(0.55f, 0.85f, 1f);
 
         private static readonly BrushInfo[] Brushes =
         {
@@ -63,13 +67,23 @@ namespace MyGame.EditorTools.MapTool
             new(Brush.Start, "Start", KeyCode.T, false, StartColor),
             new(Brush.ItemGround, "Item", KeyCode.G, false, GemColor),
             new(Brush.ItemAir, "Item (air)", KeyCode.A, false, GemColor),
-            new(Brush.EraseItem, "Erase item", KeyCode.E, false, Color.gray),
+            new(Brush.Erase, "Erase", KeyCode.E, false, Color.gray),
+            new(Brush.Switch, "Switch", KeyCode.K, false, PuzzleGroups.ColorOf(PuzzleGroup.A)),
+            new(Brush.Rising, "Rising", KeyCode.U, false, PuzzleGroups.ColorOf(PuzzleGroup.B)),
+            new(Brush.Crate, "Crate", KeyCode.X, false, CrateColor),
+            new(Brush.Springboard, "Spring", KeyCode.J, false, SpringColor),
+            new(Brush.Platform, "Platform", KeyCode.P, false, PlatformColor),
         };
 
         [SerializeField] private Brush _brush = Brush.Height0;
 
         [Tooltip("Skin given to a hole when a height brush turns it into a block.")]
         [SerializeField] private Skin _lastSkin = Skin.Meadow;
+
+        [SerializeField] private PuzzleGroup _group;
+        [SerializeField] private int _raisedHeight = 2;
+        [SerializeField] private int _platformHeight = 1;
+        [SerializeField] private float _platformPeriod = 6f;
 
         private readonly Dictionary<MapLayout, MapLayout> _drafts = new();
         private readonly Dictionary<MapLayout, string> _savedJson = new();
@@ -93,6 +107,8 @@ namespace MyGame.EditorTools.MapTool
         private Vector2 _scroll;
         private GUIStyle _cellStyle;
         private GUIStyle _gemStyle;
+        private GUIStyle _badgeStyle;
+        private Vector2Int? _platformStart;
 
         private enum Brush
         {
@@ -117,7 +133,12 @@ namespace MyGame.EditorTools.MapTool
             Start,
             ItemGround,
             ItemAir,
-            EraseItem,
+            Erase,
+            Switch,
+            Rising,
+            Crate,
+            Springboard,
+            Platform,
         }
 
         [MenuItem("Tools/MyGame/Map Tool", priority = 10)]
@@ -220,6 +241,7 @@ namespace MyGame.EditorTools.MapTool
         {
             _cellStyle ??= new GUIStyle(EditorStyles.boldLabel) { alignment = TextAnchor.MiddleCenter, fontSize = 16, normal = { textColor = Color.white } };
             _gemStyle ??= new GUIStyle(EditorStyles.boldLabel) { alignment = TextAnchor.LowerCenter, fontSize = 13, normal = { textColor = GemColor } };
+            _badgeStyle ??= new GUIStyle(EditorStyles.miniBoldLabel) { alignment = TextAnchor.MiddleCenter, normal = { textColor = Color.white } };
 
             if (_worlds == null)
             {
@@ -483,6 +505,7 @@ namespace MyGame.EditorTools.MapTool
 
             DrawSizeControls();
             DrawItemControls();
+            DrawTideControls();
             DrawBrushes();
             DrawGrid();
             DrawIssues();
@@ -643,15 +666,79 @@ namespace MyGame.EditorTools.MapTool
             }
         }
 
+        private void DrawTideControls()
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                var tide = _draft.Tide;
+                var enabled = EditorGUILayout.ToggleLeft("Tide", tide.Enabled, GUILayout.Width(60f));
+                float rise;
+                float period;
+                using (new EditorGUI.DisabledScope(!enabled))
+                {
+                    EditorGUILayout.LabelField("Rise", GUILayout.Width(32f));
+                    rise = EditorGUILayout.Slider(tide.Rise, TideSettings.MinRise, TideSettings.MaxRise);
+                    EditorGUILayout.LabelField("Period (s)", GUILayout.Width(64f));
+                    period = EditorGUILayout.Slider(tide.Period, TideSettings.MinPeriod, TideSettings.MaxPeriod);
+                }
+
+                var changed = new TideSettings(enabled, rise, period);
+                if (!changed.Equals(tide))
+                {
+                    Undo.RecordObject(_draft, "Change Tide");
+                    _draft.Tide = changed;
+                    MarkChanged();
+                }
+            }
+        }
+
         private void DrawBrushes()
         {
             EditorGUILayout.LabelField("Brushes (key in brackets, ⇧ = Shift; drag to paint). Height and skin are painted separately.",
                 EditorStyles.miniBoldLabel);
             var skinStart = System.Array.FindIndex(Brushes, info => info.Brush == Brush.Sand);
             var otherStart = System.Array.FindIndex(Brushes, info => info.Brush == Brush.Crumbling);
+            var puzzleStart = System.Array.FindIndex(Brushes, info => info.Brush == Brush.Switch);
             DrawBrushRow("Height", 0, skinStart);
             DrawBrushRow("Skin", skinStart, otherStart);
-            DrawBrushRow("Other", otherStart, Brushes.Length);
+            DrawBrushRow("Other", otherStart, puzzleStart);
+            DrawBrushRow("Puzzle", puzzleStart, Brushes.Length);
+            DrawPuzzleOptions();
+        }
+
+        /// <summary>Settings the puzzle brushes paint with: group, raised height, platform height and period.</summary>
+        private void DrawPuzzleOptions()
+        {
+            using (new EditorGUILayout.HorizontalScope())
+            {
+                GUILayout.Label(string.Empty, GUILayout.Width(44f));
+                GUILayout.Label("[Q] Group", GUILayout.Width(64f));
+                for (var i = 0; i < PuzzleGroups.Count; i++)
+                {
+                    var group = (PuzzleGroup)i;
+                    var rect = GUILayoutUtility.GetRect(new GUIContent(group.ToString()), "Button", GUILayout.Width(32f), GUILayout.Height(22f));
+                    if (GUI.Toggle(rect, _group == group, group.ToString(), "Button"))
+                    {
+                        _group = group;
+                    }
+
+                    EditorGUI.DrawRect(new Rect(rect.x + 3f, rect.yMax - 4f, rect.width - 6f, 3f), PuzzleGroups.ColorOf(group));
+                }
+
+                GUILayout.Space(12f);
+                GUILayout.Label("Rise to", GUILayout.Width(44f));
+                _raisedHeight = EditorGUILayout.IntSlider(_raisedHeight, 0, CellSpec.MaxHeight, GUILayout.Width(140f));
+                GUILayout.Space(12f);
+                GUILayout.Label("Platform height", GUILayout.Width(92f));
+                _platformHeight = EditorGUILayout.IntSlider(_platformHeight, 0, CellSpec.MaxHeight, GUILayout.Width(140f));
+                GUILayout.Label("Period (s)", GUILayout.Width(62f));
+                _platformPeriod = EditorGUILayout.Slider(_platformPeriod, PlatformPlacement.MinPeriod, PlatformPlacement.MaxPeriod, GUILayout.Width(140f));
+                GUILayout.FlexibleSpace();
+            }
+
+            EditorGUILayout.LabelField(
+                "Switch / Rising use the group; Rising moves the block to \"Rise to\" while the group is on. Platform: click one end, then the other.",
+                EditorStyles.miniLabel);
         }
 
         private void DrawBrushRow(string title, int from, int to)
@@ -691,6 +778,7 @@ namespace MyGame.EditorTools.MapTool
 
             var showItems = _draft.ItemMode == ItemMode.Fixed;
             var cells = _report != null && _report.Cells.GetLength(0) == width && _report.Cells.GetLength(1) == depth ? _report.Cells : null;
+            var flooded = cells != null ? _report.Flooded : null;
 
             for (var row = 0; row < depth; row++)
             {
@@ -715,6 +803,12 @@ namespace MyGame.EditorTools.MapTool
                         GUI.Label(rect, inAir ? "◆ ↑" : "◆", _gemStyle);
                     }
 
+                    DrawPuzzleBadges(rect, cell);
+                    if (flooded != null && flooded[column, row])
+                    {
+                        Badge(new Rect(rect.xMax - 16f, rect.yMax - 15f, 14f, 13f), "≈", FloodColor, DarkText);
+                    }
+
                     if (cells != null)
                     {
                         switch (cells[column, row])
@@ -735,6 +829,12 @@ namespace MyGame.EditorTools.MapTool
                 }
             }
 
+            DrawPlatforms(origin, depth);
+            if (_platformStart is { } pending)
+            {
+                DrawOutline(CellRect(origin, depth, pending.x, pending.y), PlatformColor, 3f);
+            }
+
             var bottom = origin.y + depth * CellSize;
             for (var column = 0; column < width; column++)
             {
@@ -746,11 +846,66 @@ namespace MyGame.EditorTools.MapTool
             HandlePainting(origin, width, depth);
         }
 
+        /// <summary>Rising block (top right, raised height), and switch, crate, or springboard (bottom left).</summary>
+        private void DrawPuzzleBadges(Rect rect, Vector2Int cell)
+        {
+            foreach (var block in _draft.RisingBlocks.Where(block => block.Cell == cell))
+            {
+                var color = PuzzleGroups.ColorOf(block.Group);
+                DrawOutline(new Rect(rect.x + 3f, rect.y + 3f, rect.width - 6f, rect.height - 6f), color, 2f);
+                var arrow = block.RaisedHeight >= _cells[cell.x, cell.y].Height ? "↑" : "↓";
+                Badge(new Rect(rect.xMax - 24f, rect.y + 2f, 22f, 14f), arrow + block.RaisedHeight, color, Color.white);
+            }
+
+            var corner = new Rect(rect.x + 2f, rect.yMax - 15f, 18f, 13f);
+            foreach (var floorSwitch in _draft.Switches.Where(floorSwitch => floorSwitch.Cell == cell))
+            {
+                Badge(corner, floorSwitch.Group.ToString(), PuzzleGroups.ColorOf(floorSwitch.Group), Color.white);
+            }
+
+            if (_draft.Crates.Contains(cell))
+            {
+                Badge(corner, "▣", CrateColor, Color.white);
+            }
+
+            if (_draft.Springboards.Contains(cell))
+            {
+                Badge(corner, "⤒", SpringColor, DarkText);
+            }
+        }
+
+        /// <summary>A bar along each platform's path, with its height at both ends.</summary>
+        private void DrawPlatforms(Vector2 origin, int depth)
+        {
+            foreach (var platform in _draft.Platforms)
+            {
+                var from = CellRect(origin, depth, platform.From.x, platform.From.y).center;
+                var to = CellRect(origin, depth, platform.To.x, platform.To.y).center;
+                var min = Vector2.Min(from, to);
+                var max = Vector2.Max(from, to);
+                var color = new Color(PlatformColor.r, PlatformColor.g, PlatformColor.b, 0.7f);
+                EditorGUI.DrawRect(new Rect(min.x - 3f, min.y - 3f, max.x - min.x + 6f, max.y - min.y + 6f), color);
+                foreach (var end in new[] { from, to })
+                {
+                    Badge(new Rect(end.x - 12f, end.y - 7f, 24f, 14f), $"P{platform.Height}", PlatformColor, DarkText);
+                }
+            }
+        }
+
+        private void Badge(Rect rect, string text, Color background, Color textColor)
+        {
+            EditorGUI.DrawRect(rect, background);
+            _badgeStyle.normal.textColor = textColor;
+            GUI.Label(rect, text, _badgeStyle);
+        }
+
         private void DrawIssues()
         {
             GUILayout.Space(8f);
             EditorGUILayout.LabelField("Checks", EditorStyles.boldLabel);
-            EditorGUILayout.LabelField("Reachability is approximate: it follows the jump rules in plan.md §4.5.", EditorStyles.miniLabel);
+            EditorGUILayout.LabelField(
+                "Reachability is approximate: it follows the jump rules in plan.md §4.5, and moving puzzle elements are only estimated (low tide).",
+                EditorStyles.miniLabel);
             if (_report == null || _report.Issues.Count == 0)
             {
                 EditorGUILayout.HelpBox("No problems found.", MessageType.Info);
@@ -842,16 +997,147 @@ namespace MyGame.EditorTools.MapTool
                 case Brush.ItemAir:
                     PlaceItem(cell, _brush == Brush.ItemAir);
                     break;
-                case Brush.EraseItem:
-                    if (_draft.Items.Any(item => item.Cell == cell))
-                    {
-                        Undo.RecordObject(_draft, "Erase Item");
-                        _draft.SetItems(_draft.Items.Where(item => item.Cell != cell).ToArray());
-                        MarkChanged();
-                    }
-
+                case Brush.Erase:
+                    Erase(cell);
+                    break;
+                case Brush.Switch:
+                case Brush.Crate:
+                case Brush.Springboard:
+                    PlaceOccupant(cell, _brush);
+                    break;
+                case Brush.Rising:
+                    PlaceRising(cell);
+                    break;
+                case Brush.Platform:
+                    PlacePlatformEnd(cell);
                     break;
             }
+        }
+
+        /// <summary>Removes the item and every puzzle element on the cell (a platform with an end there).</summary>
+        private void Erase(Vector2Int cell)
+        {
+            var hasAny = _draft.Items.Any(item => item.Cell == cell) || HasPuzzleElement(cell)
+                         || _draft.Platforms.Any(platform => platform.From == cell || platform.To == cell);
+            if (!hasAny)
+            {
+                return;
+            }
+
+            Undo.RecordObject(_draft, "Erase");
+            _draft.SetItems(_draft.Items.Where(item => item.Cell != cell).ToArray());
+            RemovePuzzleElements(cell);
+            _draft.SetPlatforms(_draft.Platforms.Where(platform => platform.From != cell && platform.To != cell).ToArray());
+            MarkChanged();
+        }
+
+        private bool HasPuzzleElement(Vector2Int cell) =>
+            _draft.Switches.Any(floorSwitch => floorSwitch.Cell == cell) || _draft.RisingBlocks.Any(block => block.Cell == cell)
+            || _draft.Crates.Contains(cell) || _draft.Springboards.Contains(cell);
+
+        private void RemovePuzzleElements(Vector2Int cell)
+        {
+            _draft.SetSwitches(_draft.Switches.Where(floorSwitch => floorSwitch.Cell != cell).ToArray());
+            _draft.SetRisingBlocks(_draft.RisingBlocks.Where(block => block.Cell != cell).ToArray());
+            _draft.SetCrates(_draft.Crates.Where(crate => crate != cell).ToArray());
+            _draft.SetSpringboards(_draft.Springboards.Where(spring => spring != cell).ToArray());
+        }
+
+        private bool IsFirmBlock(Vector2Int cell) =>
+            _cells[cell.x, cell.y].IsBlock && !_cells[cell.x, cell.y].IsCrumbling && _cells[cell.x, cell.y].Skin != Skin.Iceberg;
+
+        /// <summary>A switch, crate, or springboard: one per cell, replacing whichever was there.</summary>
+        private void PlaceOccupant(Vector2Int cell, Brush brush)
+        {
+            if (!IsFirmBlock(cell))
+            {
+                _status = "Switches, crates, and springboards go on firm blocks (no hole, crumbling, or iceberg).";
+                return;
+            }
+
+            if (brush != Brush.Switch && cell == _draft.Start)
+            {
+                _status = "Crates and springboards stay off the start.";
+                return;
+            }
+
+            var isSame = brush switch
+            {
+                Brush.Switch => _draft.Switches.Contains(new SwitchPlacement(cell, _group)),
+                Brush.Crate => _draft.Crates.Contains(cell),
+                _ => _draft.Springboards.Contains(cell),
+            };
+            if (isSame)
+            {
+                return;
+            }
+
+            Undo.RecordObject(_draft, "Place Puzzle Element");
+            _draft.SetSwitches(_draft.Switches.Where(floorSwitch => floorSwitch.Cell != cell).ToArray());
+            _draft.SetCrates(_draft.Crates.Where(crate => crate != cell).ToArray());
+            _draft.SetSpringboards(_draft.Springboards.Where(spring => spring != cell).ToArray());
+            switch (brush)
+            {
+                case Brush.Switch:
+                    _draft.SetSwitches(_draft.Switches.Append(new SwitchPlacement(cell, _group)).ToArray());
+                    break;
+                case Brush.Crate:
+                    _draft.SetCrates(_draft.Crates.Append(cell).ToArray());
+                    break;
+                default:
+                    _draft.SetSpringboards(_draft.Springboards.Append(cell).ToArray());
+                    break;
+            }
+
+            if (brush != Brush.Switch)
+            {
+                _draft.SetItems(_draft.Items.Where(item => item.Cell != cell || MapLayoutValidator.CanHoldItem(_draft, _cells, cell)).ToArray());
+            }
+
+            MarkChanged();
+        }
+
+        private void PlaceRising(Vector2Int cell)
+        {
+            if (!IsFirmBlock(cell))
+            {
+                _status = "Rising blocks go on firm blocks (no hole, crumbling, or iceberg).";
+                return;
+            }
+
+            var placement = new RisingBlockPlacement(cell, _group, _raisedHeight);
+            if (_draft.RisingBlocks.Contains(placement))
+            {
+                return;
+            }
+
+            Undo.RecordObject(_draft, "Place Rising Block");
+            _draft.SetRisingBlocks(_draft.RisingBlocks.Where(block => block.Cell != cell).Append(placement).ToArray());
+            _draft.SetItems(_draft.Items.Where(item => item.Cell != cell).ToArray());
+            MarkChanged();
+        }
+
+        /// <summary>First click picks one end, the second (same row or column) adds the platform.</summary>
+        private void PlacePlatformEnd(Vector2Int cell)
+        {
+            if (_platformStart is not { } first)
+            {
+                _platformStart = cell;
+                _status = $"Platform from ({cell.x}, {cell.y}): click the other end in the same row or column (Esc cancels).";
+                return;
+            }
+
+            _platformStart = null;
+            var placement = new PlatformPlacement(first, cell, _platformHeight, _platformPeriod);
+            if (!placement.IsStraight)
+            {
+                _status = "A platform runs along one row or column between two different cells.";
+                return;
+            }
+
+            Undo.RecordObject(_draft, "Place Platform");
+            _draft.SetPlatforms(_draft.Platforms.Append(placement).ToArray());
+            MarkChanged();
         }
 
         /// <summary>Writes one cell; an item left on a cell that can no longer hold it goes away.</summary>
@@ -868,6 +1154,11 @@ namespace MyGame.EditorTools.MapTool
             if (!MapLayoutValidator.CanHoldItem(_draft, _cells, cell) && _draft.Items.Any(item => item.Cell == cell))
             {
                 _draft.SetItems(_draft.Items.Where(item => item.Cell != cell).ToArray());
+            }
+
+            if (!IsFirmBlock(cell))
+            {
+                RemovePuzzleElements(cell);
             }
 
             MarkChanged();
@@ -889,6 +1180,8 @@ namespace MyGame.EditorTools.MapTool
             Undo.RecordObject(_draft, "Move Start");
             _draft.Start = cell;
             _draft.SetItems(_draft.Items.Where(item => item.Cell != cell).ToArray());
+            _draft.SetCrates(_draft.Crates.Where(crate => crate != cell).ToArray());
+            _draft.SetSpringboards(_draft.Springboards.Where(spring => spring != cell).ToArray());
             MarkChanged();
         }
 
@@ -896,7 +1189,7 @@ namespace MyGame.EditorTools.MapTool
         {
             if (!MapLayoutValidator.CanHoldItem(_draft, _cells, cell))
             {
-                _status = "Items go on firm blocks other than the start (no hole, crumbling, or iceberg).";
+                _status = "Items go on firm blocks other than the start (no hole, crumbling, iceberg, rising block, or crate).";
                 return;
             }
 
@@ -930,9 +1223,16 @@ namespace MyGame.EditorTools.MapTool
                 }
             }
 
+            bool Inside(Vector2Int cell) => cell.x < width && cell.y < depth;
+
             Undo.RecordObject(_draft, "Resize Layout");
             _draft.SetCells(resized);
-            _draft.SetItems(_draft.Items.Where(item => item.Cell.x < width && item.Cell.y < depth).ToArray());
+            _draft.SetItems(_draft.Items.Where(item => Inside(item.Cell)).ToArray());
+            _draft.SetSwitches(_draft.Switches.Where(floorSwitch => Inside(floorSwitch.Cell)).ToArray());
+            _draft.SetRisingBlocks(_draft.RisingBlocks.Where(block => Inside(block.Cell)).ToArray());
+            _draft.SetCrates(_draft.Crates.Where(Inside).ToArray());
+            _draft.SetSpringboards(_draft.Springboards.Where(Inside).ToArray());
+            _draft.SetPlatforms(_draft.Platforms.Where(platform => Inside(platform.From) && Inside(platform.To)).ToArray());
             MarkChanged(frame: true);
         }
 
@@ -957,6 +1257,11 @@ namespace MyGame.EditorTools.MapTool
             _draft.SetCells(shifted);
             _draft.Start = Wrap(_draft.Start);
             _draft.SetItems(_draft.Items.Select(item => new ItemPlacement(Wrap(item.Cell), item.InAir)).ToArray());
+            _draft.SetSwitches(_draft.Switches.Select(floorSwitch => floorSwitch.WithCell(Wrap(floorSwitch.Cell))).ToArray());
+            _draft.SetRisingBlocks(_draft.RisingBlocks.Select(block => block.WithCell(Wrap(block.Cell))).ToArray());
+            _draft.SetCrates(_draft.Crates.Select(Wrap).ToArray());
+            _draft.SetSpringboards(_draft.Springboards.Select(Wrap).ToArray());
+            _draft.SetPlatforms(_draft.Platforms.Select(platform => platform.Moved(Wrap)).ToArray());
             MarkChanged();
         }
 
@@ -979,6 +1284,23 @@ namespace MyGame.EditorTools.MapTool
                 return;
             }
 
+            if (current.keyCode == KeyCode.Q && !current.shift)
+            {
+                _group = (PuzzleGroup)(((int)_group + 1) % PuzzleGroups.Count);
+                current.Use();
+                Repaint();
+                return;
+            }
+
+            if (current.keyCode == KeyCode.Escape && _platformStart != null)
+            {
+                _platformStart = null;
+                _status = null;
+                current.Use();
+                Repaint();
+                return;
+            }
+
             var key = current.keyCode >= KeyCode.Keypad0 && current.keyCode <= KeyCode.Keypad9
                 ? KeyCode.Alpha0 + (current.keyCode - KeyCode.Keypad0)
                 : current.keyCode;
@@ -986,6 +1308,7 @@ namespace MyGame.EditorTools.MapTool
             if (index >= 0)
             {
                 _brush = Brushes[index].Brush;
+                _platformStart = null;
                 current.Use();
                 Repaint();
             }

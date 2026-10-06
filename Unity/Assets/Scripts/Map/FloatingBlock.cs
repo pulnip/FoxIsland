@@ -4,8 +4,8 @@ namespace MyGame.Map
 {
     /// <summary>
     /// An iceberg (plan.md §4.9): bobs and rocks gently on the lake, and sinks a little while
-    /// something stands on it, rising again when it is free. The whole tile moves, collider
-    /// included, so the fox rides it.
+    /// something stands on it, rising again when it is free. It rides the tide when there is one.
+    /// The whole tile moves, collider included, so the fox rides it.
     /// </summary>
     [RequireComponent(typeof(Tile), typeof(BoxCollider))]
     public class FloatingBlock : MonoBehaviour
@@ -26,6 +26,8 @@ namespace MyGame.Map
         /// <summary>How far the block currently sits below its rest height (0 to the sink depth).</summary>
         public float Sink => _sink;
 
+        public Tide Tide { get; set; }
+
         private void Start()
         {
             _tile = GetComponent<Tile>();
@@ -40,7 +42,8 @@ namespace MyGame.Map
 
             var wave = Time.time * Mathf.PI * 2f / _bobPeriod + _phase;
             var bob = Mathf.Sin(wave) * _bobAmplitude * (1f - _sink / _sinkDepth * 0.5f);
-            transform.localPosition = _restPosition + Vector3.up * (bob - _sink);
+            var tide = Tide != null ? Tide.Rise : 0f;
+            transform.localPosition = _restPosition + Vector3.up * (tide + bob - _sink);
             transform.localRotation = Quaternion.Euler(Mathf.Sin(wave * 0.7f) * _tiltDegrees, 0f, Mathf.Cos(wave * 0.9f) * _tiltDegrees);
         }
 

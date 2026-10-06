@@ -1,5 +1,6 @@
 using System;
 using MyGame.Map;
+using MyGame.Puzzle;
 using UnityEngine;
 using UnityEngine.InputSystem;
 
@@ -7,11 +8,14 @@ namespace MyGame.Player
 {
     /// <summary>
     /// Camera-relative walking and jumping on a <see cref="CharacterController"/> (plan.md §4.5, §6).
+    /// Rides whatever it stands on (rising blocks, platforms, crates, icebergs) and pushes crates.
     /// </summary>
     [RequireComponent(typeof(CharacterController))]
     public class PlayerController : MonoBehaviour
     {
         private const float GroundedVerticalSpeed = -2f;
+        private const float PushAlignment = 0.7f;
+        private const float PushFootTolerance = 0.15f;
 
         [SerializeField] private float _walkSpeed = 1f;
         [SerializeField] private float _runSpeed = 3f;
@@ -43,6 +47,8 @@ namespace MyGame.Player
         private CellSpec _ground;
         private bool _keepsSlideInAir;
         private bool _wasGrounded = true;
+        private Transform _groundBody;
+        private Vector3 _groundBodyPosition;
 
         public event Action Jumped;
 
@@ -102,6 +108,7 @@ namespace MyGame.Player
 
         private void Update()
         {
+            RideGround();
             var now = Time.time;
             if (_controller.isGrounded)
             {
@@ -161,6 +168,15 @@ namespace MyGame.Player
             }
 
             var grounded = _controller.isGrounded;
+            if (grounded && _groundBody != null)
+            {
+                _groundBodyPosition = _groundBody.position;
+            }
+            else
+            {
+                _groundBody = null;
+            }
+
             if (grounded && !_wasGrounded)
             {
                 _keepsSlideInAir = false;
@@ -172,16 +188,69 @@ namespace MyGame.Player
             FaceTowards(target);
         }
 
+        /// <summary>Throws the fox up <paramref name="height"/> units, like a jump it did not ask for.</summary>
+        public void Launch(float height)
+        {
+            _verticalSpeed = Mathf.Sqrt(2f * height * -_gravity);
+            _lastGroundedTime = float.NegativeInfinity;
+            _lastJumpPressedTime = float.NegativeInfinity;
+            _keepsSlideInAir = IsOnIce;
+            Jumped?.Invoke();
+        }
+
+        /// <summary>
+        /// Moves along with the body stood on last frame, then syncs physics so the move below sees
+        /// colliders where their transforms are now.
+        /// </summary>
+        private void RideGround()
+        {
+            if (_groundBody != null)
+            {
+                var delta = _groundBody.position - _groundBodyPosition;
+                if (delta.sqrMagnitude > 0f)
+                {
+                    transform.position += delta;
+                }
+            }
+
+            Physics.SyncTransforms();
+        }
+
         private void OnControllerColliderHit(ControllerColliderHit hit)
         {
             if (hit.normal.y > 0.5f)
             {
                 _ground = hit.collider.TryGetComponent<Tile>(out var ground) ? ground.Spec : CellSpec.Hole;
+                _groundBody = hit.collider.transform;
             }
 
             if (hit.normal.y > 0.5f && hit.collider.TryGetComponent<CrumblingTile>(out var tile))
             {
                 tile.NotifyStoodOn();
+            }
+
+            if (Mathf.Abs(hit.normal.y) < 0.3f && hit.collider.TryGetComponent<Crate>(out var crate))
+            {
+                TryPush(crate, hit);
+            }
+        }
+
+        /// <summary>Walking into a crate's side, along a grid axis and from its floor, pushes it.</summary>
+        private void TryPush(Crate crate, ControllerColliderHit hit)
+        {
+            var moving = new Vector3(hit.moveDirection.x, 0f, hit.moveDirection.z);
+            if (!InputEnabled || !_wasGrounded || moving.sqrMagnitude < 0.0001f || transform.position.y < crate.Bottom - PushFootTolerance)
+            {
+                return;
+            }
+
+            var away = -hit.normal;
+            var direction = Mathf.Abs(away.x) > Mathf.Abs(away.z)
+                ? new Vector2Int(away.x > 0f ? 1 : -1, 0)
+                : new Vector2Int(0, away.z > 0f ? 1 : -1);
+            if (Vector3.Dot(moving.normalized, new Vector3(direction.x, 0f, direction.y)) > PushAlignment)
+            {
+                crate.Push(direction);
             }
         }
 

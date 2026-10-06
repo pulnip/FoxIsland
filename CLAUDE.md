@@ -64,6 +64,8 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
   Play progress lives outside the project (`progress.json` in `Application.persistentDataPath`);
   a test that writes it must back it up and restore it.
   Builders must be deterministic: running Build All twice must leave `git status` clean.
+  Give every child of a generated prefab a unique name; prefab saving matches children by name,
+  and duplicates get new file IDs on every build.
   Scene components whose tuning lives in code (`GrassField`) are reset to their script defaults
   by `EditorAssetUtility.ResetToDefaults`; changing a code default alone does not update a
   component already saved in the scene otherwise.

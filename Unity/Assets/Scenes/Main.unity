@@ -532,6 +532,7 @@ MonoBehaviour:
   - _skin: 7
     _top: {fileID: 2100000, guid: 16d4303b8f3bdc84eb2c985ce4b132c2, type: 2}
     _body: {fileID: 2100000, guid: 50d4f1f995078aa44a552a60833891dd, type: 2}
+  _tide: {fileID: 1603540923}
 --- !u!4 &577549369
 Transform:
   m_ObjectHideFlags: 0
@@ -739,6 +740,8 @@ MonoBehaviour:
   _player: {fileID: 1162758536}
   _camera: {fileID: 330585548}
   _water: {fileID: 1603540919}
+  _tide: {fileID: 1603540923}
+  _puzzles: {fileID: 1746997705}
 --- !u!4 &839982606
 Transform:
   m_ObjectHideFlags: 0
@@ -929,6 +932,7 @@ GameObject:
   - component: {fileID: 1603540921}
   - component: {fileID: 1603540920}
   - component: {fileID: 1603540919}
+  - component: {fileID: 1603540923}
   m_Layer: 0
   m_Name: Lake
   m_TagString: Untagged
@@ -1023,6 +1027,18 @@ Transform:
   - {fileID: 1143307379}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1603540923
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1603540918}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e6ea8ee4b0e479748abaa1eb4efb0022, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.Tide
 --- !u!1 &1676309840
 GameObject:
   m_ObjectHideFlags: 0
@@ -1055,6 +1071,7 @@ MonoBehaviour:
   _levelLoader: {fileID: 839982605}
   _player: {fileID: 1162758536}
   _itemSpawner: {fileID: 757931664}
+  _tide: {fileID: 1603540923}
   _splashEffect: {fileID: 778939960817309956, guid: 7d3f239e20271284c9afbc6a28447d4b, type: 3}
 --- !u!4 &1676309842
 Transform:
@@ -1063,6 +1080,61 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1676309840}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1746997704
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1746997706}
+  - component: {fileID: 1746997705}
+  m_Layer: 0
+  m_Name: Puzzles
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1746997705
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1746997704}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2ce56588831b47a4497363666864be48, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MyGame.Puzzle.PuzzleBoard
+  _mapBuilder: {fileID: 577549368}
+  _switchPrefab: {fileID: 5807488421584740051, guid: 92cca13e0b354ab48aa1d0fc53c4fa8c, type: 3}
+  _risingMarkerPrefab: {fileID: 6141854490310439029, guid: eb1f006451e8ed441a6dd1eca568713b, type: 3}
+  _cratePrefab: {fileID: 1965315939494449586, guid: 5dd616a9d1be9744f8124f598fa93738, type: 3}
+  _springboardPrefab: {fileID: 2615216604580749974, guid: 3ce2a377bd38e10429545718b992b8f4, type: 3}
+  _platformPrefab: {fileID: 2982272794444639356, guid: 5a1ee157bb759fd44b1f83ccf1badc75, type: 3}
+  _groupMaterials:
+  - {fileID: 2100000, guid: 2d25391e2365afc44a6366a2dae89dbd, type: 2}
+  - {fileID: 2100000, guid: 96a311f1726938741ae33bbc9ce08fa3, type: 2}
+  - {fileID: 2100000, guid: cc25eba12996e15469e64503f4e44878, type: 2}
+  _splashEffect: {fileID: 8103500051495855211, guid: 93b082919667ade4b8e65cf9d4a2f388, type: 3}
+--- !u!4 &1746997706
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1746997704}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1085,3 +1157,4 @@ SceneRoots:
   - {fileID: 757931665}
   - {fileID: 1603540922}
   - {fileID: 839982606}
+  - {fileID: 1746997706}

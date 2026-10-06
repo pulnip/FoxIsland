@@ -10,6 +10,13 @@
                 <ui:VisualElement class="pill pill--inline" picking-mode="Ignore">
                     <ui:Label name="hud-level" text="LEVEL 1 / 1" class="pill__label pill__label--level" picking-mode="Ignore" />
                 </ui:VisualElement>
+                <ui:VisualElement name="hud-tide" class="pill pill--inline hud__tide hidden" picking-mode="Ignore">
+                    <game:GameIcon kind="Wave" class="icon tide__icon" picking-mode="Ignore" />
+                    <ui:VisualElement class="tide__track" picking-mode="Ignore">
+                        <ui:VisualElement name="hud-tide-fill" class="tide__fill" picking-mode="Ignore" />
+                    </ui:VisualElement>
+                    <game:GameIcon name="hud-tide-arrow" kind="Walk" class="icon tide__arrow" picking-mode="Ignore" />
+                </ui:VisualElement>
             </ui:VisualElement>
             <ui:VisualElement class="pill hud__time" picking-mode="Ignore">
                 <ui:Label name="hud-time" text="0:00" class="pill__label" picking-mode="Ignore" />

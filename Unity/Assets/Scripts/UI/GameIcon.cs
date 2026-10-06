@@ -16,6 +16,7 @@ namespace MyGame.UI
         Check,
         Lock,
         Stages,
+        Wave,
     }
 
     /// <summary>
@@ -127,10 +128,24 @@ namespace MyGame.UI
                     FillPolygon(painter, color, P(0.14f, 0.56f), P(0.44f, 0.56f), P(0.44f, 0.86f), P(0.14f, 0.86f));
                     FillPolygon(painter, color, P(0.56f, 0.56f), P(0.86f, 0.56f), P(0.86f, 0.86f), P(0.56f, 0.86f));
                     break;
+                case GameIconKind.Wave:
+                    StrokeWave(painter, P, 0.36f);
+                    StrokeWave(painter, P, 0.66f);
+                    break;
                 case GameIconKind.FoxMark:
                     DrawFoxMark(painter, origin, size);
                     break;
             }
+        }
+
+        private static void StrokeWave(Painter2D painter, System.Func<float, float, Vector2> point, float y)
+        {
+            const float Crest = 0.13f;
+            painter.BeginPath();
+            painter.MoveTo(point(0.1f, y));
+            painter.BezierCurveTo(point(0.24f, y - Crest), point(0.36f, y - Crest), point(0.5f, y));
+            painter.BezierCurveTo(point(0.64f, y + Crest), point(0.76f, y + Crest), point(0.9f, y));
+            painter.Stroke();
         }
 
         private static void DrawRestart(Painter2D painter, Vector2 center, float radius, float size)

@@ -21,6 +21,7 @@ This file is the source of truth for implementation.
 | Stages           | `WorldList`: 4 worlds (Beach, Meadow, Forest, Mountain) of stages in play order; clearing one moves on to the next. Authored with Tools/MyGame/Map Tool (§4.8) |
 | Progress         | Clears and best times saved locally; a world unlocks when every stage before it is cleared (§8.2) |
 | Items            | Per level: random solid tiles (reshuffled every load) or fixed cells                      |
+| Puzzle elements  | Tide, switches + rising blocks, pushable crates, springboards, moving platforms; each world introduces one (§4.10) |
 | Camera           | Fixed orthographic quarter view, whole map always visible                                 |
 | Controls         | WASD = run (camera-relative), Left Ctrl = toggle walk mode, Space = jump (and start from the title), R = restart, Esc = pause |
 | Movement         | Free (continuous) movement with `CharacterController`, not tile-by-tile stepping           |
@@ -64,13 +65,14 @@ MyGame/
         │   └── Shaders/           # Grass.shader, Water.shader (hand-written URP shaders)
         ├── Editor/                # Tools/MyGame/* builders (see §2.1); MapTool/ (§4.8)
         ├── Input/                 # PlayerControls.inputactions
-        ├── Prefabs/               # Player, Item, Tiles/Tile_{Solid,Crumbling,Start}, Effects/{PickupBurst,CrumbleDust,Footprints,Splash,TileSplash}
+        ├── Prefabs/               # Player, Item, Tiles/Tile_{Solid,Crumbling}, Effects/{PickupBurst,CrumbleDust,Footprints,Splash,TileSplash,StepSplash}, Puzzle/{FloorSwitch,RisingMarker,Crate,Springboard,MovingPlatform}
         ├── Scenes/Main.unity
         ├── ScriptableObjects/     # WorldList, Levels/Level01… (MapLayout)
         ├── UI/                    # GameUI.uxml/.uss, GameTheme.tss, GamePanelSettings, Fonts/Inter-Regular.ttf (+ OFL license)
         └── Scripts/
             ├── Core/              # GameManager, GameState, LevelLoader, LevelSession, PlayerProgress
-            ├── Map/               # MapBuilder, MapLayout, MapLayoutValidator, LayoutReport, World, WorldList, StageRef, ItemMode, ItemPlacement, MapMetrics, Tile, CellSpec, Skin, SkinMaterials, CrumblingTile, GrassField, TerrainDecor, SnowField, VoxelMeshBuilder, WaterSurface
+            ├── Map/               # MapBuilder, MapLayout, MapLayoutValidator, LayoutReport, World, WorldList, StageRef, ItemMode, ItemPlacement, MapMetrics, Tile, CellSpec, Skin, SkinMaterials, CrumblingTile, FloatingBlock, GrassField, TerrainDecor, SnowField, VoxelMeshBuilder, WaterSurface, Tide, TideSettings, PuzzleGroup, SwitchPlacement, RisingBlockPlacement, PlatformPlacement
+            ├── Puzzle/            # PuzzleBoard, FloorSwitch, RisingBlock, Crate, Springboard, MovingPlatform
             ├── Player/            # PlayerController, PlayerAnimator
             ├── Items/             # Item, ItemSpawner
             ├── CameraRig/         # QuarterViewCamera
@@ -85,14 +87,17 @@ Generated assets are rebuilt from code, never hand-edited. `Tools/MyGame/Build A
 | ------------------------ | -------------------- | --------------------------------------------------------------- |
 | Build Effect Assets      | `EffectAssetBuilder` | `Effect_Voxel` material, `PickupBurst`, `CrumbleDust`, `Footprints`, `Splash`, `TileSplash` prefabs |
 | Build Map Assets         | `MapAssetBuilder`    | tile, grass, water, and lake bed materials, tile prefabs, `Levels/Level01` and `WorldList` (only if missing; deletes the old `LevelList`) |
+| Build Puzzle Assets      | `PuzzleAssetBuilder` | `Puzzle_*` materials (one per switch group), `Puzzle/` prefabs (§4.10) |
 | Build Character Assets   | `CharacterAssetBuilder` | `Fox.fbx` import settings, `Fox.controller` (only if its layout changed) |
 | Build Player Prefab      | `PlayerAssetBuilder` | player materials, `Player.prefab`                               |
 | Build Item Assets        | `ItemAssetBuilder`   | gem material, `Item.prefab`                                     |
 | Build UI Assets          | `UIAssetBuilder`     | `GamePanelSettings`                                             |
 | Build Player Settings    | `PlayerSettingsBuilder` | product name "Fox Island", `AppIcon.png` import settings, default app icon |
-| Setup Main Scene         | `MainSceneSetup`     | camera, light, `Map`, player, `Lake` (laid out for level 1), `Level` (`LevelLoader`), `GameManager`, `UI` |
+| Setup Main Scene         | `MainSceneSetup`     | camera, light, `Map`, player, `Lake` (laid out for level 1, with `Tide`), `Puzzles` (`PuzzleBoard`), `Level` (`LevelLoader`), `GameManager`, `UI` |
 
-Builders overwrite assets in place, so GUIDs and references survive a rebuild.
+Builders overwrite assets in place, so GUIDs and references survive a rebuild. Children of a
+generated prefab need unique names: prefab saving matches them by name, and duplicates get new
+file IDs on every build.
 The levels (`Levels/*.asset`) and `WorldList` are the exceptions: created once, then edited
 with the map tool. `MapAssetBuilder` moved the original `MapLayout_Main` to `Levels/Level01`
 (GUID kept).
@@ -214,7 +219,9 @@ row 0:  0m  0m  0m  .
 - `MapLayout` (one asset per level under `Assets/ScriptableObjects/Levels/`) stores the cells as
   text rows (first row = farthest from the camera, tokens separated by spaces), 2–8 per side
   (`MinSize`, `MaxSize`). A token is `.` for a hole or `<height><skin>[c]`, e.g. `0s`, `2m`,
-  `5i`, `0mc` (`CellSpec.TryParse` / `ToToken`). Plus `_start` (cell) and the items.
+  `5i`, `0mc` (`CellSpec.TryParse` / `ToToken`). Plus `_start` (cell), the items, and the
+  puzzle elements (§4.10: `Tide`, `Switches`, `RisingBlocks`, `Crates`, `Springboards`,
+  `Platforms`). `MaxHeight` includes raised blocks and platforms.
   Parsing checks only the shape (tokens, rectangular rows), so a layout mid-edit still loads;
   content rules live in `MapLayoutValidator` (§4.8), whose errors `OnValidate` logs.
   `SetCells` writes rows back; `MaxHeight` frames the camera.
@@ -352,30 +359,52 @@ layouts.
 - **Grid** (top-down): row 0 at the bottom (camera side), column 0 on the left, axis numbers
   match the check messages. Cell color = skin (lighter the higher), label = height plus `c` when
   crumbling, a blue `S` badge on the start; `◆` / `◆ ↑` = fixed item on the ground / in the air.
-- **Brushes** (left-drag paints), in three rows that never touch each other's property:
+- **Brushes** (left-drag paints), in rows that never touch each other's property:
   - Height: `H` Hole, `0`–`6`. A height brush on a hole makes a block of the last used skin.
   - Skin (Shift + letter of the token): `⇧S` Sand, `⇧M` Meadow, `⇧F` Forest, `⇧R` Rock, `⇧N`
     Snow, `⇧I` Ice, `⇧W` Water, `⇧B` Iceberg. A skin brush on a hole makes a height-0 block.
   - Other: `C` Crumbling, `V` Firm (clears crumbling), `T` Start (moves the start; blocks only),
-    `G` Item, `A` Item (air), `E` Erase item. An item on a cell that can no longer hold one is
-    removed. Item brushes work only on firm, still blocks other than the start and switch the
-    layout to `Fixed`.
+    `G` Item, `A` Item (air), `E` Erase (the item and every puzzle element on the cell, and
+    platforms ending there). An item on a cell that can no longer hold one is removed. Item
+    brushes work only on firm, still blocks other than the start, a rising block, or a crate,
+    and switch the layout to `Fixed`.
+  - Puzzle (§4.10): `K` Switch, `U` Rising, `X` Crate, `J` Spring, `P` Platform. Options row:
+    group A/B/C (`Q` cycles) for switches and rising blocks, "Rise to" (0–6), platform height
+    (0–6) and period (3–12 s). Switch, crate, and springboard share a cell slot (placing one
+    replaces the others); all need a firm block, crates and springboards stay off the start.
+    Platform: click one end, then the other in the same row or column (`Esc` cancels). Painting
+    a hole, crumbling, or iceberg drops the cell's puzzle elements.
+  - Grid badges: rising block = inner outline in its group color + `↑n`/`↓n` (top right);
+    switch = group letter, crate `▣`, springboard `⤒` (bottom left); `≈` (bottom right) = under
+    water at high tide; platforms = a bar along the path with `P<height>` at both ends.
 - **Size**: width × depth (2–8), grown or cropped from the (0, 0) corner (new cells height 0 in
   the last used skin);
   Shift ◀▶▲▼ moves everything one cell with wrap-around.
 - **Items**: mode popup; `Random` count slider (0–32), or `Fixed` with a count and Clear Items.
+- **Tide**: toggle, rise (0.3–1.0) and period (6–12 s) sliders.
 - **Checks** (`MapLayoutValidator.Validate` → `LayoutReport`: issues + per-cell `Reachability`),
   rerun on every edit; clicking an issue outlines its cell.
   - Errors: rows do not parse, size outside 2–8, start not on a block, an iceberg above height 0,
-    fixed item on a cell that cannot hold one (hole, crumbling, iceberg, start) or two on one
-    cell, no items. Play This Level is disabled while there are errors.
+    fixed item on a cell that cannot hold one (hole, crumbling, iceberg, start, rising block,
+    crate) or two on one cell, no items; a switch, rising block, crate, or springboard off a firm
+    block, two in one slot, a switch or springboard on a rising block, a crate or springboard on
+    the start; a platform leaving the grid or not along one row or column. Play This Level is
+    disabled while there are errors.
   - Warnings: more random items than cells that can hold one, random items able to land on
     unreachable cells, unreachable blocks (red outline) and fixed items, blocks that need a
-    two-level jump (orange outline).
+    two-level jump (orange outline); a rising block whose group has no switch (or that rises to
+    its own height), a switch whose group has nothing to move, a platform passing through a
+    block at or above its height; blocks under water at high tide (one summary, `≈` on the grid)
+    and a start that floods.
   - Reachability (approximate, §4.5): breadth-first from the start over blocks, 4-neighbour
     moves: up one level is easy, up two is "hard" (still counted), any drop is fine; a running
     jump crosses one hole in a straight line onto a block no higher than the takeoff. Air items
-    count as reachable with their block (jump apex 1.2).
+    count as reachable with their block (jump apex 1.2). Each cell offers a set of floor heights:
+    its block, a rising block's raised height, the top of a crate on its starting cell, and a
+    platform passing over (so holes on a platform path become standable). A step works when some
+    height of the next cell is close enough above some height of this one. From a springboard
+    the climb limit is 4 (also across a hole); a platform joins every cell on its path. The tide
+    is judged at low water. Moving elements are only estimated; the tool says so.
 - **3D Preview in Scene View** (`MapToolPreview`): a `[Map Preview]` root in the Main scene with
   its own `MapBuilder`, `GrassField`, `TerrainDecor`, `SnowField`, and `WaterSurface` copied from the scene's, rebuilt on every
   edit and framed in the Scene view. Every object in it is `HideFlags.DontSave`, so saving the
@@ -386,6 +415,28 @@ layouts.
   title is skipped, and the HUD shows `TEST PLAY`; the key is erased when play mode ends.
 - `MapLayout` resets its parse cache in `OnAfterDeserialize`, so undo and JSON overwrites never
   leave stale cells behind.
+
+### 4.10 Puzzle elements
+
+Built by `PuzzleBoard` (the `Puzzles` object; `LevelLoader` calls `Build(layout)` right after
+`MapBuilder.Build`) from the layout's lists, with prefabs from `PuzzleAssetBuilder` (cubes,
+`Puzzle_*` materials). The map tool preview builds them too, at rest. Each world introduces one:
+
+| Element | Data | Behavior |
+|---|---|---|
+| Tide (beach) | `TideSettings`: enabled, rise 0.3–1.0, period 6–12 s | `Tide` (on `Lake`) moves the water to `WaterLevel + rise × (1 − cos 2πt/T) / 2`, starting at low tide; the clock runs only outside the title. `GameManager.WaterLevel` follows it, so low blocks drown the fox at high tide. Icebergs ride it (`MapBuilder._tide` → `FloatingBlock.Tide`). HUD gauge (§8.1). |
+| Switch (meadow) | `SwitchPlacement`: cell, group A/B/C | `FloorSwitch`: a plate on the block top, no collider. Pressed while a `CharacterController` is over it or a crate rests on its cell; the button sinks 0.05. A group is on while any of its switches is pressed (`PuzzleBoard.IsGroupOn`). |
+| Rising block (meadow) | `RisingBlockPlacement`: cell, group, raised height 0–6 | `RisingBlock` on the cell's tile moves it between its own height and the raised height (lower = it sinks) in 0.4 s while the group is on. Pillar and collider stretch down so it always reaches the lake bed. A frame in the group color (`RisingMarker`) marks the top. |
+| Crate (forest) | `Crates`: starting cells | `Crate`, one level tall, pivot at the bottom. Walking into a side along a grid axis (from its floor level) for 0.2 s slides it one cell in 0.25 s, if the target is inside the grid, no higher, not a crumbling block, iceberg, springboard, or other crate, and the fox is not in the way. It drops to a lower floor, keeps sliding over ice, and falling into a hole makes it a permanent height-0 floor (top flush at 0; splash). Resting crates follow the block under them (rising blocks) and press switches. |
+| Springboard (mountain) | `Springboards`: cells | `Springboard`: pad on the block top, no collider. A grounded fox over it is launched 2.4 high (`PlayerController.Launch`, raises `Jumped`), enough for four levels; 0.3 s cooldown, the pad wobbles. |
+| Moving platform (mountain) | `PlatformPlacement`: from, to (same row or column), height 0–6, period 3–12 s | `MovingPlatform`: a 1.44 × 0.3 slab whose top is the floor height, shuttling between the two cells with smoothstep easing and a 20% pause at each end. |
+
+- `PlayerController` rides whatever it stands on: it remembers the collider's transform under
+  its feet and, before moving, adds that transform's movement since the last frame to its own
+  position, then calls `Physics.SyncTransforms()` (auto sync is off) so the move sees colliders
+  where they are now. Movers run earlier (`[DefaultExecutionOrder]` −40 tide, −30 board and
+  switches, −20 rising blocks, platforms, springboards, −15 crates).
+- Group colors (`PuzzleGroups.ColorOf`): A pink-red, B blue, C violet.
 
 ### 4.9 Skins
 
@@ -538,7 +589,7 @@ launch ──▶ Title (Continue target loaded) ──(Space / Continue)──�
 Title ──(Stages)──▶ stage list ──(unlocked stage)──▶ reload ──▶ Playing (that stage)
                                                      │
                      ┌──(all items collected)────────┼──▶ Cleared (clear recorded)
-                     │                               └──(player.y < WaterLevel)──▶ GameOver
+                     │                               └──(player.y < water level)──▶ GameOver
 Cleared ──(Space / Next Stage)──▶ reload ──▶ Playing (next stage, crossing worlds)
 Cleared with no playable next stage ──(Space / Stages)──▶ reload ──▶ Title, stage list open
 R, Restart, Retry ──▶ reload ──▶ Playing (same stage)
@@ -580,8 +631,9 @@ Quit to Title (pause menu) ──▶ reload ──▶ Title (Continue target)
   - Pause: `Time.timeScale = 0` while `Paused`, back to 1 on any other state and before a reload.
   - Reads `Player/Restart` (ignored at the title) and `Player/Pause` (toggles
     `Playing`/`Paused`).
-  - Water check: the player's feet below `MapMetrics.WaterLevel` → spawn `Splash` at the
-    surface and switch to `GameOver`. The fox keeps sinking under gravity.
+  - Water check: the player's feet below `WaterLevel` (`MapMetrics.WaterLevel`, raised by the
+    tide, §4.10) → spawn `Splash` at the surface and switch to `GameOver`. The fox keeps sinking
+    under gravity. Sets `Tide.IsRunning` on every state change (off only at the title).
 
 ### 8.1 UI
 
@@ -597,9 +649,13 @@ No `EventSystem` is needed; UI input comes from the Input System's default UI ac
   gold only on gems. No blur (UI Toolkit has none).
 - **Icons**: `GameIcon` (`[UxmlElement]`, `kind` attribute) draws flat vector icons with
   `Painter2D` in the element's USS `color`: `Gem` (three gold faces), `Clock`, `Play`,
-  `Restart`, `Quit`, `Walk` (›), `Run` (»), `FoxMark` (the app icon's fox head, eyes cut out).
+  `Restart`, `Quit`, `Walk` (›), `Run` (»), `FoxMark` (the app icon's fox head, eyes cut out),
+  `Check`, `Lock`, `Stages` (2 × 2 squares), `Wave` (two wave strokes).
 - **HUD** (hidden at the title): top-left pill with gem + `n / total` (bumps to 112% for 0.12 s
-  on a pickup), top-center pill with the stage title, `BEACH 1-3` (`TEST PLAY` in test play), top-right pill with `m:ss`. Bottom-left hint row (fades out outside `Playing`):
+  on a pickup), top-center pill with the stage title, `BEACH 1-3` (`TEST PLAY` in test play),
+  and beside it, on tide stages only, a tide pill: wave icon, a 140 px bar filled to the current
+  tide (0 = low, full = high), and a chevron pointing up while the water rises, down while it
+  falls; top-right pill with `m:ss`. Bottom-left hint row (fades out outside `Playing`):
   `» fox RUNNING` / `› fox WALKING`, `[Ctrl] Walk / Run`, `[R] Restart`, `[Esc] Pause`, with key
   caps and thin separators.
 - **Title**: light dim over the live scene; fox mark, `FOX ISLAND` (120 px, letter-spaced),

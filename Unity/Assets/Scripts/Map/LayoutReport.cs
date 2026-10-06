@@ -42,12 +42,19 @@ namespace MyGame.Map
     {
         private readonly List<LayoutIssue> _issues = new();
 
-        public LayoutReport(Reachability[,] cells) => Cells = cells;
+        public LayoutReport(Reachability[,] cells)
+        {
+            Cells = cells;
+            Flooded = new bool[cells.GetLength(0), cells.GetLength(1)];
+        }
 
         public IReadOnlyList<LayoutIssue> Issues => _issues;
 
         /// <summary>Per cell, indexed [column, row]; empty when the rows do not parse.</summary>
         public Reachability[,] Cells { get; }
+
+        /// <summary>Per cell, indexed [column, row]: the block goes under the water at high tide.</summary>
+        public bool[,] Flooded { get; }
 
         public bool HasErrors { get; private set; }
 

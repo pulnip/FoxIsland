@@ -162,11 +162,12 @@ Work top to bottom unless the user says otherwise.
 
 ## M15. Puzzle elements
 
-- [ ] Tide
-- [ ] Switches and rising blocks
-- [ ] Pushable crates
-- [ ] Springboards and moving platforms
-- [ ] Map tool brushes and validator support for the puzzle elements
+- [x] Tide
+- [x] Switches and rising blocks
+- [x] Pushable crates
+- [x] Springboards and moving platforms
+- [x] Map tool brushes and validator support for the puzzle elements
+- [ ] Playtest: tide timing, switch/rising feel, crate pushing, springboard height, riding platforms, puzzle brushes
 
 ## M16. Stages
 

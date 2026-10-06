@@ -7,8 +7,8 @@ namespace MyGame.Map
 {
     /// <summary>
     /// One level (plan.md §4.3): cell rows in the <see cref="CellSpec"/> token notation, the start
-    /// cell, and the item setup. Edited with Tools/MyGame/Map Tool; <see cref="MapLayoutValidator"/>
-    /// checks it.
+    /// cell, the item setup, and the puzzle elements (§4.10). Edited with Tools/MyGame/Map Tool;
+    /// <see cref="MapLayoutValidator"/> checks it.
     /// </summary>
     [CreateAssetMenu(menuName = "MyGame/Map Layout", fileName = "MapLayout")]
     public class MapLayout : ScriptableObject, ISerializationCallbackReceiver
@@ -33,6 +33,14 @@ namespace MyGame.Map
         [SerializeField, Min(0)] private int _randomItemCount = 4;
         [SerializeField] private ItemPlacement[] _items = Array.Empty<ItemPlacement>();
 
+        [Header("Puzzle elements")]
+        [SerializeField] private TideSettings _tide = TideSettings.Default;
+        [SerializeField] private SwitchPlacement[] _switches = Array.Empty<SwitchPlacement>();
+        [SerializeField] private RisingBlockPlacement[] _risingBlocks = Array.Empty<RisingBlockPlacement>();
+        [SerializeField] private Vector2Int[] _crates = Array.Empty<Vector2Int>();
+        [SerializeField] private Vector2Int[] _springboards = Array.Empty<Vector2Int>();
+        [SerializeField] private PlatformPlacement[] _platforms = Array.Empty<PlatformPlacement>();
+
         private CellSpec[,] _cells;
 
         public int Width => Cells.GetLength(0);
@@ -47,7 +55,7 @@ namespace MyGame.Map
             set => _start = value;
         }
 
-        /// <summary>The highest block; frames the camera.</summary>
+        /// <summary>The highest block, raised block, or platform; frames the camera.</summary>
         public int MaxHeight
         {
             get
@@ -58,7 +66,17 @@ namespace MyGame.Map
                     max = Mathf.Max(max, cell.Height);
                 }
 
-                return max;
+                foreach (var block in _risingBlocks)
+                {
+                    max = Mathf.Max(max, block.RaisedHeight);
+                }
+
+                foreach (var platform in _platforms)
+                {
+                    max = Mathf.Max(max, platform.Height);
+                }
+
+                return Mathf.Min(max, CellSpec.MaxHeight);
             }
         }
 
@@ -76,6 +94,23 @@ namespace MyGame.Map
 
         /// <summary>Used when <see cref="ItemMode"/> is <see cref="Map.ItemMode.Fixed"/>.</summary>
         public IReadOnlyList<ItemPlacement> Items => _items;
+
+        public TideSettings Tide
+        {
+            get => _tide;
+            set => _tide = value;
+        }
+
+        public IReadOnlyList<SwitchPlacement> Switches => _switches;
+
+        public IReadOnlyList<RisingBlockPlacement> RisingBlocks => _risingBlocks;
+
+        /// <summary>The cells the crates start on.</summary>
+        public IReadOnlyList<Vector2Int> Crates => _crates;
+
+        public IReadOnlyList<Vector2Int> Springboards => _springboards;
+
+        public IReadOnlyList<PlatformPlacement> Platforms => _platforms;
 
         private CellSpec[,] Cells
         {
@@ -146,7 +181,21 @@ namespace MyGame.Map
 
         public void SetItems(ItemPlacement[] items) => _items = items;
 
-        /// <summary>Copies the cells, start, and item setup (not the name) from <paramref name="other"/>.</summary>
+        public void SetSwitches(SwitchPlacement[] switches) => _switches = switches;
+
+        public void SetRisingBlocks(RisingBlockPlacement[] risingBlocks) => _risingBlocks = risingBlocks;
+
+        public void SetCrates(Vector2Int[] crates) => _crates = crates;
+
+        public void SetSpringboards(Vector2Int[] springboards) => _springboards = springboards;
+
+        public void SetPlatforms(PlatformPlacement[] platforms) => _platforms = platforms;
+
+        /// <summary>Items never float over a rising block or a crate's starting cell.</summary>
+        public bool KeepsItemsOff(Vector2Int cell) =>
+            Array.Exists(_risingBlocks, block => block.Cell == cell) || Array.IndexOf(_crates, cell) >= 0;
+
+        /// <summary>Copies everything but the name from <paramref name="other"/>.</summary>
         public void CopyFrom(MapLayout other)
         {
             SetRows((string[])other._rows.Clone());
@@ -154,6 +203,12 @@ namespace MyGame.Map
             _itemMode = other._itemMode;
             _randomItemCount = other._randomItemCount;
             _items = (ItemPlacement[])other._items.Clone();
+            _tide = other._tide;
+            _switches = (SwitchPlacement[])other._switches.Clone();
+            _risingBlocks = (RisingBlockPlacement[])other._risingBlocks.Clone();
+            _crates = (Vector2Int[])other._crates.Clone();
+            _springboards = (Vector2Int[])other._springboards.Clone();
+            _platforms = (PlatformPlacement[])other._platforms.Clone();
         }
 
         /// <summary>

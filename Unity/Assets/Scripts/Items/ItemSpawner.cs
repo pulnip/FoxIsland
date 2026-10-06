@@ -7,7 +7,7 @@ namespace MyGame.Items
 {
     /// <summary>
     /// Places a layout's items (plan.md §5): on its fixed cells, or on random cells that can hold one
-    /// (firm, still blocks other than the start).
+    /// (firm, still blocks other than the start, a rising block, or a crate's cell).
     /// </summary>
     public class ItemSpawner : MonoBehaviour
     {
@@ -64,7 +64,7 @@ namespace MyGame.Items
         }
 
         private static bool CanHoldItem(MapLayout layout, Tile tile) =>
-            tile.Spec.CanHoldItem && tile.Coordinates != layout.Start;
+            tile.Spec.CanHoldItem && tile.Coordinates != layout.Start && !layout.KeepsItemsOff(tile.Coordinates);
 
         private static void Shuffle<T>(IList<T> list)
         {

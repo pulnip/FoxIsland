@@ -1,13 +1,15 @@
 using MyGame.CameraRig;
 using MyGame.Map;
 using MyGame.Player;
+using MyGame.Puzzle;
 using UnityEngine;
 
 namespace MyGame.Core
 {
     /// <summary>
-    /// Picks the stage for this scene load (plan.md §8) and fits the scene to it: builds the map,
-    /// puts the player on the start cell, frames the camera, and centers the lake. Runs before
+    /// Picks the stage for this scene load (plan.md §8) and fits the scene to it: builds the map and
+    /// its puzzle elements, puts the player on the start cell, frames the camera, and centers the
+    /// lake and sets its tide. Runs before
     /// everything that reads the tiles. At the title it loads the Continue target, so Continue
     /// simply starts playing what is already on screen.
     /// </summary>
@@ -22,6 +24,8 @@ namespace MyGame.Core
         [SerializeField] private PlayerController _player;
         [SerializeField] private QuarterViewCamera _camera;
         [SerializeField] private WaterSurface _water;
+        [SerializeField] private Tide _tide;
+        [SerializeField] private PuzzleBoard _puzzles;
 
         public MapLayout Layout { get; private set; }
 
@@ -72,12 +76,14 @@ namespace MyGame.Core
             }
 
             _mapBuilder.Build(Layout);
+            _puzzles.Build(Layout);
             PlacePlayer();
 
             var bounds = MapMetrics.FramedBounds(Layout.Width, Layout.Depth, Layout.MaxHeight, _player.JumpHeight);
             _camera.FramedBounds = bounds;
             _camera.Apply();
             _water.transform.position = new Vector3(bounds.center.x, MapMetrics.WaterLevel, bounds.center.z);
+            _tide.Configure(Layout.Tide);
         }
 
         /// <summary>The next stage, if there is one and its world is unlocked (ask after recording a clear).</summary>

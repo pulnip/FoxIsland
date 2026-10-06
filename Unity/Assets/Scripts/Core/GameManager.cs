@@ -21,6 +21,7 @@ namespace MyGame.Core
         [SerializeField] private LevelLoader _levelLoader;
         [SerializeField] private PlayerController _player;
         [SerializeField] private ItemSpawner _itemSpawner;
+        [SerializeField] private Tide _tide;
         [SerializeField] private ParticleSystem _splashEffect;
 
         private InputAction _restartAction;
@@ -39,6 +40,11 @@ namespace MyGame.Core
         public GameState State { get; private set; }
 
         public LevelLoader Level => _levelLoader;
+
+        public Tide Tide => _tide;
+
+        /// <summary>The lake surface the fox must stay above; it moves with the tide.</summary>
+        public float WaterLevel => _tide != null ? _tide.Level : MapMetrics.WaterLevel;
 
         public int CollectedCount { get; private set; }
 
@@ -75,6 +81,10 @@ namespace MyGame.Core
         {
             _startTime = Time.time;
             _player.InputEnabled = State == GameState.Playing;
+            if (_tide != null)
+            {
+                _tide.IsRunning = State != GameState.Title;
+            }
 
             var items = _itemSpawner.Spawn(_levelLoader.Layout);
             foreach (var item in items)
@@ -116,11 +126,12 @@ namespace MyGame.Core
             }
 
             var position = _player.transform.position;
-            if (State == GameState.Playing && position.y < MapMetrics.WaterLevel)
+            var waterLevel = WaterLevel;
+            if (State == GameState.Playing && position.y < waterLevel)
             {
                 if (_splashEffect != null)
                 {
-                    Instantiate(_splashEffect, new Vector3(position.x, MapMetrics.WaterLevel, position.z), Quaternion.identity);
+                    Instantiate(_splashEffect, new Vector3(position.x, waterLevel, position.z), Quaternion.identity);
                 }
 
                 SetState(GameState.GameOver);
@@ -256,6 +267,11 @@ namespace MyGame.Core
 
             Time.timeScale = state == GameState.Paused ? 0f : 1f;
             _player.InputEnabled = state == GameState.Playing;
+            if (_tide != null)
+            {
+                _tide.IsRunning = state != GameState.Title;
+            }
+
             StateChanged?.Invoke(state);
         }
     }
