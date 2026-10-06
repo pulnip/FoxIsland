@@ -250,7 +250,8 @@ row 0:  0m  0m  0m  .
 
 ### 4.5 Physics tuning targets
 
-- Run speed 3 units/s by default; walk speed 1 unit/s in walk mode (Left Ctrl toggles).
+- Run speed 3 units/s by default; walk speed 1 unit/s in walk mode (Left Ctrl toggles). Wading in
+  shallow water multiplies either by 0.6 (§4.9).
 - Jump apex: ~1.2 units above takeoff → can climb one level (0.5) comfortably, two levels (1.0) barely.
 - Horizontal jump reach (air time ≈ 0.62 s): walking ≈ 0.62, running ≈ 1.86 units. A one-tile
   hole is 1.5 units edge to edge (the center has to travel ≈ 1.1–1.5 with the 0.2 radius), so
@@ -395,10 +396,23 @@ everything sits under 0.2 so the fox and gems stay visible.
 | Rock `r` | `Tile_RockTop` / `Tile_Rock` | stones, moss | normal |
 | Snow `n` | `Tile_Snow` + snow layer / `Tile_Rock` | moss and lichen, cushion plants, rocks, wind ridges | prints press in |
 | Ice `i` | `Tile_Ice` / `Tile_Rock` | none | slippery |
-| Water `w` | `Tile_WaterBed` / `Tile_Sandstone` | none | normal (shallow water arrives in M13) |
-| Iceberg `b` | `Tile_Ice` / `Tile_IcebergBody` | none | slippery (floating arrives in M13); height 0 only |
+| Water `w` | `Tile_WaterBed` / `Tile_Sandstone` | sandstone rim + pool water surface | wading: speed ×0.6, a small splash per step, no prints |
+| Iceberg `b` | `Tile_Ice` / `Tile_IcebergBody` | none | slippery; floats, bobs, and sinks underfoot; height 0 only |
 
 Crumbling blocks of any skin show only dark cracks.
+
+- **Shallow water** (`w`): `TerrainDecor` puts a sandstone rim `MapMetrics.PoolDepth = 0.15` high
+  around the block (visual only) and a 6 × 6 water surface just under it, drawn with
+  `Water_Pool` (the lake's `MyGame/Water` shader with foam width 0.025 and waves 0.008, so the
+  drifting foam band stays shallower than the pool). The fox stands on the block top, ankle-deep.
+  `PlayerController.IsWading` multiplies speed by `_waterSpeedFactor = 0.6`; each footstep
+  spawns `StepSplash` (6 droplets) at the surface instead of a print. Only the lake ends the game.
+- **Iceberg** (`b`): `MapBuilder` adds `FloatingBlock`, and `Tile` cuts its pillar off at
+  `MapMetrics.IcebergBottom = -0.9`, so it floats. The whole tile (collider included) bobs ±0.03
+  over 3 s with a 1.5° rock, phase by cell; while a `CharacterController` stands on it, it sinks
+  toward 0.12 at 0.35 units/s and rises again when free. Slippery like ice (§4.5).
+- Footprint particles take the ground's tint: darker sand on sand, gray on rock, the default
+  dark earth elsewhere (`FootprintEmitter`).
 
 - `TerrainDecor` (on `Map`, builds in `Start`): code-built voxel meshes (4 variants per kind,
   `VoxelMeshBuilder`, vertex colors converted to linear) on one material `Decor_Voxel`
@@ -440,7 +454,8 @@ Crumbling blocks of any skin show only dark cracks.
   random 3D rotation, shrinking over life, world space, destroy on stop). One white
   `Particles/Simple Lit` material; each effect's start color tints it.
   `PickupBurst`: 18 gold cubes from a small sphere, fast. `CrumbleDust`: 18 sand cubes from
-  a flat box the size of the tile top, slow, heavier gravity.
+  a flat box the size of the tile top, slow, heavier gravity. `StepSplash`: 6 small pale cubes
+  up from a narrow cone, for steps in shallow water.
 - Footprints (on snow, ice, and icebergs see §4.9): `Footprints` is an always-running system with emission off (child of the
   Player, world space, max 64). `FootprintEmitter` on the `Model` receives the clips'
   `Footstep(legs)` animation events, raycasts down from the bottom of each named leg mesh

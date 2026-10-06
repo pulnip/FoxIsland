@@ -82,6 +82,7 @@ MonoBehaviour:
   _jumpBufferTime: 0.1
   _iceAcceleration: 3
   _iceDeceleration: 2
+  _waterSpeedFactor: 0.6
   _cameraTransform: {fileID: 0}
 --- !u!114 &7335630715606400131
 MonoBehaviour:
@@ -258,3 +259,4 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Player.FootprintEmitter
   _player: {fileID: 184902543128823064}
   _footprints: {fileID: 6491443162066117254}
+  _stepSplash: {fileID: 3083739011162429111, guid: 25c6fb79ddc2ea9449c096b36fb74e91, type: 3}

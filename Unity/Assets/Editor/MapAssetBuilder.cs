@@ -14,6 +14,7 @@ namespace MyGame.EditorTools
         public const string CrumblingPrefabPath = "Assets/Prefabs/Tiles/Tile_Crumbling.prefab";
         public const string GrassBladeMaterialPath = "Assets/Art/Materials/Grass_Blade.mat";
         public const string WaterMaterialPath = "Assets/Art/Materials/Water.mat";
+        public const string PoolWaterMaterialPath = "Assets/Art/Materials/Water_Pool.mat";
         public const string LakeBedMaterialPath = "Assets/Art/Materials/Lake_Bed.mat";
         public const string SubalpineTopMaterialPath = "Assets/Art/Materials/Tile_Subalpine.mat";
         public const string DarkEarthMaterialPath = "Assets/Art/Materials/Tile_DarkEarth.mat";
@@ -54,7 +55,8 @@ namespace MyGame.EditorTools
             EditorAssetUtility.GetOrCreateMaterial(ForestGrassMaterialPath, GrassShaderName, new Color(0.33f, 0.52f, 0.33f), smoothness: 0f);
             EditorAssetUtility.GetOrCreateMaterial(DecorMaterialPath, VoxelLitShaderName, Color.white, smoothness: 0f);
             BuildSnowMaterial();
-            BuildWaterMaterial();
+            BuildWaterMaterial(WaterMaterialPath, foamWidth: 0.06f, waveHeight: 0.02f);
+            BuildWaterMaterial(PoolWaterMaterialPath, foamWidth: 0.025f, waveHeight: 0.008f);
 
             BuildTilePrefab(SolidPrefabPath, grass, dirt, isCrumbling: false);
             BuildTilePrefab(CrumblingPrefabPath, crumbling, dirt, isCrumbling: true);
@@ -121,15 +123,19 @@ namespace MyGame.EditorTools
             }
         }
 
-        private static void BuildWaterMaterial()
+        /// <summary>
+        /// The lake, or a shallow-water pool: a pool is only 0.13 deep, so its foam band is narrower
+        /// (the drifting band must stay shallower than the pool) and its waves are smaller.
+        /// </summary>
+        private static void BuildWaterMaterial(string path, float foamWidth, float waveHeight)
         {
-            var material = EditorAssetUtility.GetOrCreateMaterial(WaterMaterialPath, WaterShaderName, Color.white, smoothness: 0f);
+            var material = EditorAssetUtility.GetOrCreateMaterial(path, WaterShaderName, Color.white, smoothness: 0f);
             var changed = EditorAssetUtility.SetColorIfChanged(material, "_ShallowColor", new Color(0.36f, 0.78f, 0.80f, 0.45f));
             changed |= EditorAssetUtility.SetColorIfChanged(material, "_DeepColor", new Color(0.12f, 0.38f, 0.62f, 0.92f));
             changed |= EditorAssetUtility.SetColorIfChanged(material, "_FoamColor", new Color(0.92f, 0.97f, 1f));
             changed |= EditorAssetUtility.SetFloatIfChanged(material, "_DepthFade", 0.8f);
-            changed |= EditorAssetUtility.SetFloatIfChanged(material, "_FoamWidth", 0.06f);
-            changed |= EditorAssetUtility.SetFloatIfChanged(material, "_WaveHeight", 0.02f);
+            changed |= EditorAssetUtility.SetFloatIfChanged(material, "_FoamWidth", foamWidth);
+            changed |= EditorAssetUtility.SetFloatIfChanged(material, "_WaveHeight", waveHeight);
             changed |= EditorAssetUtility.SetFloatIfChanged(material, "_WaveLength", 2.5f);
             changed |= EditorAssetUtility.SetFloatIfChanged(material, "_WaveSpeed", 0.4f);
             changed |= EditorAssetUtility.SetFloatIfChanged(material, "_NormalStrength", 3f);

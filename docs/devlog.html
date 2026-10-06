@@ -107,6 +107,72 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M13</span></div>
+      <h2>모래 · 바위 발자국 색</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>발자국 파티클 색을 바닥 스킨에 맞춤: 모래는 짙은 모래색, 바위는 회색, 그 외는 기존 짙은 흙색. 눈은 눌린 자국, 얼음 · 빙산은 없음, 얕은 물은 물보라(그대로)</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Player/FootprintEmitter.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>파티클 하나하나의 시작 색만 바꿔서 머티리얼은 그대로 하나</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M13</span></div>
+      <h2>빙산: 떠서 출렁이고, 밟으면 가라앉음</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>빙산 블록은 기둥이 호수 바닥까지 내려가지 않고 수면 아래 -0.9에서 끊김 → 물에 떠 있는 얼음 덩어리. 물 아래 몸통이 비쳐 보임</li>
+        <li>새 <code>FloatingBlock</code>: 타일 전체(충돌체 포함)가 3초 주기로 ±0.03 출렁이고 살짝 기울어짐. 칸마다 박자가 다름</li>
+        <li>여우가 올라서 있으면 초당 0.35로 0.12까지 가라앉고, 내리면 다시 떠오름. 얼음처럼 미끄러움</li>
+        <li>검증: 올라서고 0.7초 뒤 0.12까지 가라앉음, 미끄러움 판정 켜짐, 여우 발 높이 -0.095 (호수 수면 -0.3보다 위라서 게임 오버 아님)</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m13-iceberg.png" alt="빙산"><figcaption>빙산(앞쪽 연한 하늘색 두 칸) 위의 여우, 뒤쪽은 얕은 물</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/FloatingBlock.cs</code> (새 파일), <code>Tile.cs</code> (기둥 바닥 높이), <code>MapBuilder.cs</code>, <code>MapMetrics.cs</code> (<code>IcebergBottom</code>)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>빙산이 움직일 때 여우는 중력과 충돌로 따라감. 출렁임이 작아서 문제없지만 손맛은 직접 확인 필요</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M13</span></div>
+      <h2>얕은 물: 수면, 느려짐, 물보라</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>얕은 물 블록 가장자리에 0.15 높이 사암 테두리(보이기만 함)를 두르고, 그 안에 수면을 채움. 여우는 블록 윗면에 서서 발목까지 잠김</li>
+        <li>수면은 호수와 같은 물 셰이더지만 전용 머티리얼 <code>Water_Pool</code>: 거품 폭 0.025, 물결 0.008</li>
+        <li>물에 들어가면 이동 속도 ×0.6 (<code>PlayerController.IsWading</code>), 걸음마다 작은 물보라(<code>StepSplash</code>), 발자국은 안 남음. 게임 오버는 호수만</li>
+        <li>검증 (가상 키보드, 같은 방향 0.5초): 모래 1.50, 물 0.90 → 정확히 ×0.6</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m13-wading.png" alt="얕은 물"><figcaption>얕은 물 줄을 건너는 여우</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/TerrainDecor.cs</code>(테두리 · 수면), <code>Unity/Assets/Scripts/Player/PlayerController.cs</code>, <code>FootprintEmitter.cs</code></li>
+        <li><code>Unity/Assets/Editor/MapAssetBuilder.cs</code>(<code>Water_Pool</code>), <code>EffectAssetBuilder.cs</code>(<code>StepSplash</code>), <code>PlayerAssetBuilder.cs</code>, <code>MainSceneSetup.cs</code></li>
+        <li><code>docs/plan.md</code> — §4.5, §4.9, §5</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>문제: 처음엔 호수 머티리얼을 그대로 써서 물웅덩이 전체가 하얀 거품으로 덮임. 물웅덩이 깊이(0.13)가 호수의 흘러가는 거품 띠 범위(0.09~0.24) 안에 있었기 때문 → 전용 머티리얼로 거품 폭을 줄임</li>
+        <li>Build All 두 번 결과 동일</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-10-06</time><span class="tag">M12</span></div>
       <h2>맵툴: 높이 · 스킨 · 기타 브러시 분리</h2>
       <h3>한 일</h3>

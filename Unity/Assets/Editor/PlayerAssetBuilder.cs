@@ -47,6 +47,8 @@ namespace MyGame.EditorTools
             var footprintEmitter = model.AddComponent<FootprintEmitter>();
             EditorAssetUtility.SetReference(footprintEmitter, "_player", root.GetComponent<PlayerController>());
             EditorAssetUtility.SetReference(footprintEmitter, "_footprints", footprints);
+            EditorAssetUtility.SetReference(footprintEmitter, "_stepSplash",
+                AssetDatabase.LoadAssetAtPath<ParticleSystem>(EffectAssetBuilder.StepSplashPath));
 
             EditorAssetUtility.SavePrefab(root, PlayerPrefabPath);
             AssetDatabase.SaveAssets();

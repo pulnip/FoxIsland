@@ -7,9 +7,10 @@ namespace MyGame.Player
 {
     /// <summary>
     /// Stamps a footprint under each named paw when the Walk/Run clips fire their
-    /// <c>Footstep</c> animation events: a dark print particle on ground, a pressed print in snow
-    /// (<see cref="SnowField"/>), nothing on ice. Landing in snow presses a body-sized dent. Lives
-    /// on the animated model so it receives the events.
+    /// <c>Footstep</c> animation events: a print particle tinted for the ground (sand, rock, earth), a
+    /// pressed print in snow (<see cref="SnowField"/>), a small splash in shallow water, nothing on
+    /// ice. Landing in snow presses a body-sized dent. Lives on the animated model so it receives
+    /// the events.
     /// </summary>
     public class FootprintEmitter : MonoBehaviour
     {
@@ -20,9 +21,12 @@ namespace MyGame.Player
 
         private static readonly Vector2 PawPrintSize = new(0.07f, 0.09f);
         private static readonly Vector2 LandingPrintSize = new(0.24f, 0.42f);
+        private static readonly Color SandPrint = new(0.64f, 0.52f, 0.34f);
+        private static readonly Color RockPrint = new(0.33f, 0.33f, 0.35f);
 
         [SerializeField] private PlayerController _player;
         [SerializeField] private ParticleSystem _footprints;
+        [SerializeField] private ParticleSystem _stepSplash;
 
         private Dictionary<string, Renderer> _paws;
 
@@ -70,6 +74,16 @@ namespace MyGame.Player
                         snow.Stamp(hit.point, PawPrintSize, yaw, 1f);
                         continue;
                     }
+
+                    if (tile.Spec.Skin == Skin.Water)
+                    {
+                        if (_stepSplash != null)
+                        {
+                            Instantiate(_stepSplash, hit.point + Vector3.up * MapMetrics.PoolDepth, Quaternion.identity);
+                        }
+
+                        continue;
+                    }
                 }
 
                 var print = new ParticleSystem.EmitParams
@@ -78,6 +92,19 @@ namespace MyGame.Player
                     rotation3D = new Vector3(0f, yaw, 0f),
                     applyShapeToPosition = false,
                 };
+                if (tile != null)
+                {
+                    switch (tile.Spec.Skin)
+                    {
+                        case Skin.Sand:
+                            print.startColor = SandPrint;
+                            break;
+                        case Skin.Rock:
+                            print.startColor = RockPrint;
+                            break;
+                    }
+                }
+
                 _footprints.Emit(print, 1);
             }
         }

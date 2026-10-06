@@ -27,6 +27,9 @@ namespace MyGame.Player
         [Tooltip("On ice with no input, how fast a slide dies down (units/s²).")]
         [SerializeField] private float _iceDeceleration = 2f;
 
+        [Tooltip("Speed multiplier while wading in shallow water.")]
+        [SerializeField, Range(0.1f, 1f)] private float _waterSpeedFactor = 0.6f;
+
         [SerializeField] private Transform _cameraTransform;
 
         private CharacterController _controller;
@@ -37,7 +40,7 @@ namespace MyGame.Player
         private float _lastGroundedTime = float.NegativeInfinity;
         private float _lastJumpPressedTime = float.NegativeInfinity;
         private Vector3 _horizontalVelocity;
-        private bool _groundIsSlippery;
+        private CellSpec _ground;
         private bool _keepsSlideInAir;
         private bool _wasGrounded = true;
 
@@ -66,7 +69,10 @@ namespace MyGame.Player
         public float HorizontalSpeed { get; private set; }
 
         /// <summary>Standing on ice or an iceberg (plan.md §4.9): movement keeps momentum.</summary>
-        public bool IsOnIce => _controller.isGrounded && _groundIsSlippery;
+        public bool IsOnIce => _controller.isGrounded && _ground.IsSlippery;
+
+        /// <summary>Standing in shallow water: slower going.</summary>
+        public bool IsWading => _controller.isGrounded && _ground.IsBlock && _ground.Skin == Skin.Water;
 
         /// <summary>
         /// Running is the default; the toggle-walk key switches between walking and running.
@@ -129,7 +135,7 @@ namespace MyGame.Player
                 RunningChanged?.Invoke(IsRunning);
             }
 
-            var target = ToWorldDirection(input) * (IsRunning ? _runSpeed : _walkSpeed);
+            var target = ToWorldDirection(input) * (IsRunning ? _runSpeed : _walkSpeed) * (IsWading ? _waterSpeedFactor : 1f);
             var sliding = IsOnIce || (!_controller.isGrounded && _keepsSlideInAir);
             if (sliding)
             {
@@ -170,7 +176,7 @@ namespace MyGame.Player
         {
             if (hit.normal.y > 0.5f)
             {
-                _groundIsSlippery = hit.collider.TryGetComponent<Tile>(out var ground) && ground.Spec.IsSlippery;
+                _ground = hit.collider.TryGetComponent<Tile>(out var ground) ? ground.Spec : CellSpec.Hole;
             }
 
             if (hit.normal.y > 0.5f && hit.collider.TryGetComponent<CrumblingTile>(out var tile))

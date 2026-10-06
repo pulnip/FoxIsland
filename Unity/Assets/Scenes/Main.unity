@@ -606,6 +606,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.TerrainDecor
   _mapBuilder: {fileID: 577549368}
   _material: {fileID: 2100000, guid: 16b89cde0dac0d84ead1ec42e570f24b, type: 2}
+  _waterMaterial: {fileID: 2100000, guid: 547d489249275fb419f9469fa4cc3d7b, type: 2}
   _windDirection: {x: 1, y: 0, z: 0.4}
 --- !u!1 &757931663
 GameObject:

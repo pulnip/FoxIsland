@@ -15,6 +15,7 @@ namespace MyGame.EditorTools
         public const string FootprintsPath = "Assets/Prefabs/Effects/Footprints.prefab";
         public const string SplashPath = "Assets/Prefabs/Effects/Splash.prefab";
         public const string TileSplashPath = "Assets/Prefabs/Effects/TileSplash.prefab";
+        public const string StepSplashPath = "Assets/Prefabs/Effects/StepSplash.prefab";
 
         private const string MaterialPath = "Assets/Art/Materials/Effect_Voxel.mat";
 
@@ -76,6 +77,20 @@ namespace MyGame.EditorTools
                 ShapeScale = new Vector3(1.4f, 1.4f, 0.05f),
                 ShapeRotation = up,
                 RandomDirection = 0.25f,
+            });
+
+            BuildBurst(StepSplashPath, material, new BurstSettings
+            {
+                Color = splashColor,
+                Count = 6,
+                Lifetime = new Vector2(0.25f, 0.4f),
+                Speed = new Vector2(0.8f, 1.4f),
+                Size = new Vector2(0.025f, 0.05f),
+                Gravity = 1f,
+                Shape = ParticleSystemShapeType.Cone,
+                ShapeScale = Vector3.one * 0.05f,
+                ShapeRotation = up,
+                ConeAngle = 35f,
             });
 
             BuildFootprints(material);

@@ -148,9 +148,10 @@ Work top to bottom unless the user says otherwise.
 
 ## M13. Skin behavior
 
-- [ ] Shallow water: water surface, slower movement, splashes, no prints
-- [ ] Iceberg: floats, bobs, sinks a little underfoot, slippery
-- [ ] Sand-colored footprints on sand
+- [x] Shallow water: water surface, slower movement, splashes, no prints
+- [x] Iceberg: floats, bobs, sinks a little underfoot, slippery
+- [x] Sand-colored footprints on sand
+- [ ] Playtest: wading, riding an iceberg — **user**
 
 ## M14. Worlds, progress, title
 

@@ -8,7 +8,8 @@ namespace MyGame.Map
     /// Low voxel decorations by skin (plan.md §4.9): shells, pebbles, and driftwood on sand; dwarf
     /// shrubs, needle litter, and wind-flattened krummholz on the forest floor; stones and moss on
     /// rock; moss, cushion plants, rocks, and wind ridges on snow. Crumbling blocks show cracks
-    /// instead. Meadow grass is <see cref="GrassField"/>'s; ice, water, and icebergs stay clean.
+    /// instead. Shallow-water blocks get a low sandstone rim and a water surface. Meadow grass is
+    /// <see cref="GrassField"/>'s; ice and icebergs stay clean.
     /// Seeded per tile; nothing is taller than 0.2, so the fox and gems stay visible.
     /// </summary>
     public class TerrainDecor : MonoBehaviour
@@ -18,6 +19,9 @@ namespace MyGame.Map
         private const float EdgeMargin = 0.2f;
         private const float Spacing = 0.28f;
         private const int PlacementAttempts = 20;
+        private const float PoolRimWidth = 0.08f;
+        private const float PoolInset = 0.04f;
+        private const int PoolSegments = 6;
 
         private static readonly Color[] LeafGreens = { new(0.17f, 0.36f, 0.22f), new(0.22f, 0.43f, 0.24f), new(0.27f, 0.47f, 0.27f) };
         private static readonly Color[] Berries = { new(0.32f, 0.24f, 0.55f), new(0.72f, 0.16f, 0.22f) };
@@ -33,14 +37,20 @@ namespace MyGame.Map
         private static readonly Color[] Pebbles = { new(0.62f, 0.60f, 0.58f), new(0.50f, 0.48f, 0.46f), new(0.70f, 0.66f, 0.60f) };
         private static readonly Color Driftwood = new(0.60f, 0.52f, 0.40f);
         private static readonly Color CrackDark = new(0.20f, 0.16f, 0.13f);
+        private static readonly Color PoolRim = new(0.78f, 0.64f, 0.44f);
 
         [SerializeField] private MapBuilder _mapBuilder;
         [SerializeField] private Material _material;
+
+        [Tooltip("Water for shallow-water pools: the lake's shader with a narrower foam band.")]
+        [SerializeField] private Material _waterMaterial;
 
         [Tooltip("Krummholz mats and snow ridges are shaped by this wind (XZ).")]
         [SerializeField] private Vector3 _windDirection = new(1f, 0f, 0.4f);
 
         private Dictionary<Kind, Mesh[]> _meshes;
+        private Mesh _poolRim;
+        private Mesh _poolSurface;
 
         private enum Kind : byte
         {
@@ -73,6 +83,9 @@ namespace MyGame.Map
                     DestroyMesh(mesh);
                 }
             }
+
+            DestroyMesh(_poolRim);
+            DestroyMesh(_poolSurface);
         }
 
         public void Build()
@@ -84,6 +97,11 @@ namespace MyGame.Map
                 var random = new System.Random(Seed + tile.Coordinates.x * 73856093 ^ tile.Coordinates.y * 19349663);
                 var placed = new List<Vector3>();
                 var surface = spec.IsSnow ? tile.TopY + MapMetrics.SnowDepth - 0.01f : tile.TopY;
+                if (spec.Skin == Skin.Water)
+                {
+                    AddPool(tile);
+                }
+
                 if (spec.IsCrumbling)
                 {
                     Scatter(tile, Kind.Crack, random.Next(1, 3), surface + 0.002f, placed, random);
@@ -136,6 +154,80 @@ namespace MyGame.Map
                 var variants = _meshes[kind];
                 AddDecor(tile, kind.ToString(), variants[random.Next(variants.Length)], position + Vector3.up * surfaceY, yaw);
             }
+        }
+
+        /// <summary>
+        /// A shallow-water block: a sandstone rim <see cref="MapMetrics.PoolDepth"/> high around the
+        /// edge (visual only) and a water surface just under its top, drawn with the lake's material.
+        /// </summary>
+        private void AddPool(Tile tile)
+        {
+            _poolRim ??= BuildPoolRim();
+            _poolSurface ??= BuildPoolSurface();
+            AddDecor(tile, "PoolRim", _poolRim, Vector3.up * tile.TopY, 0f);
+
+            var surface = new GameObject("PoolWater");
+            surface.transform.SetParent(tile.Visual, false);
+            surface.transform.localPosition = Vector3.up * (tile.TopY + MapMetrics.PoolDepth - 0.02f);
+            surface.AddComponent<MeshFilter>().sharedMesh = _poolSurface;
+            var renderer = surface.AddComponent<MeshRenderer>();
+            renderer.sharedMaterial = _waterMaterial;
+            renderer.shadowCastingMode = ShadowCastingMode.Off;
+        }
+
+        private static Mesh BuildPoolRim()
+        {
+            var half = (MapMetrics.TileSize - PoolInset) * 0.5f;
+            var length = half * 2f;
+            var builder = new VoxelMeshBuilder();
+            var size = new Vector3(PoolRimWidth, MapMetrics.PoolDepth, length);
+            builder.AddBox(new Vector3(half - PoolRimWidth * 0.5f, 0f, 0f), size, 0f, PoolRim);
+            builder.AddBox(new Vector3(-half + PoolRimWidth * 0.5f, 0f, 0f), size, 0f, PoolRim);
+            builder.AddBox(new Vector3(0f, 0f, half - PoolRimWidth * 0.5f), size, 90f, PoolRim);
+            builder.AddBox(new Vector3(0f, 0f, -half + PoolRimWidth * 0.5f), size, 90f, PoolRim);
+            return builder.ToMesh("PoolRim");
+        }
+
+        /// <summary>A flat grid inside the rim, subdivided so the water shader's waves can move it.</summary>
+        private static Mesh BuildPoolSurface()
+        {
+            var size = MapMetrics.TileSize - PoolInset - PoolRimWidth * 2f;
+            var half = size * 0.5f;
+            var step = size / PoolSegments;
+            var side = PoolSegments + 1;
+            var vertices = new Vector3[side * side];
+            var normals = new Vector3[side * side];
+            for (var z = 0; z < side; z++)
+            {
+                for (var x = 0; x < side; x++)
+                {
+                    vertices[z * side + x] = new Vector3(x * step - half, 0f, z * step - half);
+                    normals[z * side + x] = Vector3.up;
+                }
+            }
+
+            var triangles = new int[PoolSegments * PoolSegments * 6];
+            var t = 0;
+            for (var z = 0; z < PoolSegments; z++)
+            {
+                for (var x = 0; x < PoolSegments; x++)
+                {
+                    var corner = z * side + x;
+                    triangles[t++] = corner;
+                    triangles[t++] = corner + side;
+                    triangles[t++] = corner + 1;
+                    triangles[t++] = corner + 1;
+                    triangles[t++] = corner + side;
+                    triangles[t++] = corner + side + 1;
+                }
+            }
+
+            var mesh = new Mesh { name = "PoolSurface", hideFlags = HideFlags.DontSave };
+            mesh.vertices = vertices;
+            mesh.normals = normals;
+            mesh.triangles = triangles;
+            mesh.bounds = new Bounds(Vector3.zero, new Vector3(size, 0.2f, size));
+            return mesh;
         }
 
         private void AddDecor(Tile tile, string name, Mesh mesh, Vector3 localPosition, float yaw)
@@ -308,6 +400,11 @@ namespace MyGame.Map
 
         private static void DestroyMesh(Mesh mesh)
         {
+            if (mesh == null)
+            {
+                return;
+            }
+
             if (Application.isPlaying)
             {
                 Destroy(mesh);

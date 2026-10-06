@@ -34,7 +34,7 @@ namespace MyGame.Map
             Spec = spec;
             name = $"Tile_{coordinates.x}_{coordinates.y}_{spec.ToToken()}";
             transform.localPosition = MapMetrics.TopCenter(coordinates, 0);
-            ApplyLevel(spec.Height);
+            ApplyLevel(spec.Height, spec.Skin == Skin.Iceberg ? MapMetrics.IcebergBottom : MapMetrics.LakeBedY);
         }
 
         /// <summary>Swaps the slab and pillar materials; the map builder picks them by skin.</summary>
@@ -44,7 +44,11 @@ namespace MyGame.Map
             _body.GetComponent<MeshRenderer>().sharedMaterial = body;
         }
 
-        public void ApplyLevel(int level)
+        /// <summary>
+        /// Sizes the slab, pillar, and collider for <paramref name="level"/>; the pillar reaches down
+        /// to <paramref name="bodyBottom"/> (the lake bed, or less for a floating iceberg).
+        /// </summary>
+        public void ApplyLevel(int level, float bodyBottom = MapMetrics.LakeBedY)
         {
             var top = MapMetrics.TopY(level);
             var height = top - MapMetrics.TileBottom;
@@ -53,8 +57,8 @@ namespace MyGame.Map
             _top.localPosition = new Vector3(0f, top - TopThickness * 0.5f, 0f);
             _top.localScale = new Vector3(visualWidth, TopThickness, visualWidth);
 
-            var bodyHeight = top - TopThickness - MapMetrics.LakeBedY;
-            _body.localPosition = new Vector3(0f, MapMetrics.LakeBedY + bodyHeight * 0.5f, 0f);
+            var bodyHeight = top - TopThickness - bodyBottom;
+            _body.localPosition = new Vector3(0f, bodyBottom + bodyHeight * 0.5f, 0f);
             _body.localScale = new Vector3(visualWidth, bodyHeight, visualWidth);
 
             var collider = GetComponent<BoxCollider>();

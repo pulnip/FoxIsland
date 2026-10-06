@@ -20,6 +20,12 @@ namespace MyGame.Map
         /// <summary>Snow lying on alpine tiles; the fox stands on the tile top, sunk this deep.</summary>
         public const float SnowDepth = 0.08f;
 
+        /// <summary>Water standing on a shallow-water block, above its top; the fox wades in it.</summary>
+        public const float PoolDepth = 0.15f;
+
+        /// <summary>Bottom of an iceberg's underwater body; it floats instead of reaching the lake bed.</summary>
+        public const float IcebergBottom = -0.9f;
+
         public static float TopY(int level) => level * LevelHeight;
 
         public static Vector3 TopCenter(Vector2Int coordinates, int level) =>

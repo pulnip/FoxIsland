@@ -177,6 +177,7 @@ namespace MyGame.EditorTools
             EditorAssetUtility.ResetToDefaults(decor);
             EditorAssetUtility.SetReference(decor, "_mapBuilder", mapBuilder);
             EditorAssetUtility.SetReference(decor, "_material", AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.DecorMaterialPath));
+            EditorAssetUtility.SetReference(decor, "_waterMaterial", AssetDatabase.LoadAssetAtPath<Material>(MapAssetBuilder.PoolWaterMaterialPath));
 
             var snow = EditorAssetUtility.GetOrAddComponent<SnowField>(mapBuilder.gameObject);
             EditorAssetUtility.ResetToDefaults(snow);

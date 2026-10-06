@@ -49,6 +49,11 @@ namespace MyGame.Map
                     var tile = Instantiate(spec.IsCrumbling ? _crumblingPrefab : _solidPrefab, transform);
                     tile.Initialize(coordinates, spec);
                     ApplySkin(tile);
+                    if (spec.Skin == Skin.Iceberg)
+                    {
+                        tile.gameObject.AddComponent<FloatingBlock>();
+                    }
+
                     _tiles.Add(tile);
                     _tilesByCell.Add(coordinates, tile);
                 }
