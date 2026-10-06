@@ -249,7 +249,7 @@ Camera:
     width: 1
     height: 1
   near clip plane: 5.5477533
-  far clip plane: 34.452248
+  far clip plane: 41.157227
   field of view: 60
   orthographic: 1
   orthographic size: 3.871123
@@ -484,6 +484,8 @@ GameObject:
   - component: {fileID: 577549369}
   - component: {fileID: 577549368}
   - component: {fileID: 577549370}
+  - component: {fileID: 577549372}
+  - component: {fileID: 577549371}
   m_Layer: 0
   m_Name: Map
   m_TagString: Untagged
@@ -506,6 +508,11 @@ MonoBehaviour:
   _solidPrefab: {fileID: 8306634025280069515, guid: 450e155b77519ca46b7d3b95d7527b2c, type: 3}
   _crumblingPrefab: {fileID: 4146322969919159193, guid: 8856a79457daab94ba2caebf72130303, type: 3}
   _startPrefab: {fileID: 1448675756369339408, guid: 119dcd315f8c8694485cb6b162c30f0b, type: 3}
+  _subalpineTop: {fileID: 2100000, guid: d48f1a8f20226d748aa7cd9dece03bac, type: 2}
+  _subalpineBody: {fileID: 2100000, guid: bfa328ee8a1daf245a1977d92d078277, type: 2}
+  _snowTop: {fileID: 2100000, guid: 570e5823fe4cc1843baaddfdd9dd5224, type: 2}
+  _iceTop: {fileID: 2100000, guid: 16d4303b8f3bdc84eb2c985ce4b132c2, type: 2}
+  _alpineBody: {fileID: 2100000, guid: 31fbb539898f50f4eacf72d289285b12, type: 2}
 --- !u!4 &577549369
 Transform:
   m_ObjectHideFlags: 0
@@ -535,6 +542,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.GrassField
   _mapBuilder: {fileID: 577549368}
   _material: {fileID: 2100000, guid: a7f69bba1475cdf4791ebd2dde5d6238, type: 2}
+  _subalpineMaterial: {fileID: 2100000, guid: d2c3d621b1988af48b0d597421a459d0, type: 2}
+  _subalpineScale: 0.7
   _bladeHeight: {x: 0.12, y: 0.2}
   _bareShare: 0.25
   _fullShare: 0.35
@@ -550,6 +559,35 @@ MonoBehaviour:
   _trampleRadius: 0.4
   _trampleAngle: 65
   _recoverTime: 0.6
+--- !u!114 &577549371
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 577549367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b4f4cf981ae88084ab0ee26cb2e76b8e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.SnowField
+  _mapBuilder: {fileID: 577549368}
+  _material: {fileID: 2100000, guid: 7fc969822ac77de4e9b5f827ae1b4825, type: 2}
+--- !u!114 &577549372
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 577549367}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b1ed49ff81a23e844bb47e8fa5f50325, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.TerrainDecor
+  _mapBuilder: {fileID: 577549368}
+  _material: {fileID: 2100000, guid: 16b89cde0dac0d84ead1ec42e570f24b, type: 2}
+  _windDirection: {x: 1, y: 0, z: 0.4}
 --- !u!1 &757931663
 GameObject:
   m_ObjectHideFlags: 0
@@ -724,7 +762,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: -0, y: -1.3000001, z: -0}
-  m_LocalScale: {x: 40, y: 0.2, z: 40}
+  m_LocalScale: {x: 60, y: 0.2, z: 60}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 1603540922}
@@ -890,7 +928,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b40abccca19b5bf4497a7b11ebc282ae, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::MyGame.Map.WaterSurface
-  _size: 40
+  _size: 60
   _cellSize: 0.5
 --- !u!23 &1603540920
 MeshRenderer:

@@ -13,6 +13,13 @@ namespace MyGame.Map
         [SerializeField] private Tile _crumblingPrefab;
         [SerializeField] private Tile _startPrefab;
 
+        [Header("Elevation zones (plan.md §4.9); lowland keeps the solid prefab's materials")]
+        [SerializeField] private Material _subalpineTop;
+        [SerializeField] private Material _subalpineBody;
+        [SerializeField] private Material _snowTop;
+        [SerializeField] private Material _iceTop;
+        [SerializeField] private Material _alpineBody;
+
         private readonly List<Tile> _tiles = new();
         private readonly Dictionary<Vector2Int, Tile> _tilesByCell = new();
 
@@ -47,6 +54,7 @@ namespace MyGame.Map
 
                     var tile = Instantiate(prefab, transform);
                     tile.Initialize(coordinates, spec);
+                    ApplyZoneMaterials(tile);
                     _tiles.Add(tile);
                     _tilesByCell.Add(coordinates, tile);
                 }
@@ -68,6 +76,25 @@ namespace MyGame.Map
                 {
                     DestroyImmediate(child);
                 }
+            }
+        }
+
+        private void ApplyZoneMaterials(Tile tile)
+        {
+            var spec = tile.Spec;
+            if (spec.Type != TileType.Solid)
+            {
+                return;
+            }
+
+            switch (spec.Zone)
+            {
+                case ElevationZone.Subalpine:
+                    tile.SetMaterials(_subalpineTop, _subalpineBody);
+                    break;
+                case ElevationZone.Alpine:
+                    tile.SetMaterials(spec.IsIce ? _iceTop : _snowTop, _alpineBody);
+                    break;
             }
         }
 

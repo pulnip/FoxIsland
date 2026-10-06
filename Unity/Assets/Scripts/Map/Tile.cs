@@ -31,6 +31,13 @@ namespace MyGame.Map
             ApplyLevel(spec.Level);
         }
 
+        /// <summary>Swaps the slab and pillar materials; the map builder picks them by elevation zone.</summary>
+        public void SetMaterials(Material top, Material body)
+        {
+            _top.GetComponent<MeshRenderer>().sharedMaterial = top;
+            _body.GetComponent<MeshRenderer>().sharedMaterial = body;
+        }
+
         public void ApplyLevel(int level)
         {
             var top = MapMetrics.TopY(level);

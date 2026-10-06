@@ -37,6 +37,21 @@ namespace MyGame.Map
 
         public IReadOnlyList<string> Rows => _rows;
 
+        /// <summary>The highest level of any tile; frames the camera.</summary>
+        public int MaxLevel
+        {
+            get
+            {
+                var max = 0;
+                foreach (var spec in Tiles)
+                {
+                    max = Mathf.Max(max, spec.Level);
+                }
+
+                return max;
+            }
+        }
+
         public ItemMode ItemMode
         {
             get => _itemMode;

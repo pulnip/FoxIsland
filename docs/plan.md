@@ -188,7 +188,8 @@ ground. Adding a new animal = adding one file under `animals/` with the same par
 | Type        | Symbol | Behaviour                                                                                 |
 | ----------- | ------ | ----------------------------------------------------------------------------------------- |
 | Hole        | `.`    | No tile, just water. Falling in ends the game.                                            |
-| Solid       | `0`–`2`| Static tile at height level N (level height = 0.5 units).                                 |
+| Solid       | `0`–`6`| Static tile at height level N (level height = 0.5 units). Its look follows the elevation zone (§4.9). |
+| Ice         | `5i` `6i` | Solid level 5 or 6 covered in ice instead of snow; slippery (§4.9). Other levels do not parse. |
 | Crumbling   | `C`    | Level 0. The first landing starts it: it shakes for 0.8 s (the warning, ramping from 30% to full strength), then sinks into the lake in a burst of `CrumbleDust`, splashing (`TileSplash`) as its top goes under; it respawns 3 s after dropping, waiting while anything occupies its cell. |
 | Start       | `S`    | Solid level 0; player spawns here. Never holds an item.                                   |
 
@@ -232,10 +233,11 @@ row 0:  S  0  0  .
   `CrumblingTile` moves only `Visual`; the collider stays put and is disabled while the tile
   is gone. The player notifies it from `OnControllerColliderHit` on an upward-facing hit.
 - The collider covers the full cell; visuals are inset by 0.04 so the grid reads clearly.
-- The camera frames `MapMetrics.FramedBounds(width, depth, jumpHeight)`: `GridBounds` (tile
-  bottoms to the top of level 2) raised by the player's jump height. `LevelLoader` sets it per
-  level at runtime; `MainSceneSetup` sets it for level 1 so the scene reads right in edit
-  mode. For a 4×4 map: center `(2.25, 0.85, 2.25)`, size `(6, 2.7, 6)`.
+- The camera frames `MapMetrics.FramedBounds(width, depth, maxLevel, jumpHeight)`: `GridBounds`
+  (tile bottoms to the top of the layout's highest level, `MapLayout.MaxLevel`) raised by the
+  player's jump height. `LevelLoader` sets it per level at runtime; `MainSceneSetup` sets it for
+  level 1 so the scene reads right in edit mode. For the 4×4 level 1 (max level 2): center
+  `(2.25, 0.85, 2.25)`, size `(6, 2.7, 6)`.
 
 ### 4.5 Physics tuning targets
 
@@ -245,11 +247,18 @@ row 0:  S  0  0  .
   hole is 1.5 units edge to edge (the center has to travel ≈ 1.1–1.5 with the 0.2 radius), so
   crossing a hole takes a running jump.
 - Gravity: ~-25 units/s² for snappy feel.
+- Ice (§4.9): standing on ice, the horizontal velocity moves toward the input at 3 units/s²
+  (`_iceAcceleration`) and dies down at 2 units/s² with no input (`_iceDeceleration`); a full-speed
+  run takes 1 s to reach and slides 2.25 units after letting go. A jump from ice keeps that
+  momentum until landing. Hitting a wall takes the controller's actual velocity, so a slide
+  stops against it. Elsewhere velocity follows the input instantly.
 
 ### 4.6 Grass
 
-- `GrassField` (on the `Map` object, builds in `Start` after `MapBuilder.Awake`) scatters voxel
-  grass on **Solid** tiles only (not Start, Crumbling, Hole). Decoration only: no colliders.
+- `GrassField` (on the `Map` object, builds in `Start` after `LevelLoader.Awake`) scatters voxel
+  grass on **Solid** lowland tiles (levels 0–2; not Start, Crumbling, Hole). Decoration only: no
+  colliders. Subalpine tiles (levels 3–4) get 2–4 (level 3) or 1–2 (level 4) short dark tufts:
+  material `Grass_Subalpine` (same shader, darker), height scaled ×0.7; they sway and flatten too.
 - Each solid tile gets one coverage: **Bare** (no grass), **Sparse** (3–5 tufts at least 0.3
   apart, kept 0.2 from the edge), or **Full** (a 4×4 grid over the tile with ±30% jitter and a
   10% chance to skip a cell). Tiles are split by share, not rolled one by one, so every build
@@ -284,9 +293,10 @@ row 0:  S  0  0  .
 - The grid stands in a lake: the holes and everything around the grid are water at
   `MapMetrics.WaterLevel = -0.3` (level-0 tiles rise 0.3 above it). Touching it is game over (§8).
 - `Lake` (scene object, built by `MainSceneSetup`; `LevelLoader` centers it on each level's grid): `WaterSurface`
-  builds a flat 40 × 40 grid mesh (0.5 cells) in `Awake`, play mode only, like the grass;
+  builds a flat 60 × 60 grid mesh (0.5 cells) in `Awake`, play mode only, like the grass;
   `Bed` is a sand cube whose top is at `LakeBedY = -1.5`. The camera background is the deep
-  water color in case the edge ever shows.
+  water color in case the edge ever shows. Tall maps make the camera see farther across the
+  lake, so `QuarterViewCamera` pushes its far plane out by `orthographicSize / tan(pitch)`.
 - Material `Water` uses `Assets/Art/Shaders/Water.shader` (`MyGame/Water`, transparent, no
   depth write, receives shadows). `MapAssetBuilder` sets its properties explicitly:
   - Waves: three travelling sines (wavelengths 2.5, ×0.63, ×0.41; height 0.02 and smaller;
@@ -312,11 +322,14 @@ stroke.
   or also move the asset to the trash after a confirmation; the list keeps at least one level).
   Name field renames the asset.
 - **Grid** (top-down): row 0 at the bottom (camera side), column 0 on the left, axis numbers
-  match the check messages. Cell color = tile type / level, label = level, `C`, or `S`;
+  match the check messages. Cell color = tile type / level (green lowland, dark green subalpine,
+  white snow, pale blue ice), label = token (`0`–`6`, `5i`, `6i`, `C`, `S`);
   `◆` / `◆ ↑` = fixed item on the ground / in the air.
-- **Brushes** (keys 1–9, left-drag paints): Hole, Level 0/1/2, Crumbling, Start, Item, Item (air),
-  Erase item. Start keeps a single start tile (the old one becomes level 0). Painting a non-solid
-  tile removes its item. Item brushes work only on solid tiles and switch the layout to `Fixed`.
+- **Brushes** (left-drag paints; the key matches the token): `H` Hole, `0`–`6` levels, `I` Ice,
+  `C` Crumbling, `S` Start, `G` Item, `A` Item (air), `E` Erase item. Start keeps a single start
+  tile (the old one becomes level 0). Ice turns a level 5–6 solid tile to ice (painting a level
+  brush over it makes it snow again); elsewhere it shows a hint. Painting a non-solid tile removes
+  its item. Item brushes work only on solid tiles and switch the layout to `Fixed`.
 - **Size**: width × depth (2–8), grown or cropped from the (0, 0) corner (new cells level 0);
   Shift ◀▶▲▼ moves everything one cell with wrap-around.
 - **Items**: mode popup; `Random` count slider (0–32), or `Fixed` with a count and Clear Items.
@@ -332,13 +345,49 @@ stroke.
     counted), any drop is fine; a running jump crosses one hole in a straight line onto a tile
     no higher than the takeoff. Air items count as reachable with their tile (jump apex 1.2).
 - **3D Preview in Scene View** (`MapToolPreview`): a `[Map Preview]` root in the Main scene with
-  its own `MapBuilder`, `GrassField`, and `WaterSurface` copied from the scene's, rebuilt on every
+  its own `MapBuilder`, `GrassField`, `TerrainDecor`, `SnowField`, and `WaterSurface` copied from the scene's, rebuilt on every
   edit and framed in the Scene view. Every object in it is `HideFlags.DontSave`, so saving the
   scene never writes it. Cleared when the window closes, the toggle goes off, or play mode starts.
 - **▶ Play This Level** (`MapToolPlayMode`): saves, opens the Main scene, stores the layout GUID
   in `SessionState` (`LevelSession.TestLayoutKey`), and enters play mode. `LevelSession.TestLayout`
   makes `LevelLoader` load it, the title is skipped, and the HUD shows `TEST PLAY`; the key is
   erased when play mode ends.
+
+### 4.9 Elevation zones
+
+Up to level 6, the island climbs through three vegetation belts, after real altitudinal zonation
+(montane → subalpine conifer forest → krummholz at the treeline → alpine tundra → nival snow; in
+Korean mountains the subalpine belt is Korean fir, Khingan fir, and spruce over dwarf rhododendron
+and bilberry, with creeping Siberian dwarf pine at the treeline). No trees are placed: the belts
+read through ground color and low decorations, all under 0.2 so the fox and gems stay visible.
+`TileSpec.Zone` (`ElevationZone`) gives the belt; `TileSpec.IsSnow` = alpine and not ice.
+
+| Levels | Zone | Top / sides (`MapBuilder` swaps the solid prefab's materials) | Decorations |
+|---|---|---|---|
+| 0–2 | Lowland | grass / dirt (prefab) | lowland grass (§4.6) |
+| 3 | Subalpine | `Tile_Subalpine` dark blue-green forest floor / `Tile_DarkEarth` | dwarf shrubs with purple/red berries, needle litter, short dark grass |
+| 4 | Subalpine (treeline) | same | krummholz mats stretched downwind, rocks, a little litter and grass |
+| 5 | Alpine | `Tile_Snow` + snow layer (or `Tile_Ice`) / `Tile_Rock` | moss and lichen crusts, cushion plants with tiny flowers, a rock |
+| 6 | Alpine (nival) | same | rocks poking out, wind ridges (sastrugi) along the wind |
+
+- `TerrainDecor` (on `Map`, builds in `Start`): code-built voxel meshes (4 variants per kind,
+  `VoxelMeshBuilder`, vertex colors converted to linear) on one material `Decor_Voxel`
+  (`Assets/Art/Shaders/VoxelLit.shader`, `MyGame/VoxelLit`: vertex color × main light with
+  shadows + SH; ForwardLit, DepthOnly, DepthNormals; no shadow casting). Seeded per tile, kept
+  0.2 from the tile edge and 0.28 apart. Ice tiles stay bare.
+- Snow (`SnowField`, on `Map`): every snow tile gets a slab `MapMetrics.SnowDepth = 0.08` thick
+  on top (16 × 16 top grid, sides attached); the fox stands on the collider at the tile top, so its
+  feet sink into the snow. One map-wide track texture (R8, 512², the grid bounds + 0.5) holds how
+  far the snow is pressed; `Stamp(position, size, yaw, depth)` writes a soft ellipse on the CPU
+  (deeper value wins) and uploads in `LateUpdate` when changed. Prints stay for the level.
+  Material `Snow` (`Assets/Art/Shaders/Snow.shader`, `MyGame/Snow`): vertices marked in vertex
+  color R sink by up to 0.065; top-face vertices (G) take their normal from the texture slope;
+  pressed snow is tinted blue. Globals `_SnowTracks`, `_SnowTrackRect`, `_SnowTrackTexel`.
+- Footprints on snow: `FootprintEmitter` checks the tile under each paw; snow → a 0.07 × 0.09
+  pressed print (full depth) turned to the heading, ice → nothing, else the dark print particle
+  (§5). `PlayerController.Landed` → a 0.24 × 0.42 body dent at 55% depth on snow.
+- Ice: §4.5. `PlayerController.HorizontalSpeed` is the requested speed, so a fox sliding with no
+  input plays Idle instead of running in place.
 
 ---
 
@@ -361,7 +410,7 @@ stroke.
   `Particles/Simple Lit` material; each effect's start color tints it.
   `PickupBurst`: 18 gold cubes from a small sphere, fast. `CrumbleDust`: 18 sand cubes from
   a flat box the size of the tile top, slow, heavier gravity.
-- Footprints: `Footprints` is an always-running system with emission off (child of the
+- Footprints (on snow and ice see §4.9): `Footprints` is an always-running system with emission off (child of the
   Player, world space, max 64). `FootprintEmitter` on the `Model` receives the clips'
   `Footstep(legs)` animation events, raycasts down from the bottom of each named leg mesh
   (triggers and the player's own controller ignored), and emits one flat dark voxel

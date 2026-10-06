@@ -16,11 +16,21 @@ namespace MyGame.EditorTools
         public const string GrassBladeMaterialPath = "Assets/Art/Materials/Grass_Blade.mat";
         public const string WaterMaterialPath = "Assets/Art/Materials/Water.mat";
         public const string LakeBedMaterialPath = "Assets/Art/Materials/Lake_Bed.mat";
+        public const string SubalpineTopMaterialPath = "Assets/Art/Materials/Tile_Subalpine.mat";
+        public const string DarkEarthMaterialPath = "Assets/Art/Materials/Tile_DarkEarth.mat";
+        public const string SnowTopMaterialPath = "Assets/Art/Materials/Tile_Snow.mat";
+        public const string IceTopMaterialPath = "Assets/Art/Materials/Tile_Ice.mat";
+        public const string RockMaterialPath = "Assets/Art/Materials/Tile_Rock.mat";
+        public const string SubalpineGrassMaterialPath = "Assets/Art/Materials/Grass_Subalpine.mat";
+        public const string DecorMaterialPath = "Assets/Art/Materials/Decor_Voxel.mat";
+        public const string SnowMaterialPath = "Assets/Art/Materials/Snow.mat";
 
         private const string LegacyLayoutPath = "Assets/ScriptableObjects/MapLayout_Main.asset";
         private const string MaterialFolder = "Assets/Art/Materials";
         private const string GrassShaderName = "MyGame/Grass";
         private const string WaterShaderName = "MyGame/Water";
+        private const string VoxelLitShaderName = "MyGame/VoxelLit";
+        private const string SnowShaderName = "MyGame/Snow";
 
         [MenuItem("Tools/MyGame/Build Map Assets", priority = 20)]
         public static void Run()
@@ -31,6 +41,14 @@ namespace MyGame.EditorTools
             var start = EditorAssetUtility.GetOrCreateLitMaterial($"{MaterialFolder}/Tile_Start.mat", new Color(0.42f, 0.62f, 0.86f));
             EditorAssetUtility.GetOrCreateMaterial(GrassBladeMaterialPath, GrassShaderName, new Color(0.64f, 0.86f, 0.36f), smoothness: 0f);
             EditorAssetUtility.GetOrCreateLitMaterial(LakeBedMaterialPath, new Color(0.78f, 0.70f, 0.50f));
+            EditorAssetUtility.GetOrCreateLitMaterial(SubalpineTopMaterialPath, new Color(0.24f, 0.42f, 0.33f));
+            EditorAssetUtility.GetOrCreateLitMaterial(DarkEarthMaterialPath, new Color(0.38f, 0.28f, 0.21f));
+            EditorAssetUtility.GetOrCreateLitMaterial(SnowTopMaterialPath, new Color(0.90f, 0.93f, 0.98f), smoothness: 0.2f);
+            EditorAssetUtility.GetOrCreateLitMaterial(IceTopMaterialPath, new Color(0.62f, 0.85f, 0.94f), smoothness: 0.85f);
+            EditorAssetUtility.GetOrCreateLitMaterial(RockMaterialPath, new Color(0.47f, 0.47f, 0.50f));
+            EditorAssetUtility.GetOrCreateMaterial(SubalpineGrassMaterialPath, GrassShaderName, new Color(0.33f, 0.52f, 0.33f), smoothness: 0f);
+            EditorAssetUtility.GetOrCreateMaterial(DecorMaterialPath, VoxelLitShaderName, Color.white, smoothness: 0f);
+            BuildSnowMaterial();
             BuildWaterMaterial();
 
             BuildTilePrefab(SolidPrefabPath, grass, dirt, isCrumbling: false);
@@ -70,6 +88,17 @@ namespace MyGame.EditorTools
             }
 
             EditorAssetUtility.SavePrefab(root, path);
+        }
+
+        private static void BuildSnowMaterial()
+        {
+            var material = EditorAssetUtility.GetOrCreateMaterial(SnowMaterialPath, SnowShaderName, new Color(0.93f, 0.95f, 1f), smoothness: 0f);
+            var changed = EditorAssetUtility.SetColorIfChanged(material, "_PressTint", new Color(0.72f, 0.80f, 0.95f));
+            changed |= EditorAssetUtility.SetFloatIfChanged(material, "_PressDepth", 0.065f);
+            if (changed)
+            {
+                EditorUtility.SetDirty(material);
+            }
         }
 
         private static void BuildWaterMaterial()

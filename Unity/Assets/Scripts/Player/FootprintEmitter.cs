@@ -1,23 +1,34 @@
 using System.Collections.Generic;
 using System.Linq;
+using MyGame.Map;
 using UnityEngine;
 
 namespace MyGame.Player
 {
     /// <summary>
     /// Stamps a footprint under each named paw when the Walk/Run clips fire their
-    /// <c>Footstep</c> animation events. Lives on the animated model so it receives the events.
+    /// <c>Footstep</c> animation events: a dark print particle on ground, a pressed print in snow
+    /// (<see cref="SnowField"/>), nothing on ice. Landing in snow presses a body-sized dent. Lives
+    /// on the animated model so it receives the events.
     /// </summary>
     public class FootprintEmitter : MonoBehaviour
     {
         private const float RayStartHeight = 0.2f;
         private const float RayLength = 0.4f;
         private const float SurfaceOffset = 0.006f;
+        private const float LandingPrintDepth = 0.55f;
+
+        private static readonly Vector2 PawPrintSize = new(0.07f, 0.09f);
+        private static readonly Vector2 LandingPrintSize = new(0.24f, 0.42f);
 
         [SerializeField] private PlayerController _player;
         [SerializeField] private ParticleSystem _footprints;
 
         private Dictionary<string, Renderer> _paws;
+
+        private void OnEnable() => _player.Landed += OnLanded;
+
+        private void OnDisable() => _player.Landed -= OnLanded;
 
         /// <summary>
         /// Animation event. <paramref name="legs"/> is a comma-separated list of leg names,
@@ -47,6 +58,20 @@ namespace MyGame.Player
                     continue;
                 }
 
+                if (TryGetSurface(hit, out var tile))
+                {
+                    if (tile.Spec.IsIce)
+                    {
+                        continue;
+                    }
+
+                    if (tile.Spec.IsSnow && TryGetSnow(tile, out var snow))
+                    {
+                        snow.Stamp(hit.point, PawPrintSize, yaw, 1f);
+                        continue;
+                    }
+                }
+
                 var print = new ParticleSystem.EmitParams
                 {
                     position = hit.point + hit.normal * SurfaceOffset,
@@ -55,6 +80,25 @@ namespace MyGame.Player
                 };
                 _footprints.Emit(print, 1);
             }
+        }
+
+        private void OnLanded()
+        {
+            var origin = _player.transform.position + Vector3.up * RayStartHeight;
+            if (Physics.Raycast(origin, Vector3.down, out var hit, RayLength, ~0, QueryTriggerInteraction.Ignore)
+                && TryGetSurface(hit, out var tile) && tile.Spec.IsSnow && TryGetSnow(tile, out var snow))
+            {
+                snow.Stamp(hit.point, LandingPrintSize, _player.transform.eulerAngles.y, LandingPrintDepth);
+            }
+        }
+
+        private static bool TryGetSurface(RaycastHit hit, out Tile tile) => hit.collider.TryGetComponent(out tile);
+
+        /// <summary>The snow field lives on the map object that owns the tiles.</summary>
+        private static bool TryGetSnow(Tile tile, out SnowField snow)
+        {
+            snow = tile.GetComponentInParent<SnowField>();
+            return snow != null;
         }
     }
 }

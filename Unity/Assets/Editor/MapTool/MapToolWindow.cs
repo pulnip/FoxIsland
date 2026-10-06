@@ -22,7 +22,15 @@ namespace MyGame.EditorTools.MapTool
         private const int MaxRandomItems = 32;
 
         private static readonly Color HoleColor = new(0.16f, 0.36f, 0.58f);
-        private static readonly Color[] LevelColors = { new(0.38f, 0.60f, 0.26f), new(0.49f, 0.74f, 0.33f), new(0.64f, 0.86f, 0.46f) };
+        private static readonly Color[] LevelColors =
+        {
+            new(0.38f, 0.60f, 0.26f), new(0.49f, 0.74f, 0.33f), new(0.64f, 0.86f, 0.46f),
+            new(0.20f, 0.40f, 0.32f), new(0.30f, 0.48f, 0.40f),
+            new(0.84f, 0.88f, 0.94f), new(0.97f, 0.98f, 1f),
+        };
+
+        private static readonly Color IceColor = new(0.58f, 0.84f, 0.95f);
+        private static readonly Color DarkText = new(0.15f, 0.2f, 0.28f);
         private static readonly Color CrumblingColor = new(0.86f, 0.70f, 0.45f);
         private static readonly Color StartColor = new(0.42f, 0.62f, 0.86f);
         private static readonly Color GemColor = new(1f, 0.82f, 0.22f);
@@ -31,15 +39,20 @@ namespace MyGame.EditorTools.MapTool
 
         private static readonly BrushInfo[] Brushes =
         {
-            new(Brush.Hole, "Hole", HoleColor),
-            new(Brush.Level0, "Level 0", LevelColors[0]),
-            new(Brush.Level1, "Level 1", LevelColors[1]),
-            new(Brush.Level2, "Level 2", LevelColors[2]),
-            new(Brush.Crumbling, "Crumbling", CrumblingColor),
-            new(Brush.Start, "Start", StartColor),
-            new(Brush.ItemGround, "Item", GemColor),
-            new(Brush.ItemAir, "Item (air)", GemColor),
-            new(Brush.EraseItem, "Erase item", Color.gray),
+            new(Brush.Hole, "Hole", KeyCode.H, HoleColor),
+            new(Brush.Level0, "0", KeyCode.Alpha0, LevelColors[0]),
+            new(Brush.Level1, "1", KeyCode.Alpha1, LevelColors[1]),
+            new(Brush.Level2, "2", KeyCode.Alpha2, LevelColors[2]),
+            new(Brush.Level3, "3", KeyCode.Alpha3, LevelColors[3]),
+            new(Brush.Level4, "4", KeyCode.Alpha4, LevelColors[4]),
+            new(Brush.Level5, "5", KeyCode.Alpha5, LevelColors[5]),
+            new(Brush.Level6, "6", KeyCode.Alpha6, LevelColors[6]),
+            new(Brush.Ice, "Ice", KeyCode.I, IceColor),
+            new(Brush.Crumbling, "Crumbling", KeyCode.C, CrumblingColor),
+            new(Brush.Start, "Start", KeyCode.S, StartColor),
+            new(Brush.ItemGround, "Item", KeyCode.G, GemColor),
+            new(Brush.ItemAir, "Item (air)", KeyCode.A, GemColor),
+            new(Brush.EraseItem, "Erase item", KeyCode.E, Color.gray),
         };
 
         [SerializeField] private Brush _brush = Brush.Level0;
@@ -66,6 +79,11 @@ namespace MyGame.EditorTools.MapTool
             Level0,
             Level1,
             Level2,
+            Level3,
+            Level4,
+            Level5,
+            Level6,
+            Ice,
             Crumbling,
             Start,
             ItemGround,
@@ -446,20 +464,31 @@ namespace MyGame.EditorTools.MapTool
 
         private void DrawBrushes()
         {
-            EditorGUILayout.LabelField("Brush (keys 1–9; drag to paint)", EditorStyles.miniBoldLabel);
+            EditorGUILayout.LabelField("Brush (key in brackets; drag to paint). Levels 0–2 lowland, 3–4 subalpine, 5–6 alpine snow; Ice on 5–6.",
+                EditorStyles.miniBoldLabel);
+            var itemStart = System.Array.FindIndex(Brushes, info => info.Brush == Brush.ItemGround);
+            DrawBrushRow(0, itemStart);
+            DrawBrushRow(itemStart, Brushes.Length);
+        }
+
+        private void DrawBrushRow(int from, int to)
+        {
             using (new EditorGUILayout.HorizontalScope())
             {
-                for (var i = 0; i < Brushes.Length; i++)
+                for (var i = from; i < to; i++)
                 {
                     var brush = Brushes[i];
-                    var rect = GUILayoutUtility.GetRect(new GUIContent(brush.Label), "Button", GUILayout.Height(30f), GUILayout.MinWidth(64f));
-                    if (GUI.Toggle(rect, _brush == brush.Brush, $"{i + 1}  {brush.Label}", "Button"))
+                    var label = $"[{KeyLabel(brush.Key)}] {brush.Label}";
+                    var rect = GUILayoutUtility.GetRect(new GUIContent(label), "Button", GUILayout.Height(30f), GUILayout.MinWidth(40f));
+                    if (GUI.Toggle(rect, _brush == brush.Brush, label, "Button"))
                     {
                         _brush = brush.Brush;
                     }
 
                     EditorGUI.DrawRect(new Rect(rect.x + 3f, rect.yMax - 5f, rect.width - 6f, 3f), brush.Color);
                 }
+
+                GUILayout.FlexibleSpace();
             }
         }
 
@@ -486,7 +515,9 @@ namespace MyGame.EditorTools.MapTool
                 {
                     var rect = CellRect(origin, depth, column, row);
                     var spec = _tiles[column, row];
-                    EditorGUI.DrawRect(rect, ColorOf(spec));
+                    var color = ColorOf(spec);
+                    EditorGUI.DrawRect(rect, color);
+                    _cellStyle.normal.textColor = color.grayscale > 0.6f ? DarkText : Color.white;
                     GUI.Label(rect, LabelOf(spec), _cellStyle);
                     var cell = new Vector2Int(column, row);
                     if (showItems && items.TryGetValue(cell, out var inAir))
@@ -597,6 +628,9 @@ namespace MyGame.EditorTools.MapTool
                 case Brush.ItemAir:
                     PlaceItem(cell, _brush == Brush.ItemAir);
                     break;
+                case Brush.Ice:
+                    PaintIce(cell);
+                    break;
                 case Brush.EraseItem:
                     if (_layout.Items.Any(item => item.Cell == cell))
                     {
@@ -644,11 +678,24 @@ namespace MyGame.EditorTools.MapTool
             MarkChanged();
         }
 
+        /// <summary>Turns a snow tile (level 5–6) to ice; paint a level brush over it to undo.</summary>
+        private void PaintIce(Vector2Int cell)
+        {
+            var spec = _tiles[cell.x, cell.y];
+            if (spec.Type != TileType.Solid || spec.Zone != ElevationZone.Alpine)
+            {
+                _status = "Ice goes on solid tiles at levels 5–6.";
+                return;
+            }
+
+            PaintTile(cell, new TileSpec(TileType.Solid, spec.Level, isIce: true));
+        }
+
         private void PlaceItem(Vector2Int cell, bool inAir)
         {
             if (_tiles[cell.x, cell.y].Type != TileType.Solid)
             {
-                _status = "Items go on solid tiles (levels 0–2).";
+                _status = "Items go on solid tiles (levels 0–6, snow or ice).";
                 return;
             }
 
@@ -720,11 +767,15 @@ namespace MyGame.EditorTools.MapTool
                 return;
             }
 
-            var index = current.keyCode - KeyCode.Alpha1;
-            if (index >= 0 && index < Brushes.Length)
+            var key = current.keyCode >= KeyCode.Keypad0 && current.keyCode <= KeyCode.Keypad9
+                ? KeyCode.Alpha0 + (current.keyCode - KeyCode.Keypad0)
+                : current.keyCode;
+            var index = System.Array.FindIndex(Brushes, info => info.Key == key);
+            if (index >= 0)
             {
                 _brush = Brushes[index].Brush;
                 current.Use();
+                Repaint();
             }
         }
 
@@ -800,6 +851,7 @@ namespace MyGame.EditorTools.MapTool
             TileType.Hole => HoleColor,
             TileType.Crumbling => CrumblingColor,
             TileType.Start => StartColor,
+            _ when spec.IsIce => IceColor,
             _ => LevelColors[Mathf.Clamp(spec.Level, 0, LevelColors.Length - 1)],
         };
 
@@ -808,31 +860,36 @@ namespace MyGame.EditorTools.MapTool
             TileType.Hole => string.Empty,
             TileType.Crumbling => "C",
             TileType.Start => "S",
-            _ => spec.Level.ToString(),
+            _ => spec.ToToken(),
         };
 
         private static TileSpec SpecOf(Brush brush) => brush switch
         {
             Brush.Hole => new TileSpec(TileType.Hole, 0),
-            Brush.Level1 => new TileSpec(TileType.Solid, 1),
-            Brush.Level2 => new TileSpec(TileType.Solid, 2),
+            >= Brush.Level0 and <= Brush.Level6 => new TileSpec(TileType.Solid, brush - Brush.Level0),
             Brush.Crumbling => new TileSpec(TileType.Crumbling, 0),
             Brush.Start => new TileSpec(TileType.Start, 0),
             _ => new TileSpec(TileType.Solid, 0),
         };
 
+        private static string KeyLabel(KeyCode key) =>
+            key >= KeyCode.Alpha0 && key <= KeyCode.Alpha9 ? ((char)('0' + (key - KeyCode.Alpha0))).ToString() : key.ToString();
+
         private readonly struct BrushInfo
         {
-            public BrushInfo(Brush brush, string label, Color color)
+            public BrushInfo(Brush brush, string label, KeyCode key, Color color)
             {
                 Brush = brush;
                 Label = label;
+                Key = key;
                 Color = color;
             }
 
             public Brush Brush { get; }
 
             public string Label { get; }
+
+            public KeyCode Key { get; }
 
             public Color Color { get; }
         }

@@ -53,7 +53,7 @@ namespace MyGame.Core
             _mapBuilder.Build(Layout);
             PlacePlayer();
 
-            var bounds = MapMetrics.FramedBounds(Layout.Width, Layout.Depth, _player.JumpHeight);
+            var bounds = MapMetrics.FramedBounds(Layout.Width, Layout.Depth, Layout.MaxLevel, _player.JumpHeight);
             _camera.FramedBounds = bounds;
             _camera.Apply();
             _water.transform.position = new Vector3(bounds.center.x, MapMetrics.WaterLevel, bounds.center.z);

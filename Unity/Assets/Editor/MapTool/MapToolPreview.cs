@@ -58,7 +58,9 @@ namespace MyGame.EditorTools.MapTool
 
             builder.Build(layout);
             grass.Build();
-            var bounds = MapMetrics.GridBounds(layout.Width, layout.Depth);
+            builder.GetComponent<TerrainDecor>().Build();
+            builder.GetComponent<SnowField>().Build();
+            var bounds = MapMetrics.GridBounds(layout.Width, layout.Depth, layout.MaxLevel);
             water.transform.position = new Vector3(bounds.center.x, MapMetrics.WaterLevel, bounds.center.z);
             water.Build();
 
@@ -86,17 +88,14 @@ namespace MyGame.EditorTools.MapTool
         {
             var root = EditorUtility.CreateGameObjectWithHideFlags(RootName, HideFlags.DontSave);
 
-            var map = EditorUtility.CreateGameObjectWithHideFlags("Map", HideFlags.DontSave, typeof(MapBuilder), typeof(GrassField));
+            var map = EditorUtility.CreateGameObjectWithHideFlags(
+                "Map", HideFlags.DontSave, typeof(MapBuilder), typeof(GrassField), typeof(TerrainDecor), typeof(SnowField));
             map.transform.SetParent(root.transform, false);
             var builder = map.GetComponent<MapBuilder>();
             EditorUtility.CopySerialized(FindSource<MapBuilder>(), builder);
-            var sourceGrass = FindSource<GrassField>();
-            if (sourceGrass != null)
-            {
-                EditorUtility.CopySerialized(sourceGrass, map.GetComponent<GrassField>());
-            }
-
-            EditorAssetUtility.SetReference(map.GetComponent<GrassField>(), "_mapBuilder", builder);
+            CopyFromScene<GrassField>(map, builder);
+            CopyFromScene<TerrainDecor>(map, builder);
+            CopyFromScene<SnowField>(map, builder);
 
             var water = EditorUtility.CreateGameObjectWithHideFlags("Water", HideFlags.DontSave, typeof(WaterSurface));
             water.transform.SetParent(root.transform, false);
@@ -108,6 +107,19 @@ namespace MyGame.EditorTools.MapTool
             }
 
             return root;
+        }
+
+        /// <summary>Copies the scene's component settings and points it at the preview's builder.</summary>
+        private static void CopyFromScene<T>(GameObject map, MapBuilder builder) where T : MonoBehaviour
+        {
+            var target = map.GetComponent<T>();
+            var source = FindSource<T>();
+            if (source != null)
+            {
+                EditorUtility.CopySerialized(source, target);
+            }
+
+            EditorAssetUtility.SetReference(target, "_mapBuilder", builder);
         }
 
         private static GameObject FindRoot()

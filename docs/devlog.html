@@ -107,6 +107,139 @@
     </article>
 -->
     <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M11</span></div>
+      <h2>미끄러운 얼음</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>PlayerController</code>가 수평 속도를 상태로 들고 감. 얼음 위에서는 입력 쪽으로 3 u/s²로 가속하고, 손을 떼면 2 u/s²로 감속. 다른 땅에서는 지금처럼 바로 반응</li>
+        <li>얼음에서 점프하면 착지할 때까지 미끄러지던 속도를 유지. 벽에 부딪히면 실제 이동 속도로 바꿔서 벽을 계속 미는 문제 방지</li>
+        <li>바닥 타일은 <code>OnControllerColliderHit</code>의 위쪽 충돌에서 기억 (무너지는 타일 알림과 같은 자리)</li>
+        <li>애니메이터에 넘기는 속도는 입력 기반 의도 속도라, 손을 뗀 채 미끄러지면 Idle 자세로 미끄러짐</li>
+        <li>배치 플레이 모드에서 가상 키보드로 수치를 측정했고, 계산값과 정확히 일치:
+          <ul>
+            <li>얼음: 0.25초 누름 → 0.09 이동, 1초 → 1.5, 놓은 뒤 2.25 미끄러짐</li>
+            <li>일반 땅: 0.4초에 1.2, 놓으면 0</li>
+          </ul>
+        </li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Player/PlayerController.cs</code> (<code>_iceAcceleration</code>, <code>_iceDeceleration</code>, <code>IsOnIce</code>, <code>Landed</code>), <code>Player.prefab</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>손맛은 직접 플레이해봐야 함. 조절값은 Player 프리팹의 두 값</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M11</span></div>
+      <h2>밟으면 눌리는 눈</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li><code>SnowField</code>: 눈 타일마다 두께 0.08 눈 층(윗면 16×16 격자)을 얹음. 여우는 타일 윗면(충돌체)에 서므로 발이 눈에 살짝 묻힘</li>
+        <li>맵 전체에 발자국 텍스처 하나(512×512, R8). <code>Stamp</code>가 부드러운 타원을 CPU에서 찍고, 바뀐 프레임에만 GPU로 올림. 자국은 그 레벨 동안 남음</li>
+        <li><code>MyGame/Snow</code> 셰이더: 정점 단계에서 텍스처 값만큼 눈 층을 내리고, 윗면 법선을 텍스처 기울기로 다시 계산해서 자국에 빛과 그림자가 맺힘. 눌린 곳은 살짝 푸르게</li>
+        <li><code>FootprintEmitter</code>: 발밑이 눈이면 발 모양 자국(0.07×0.09), 얼음이면 없음, 그 외는 기존 어두운 발자국. 착지하면 눈 위에 몸 크기 자국</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m11-snow-prints.png" alt="눈 위 발자국"><figcaption>6층 눈 위에 찍은 발자국 줄과 착지 자국, 옆은 얼음 타일</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/SnowField.cs</code>, <code>Unity/Assets/Art/Shaders/Snow.shader</code> (새 파일), <code>Snow.mat</code></li>
+        <li><code>Unity/Assets/Scripts/Player/FootprintEmitter.cs</code>, <code>MapMetrics.cs</code> (<code>SnowDepth</code>)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>측면 벽 삼각형의 감기 방향이 반대라서 뒷면으로 잘리던 것을 수정</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M11</span></div>
+      <h2>아고산대 · 고산대 장식</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>나무는 넣지 않고 "침엽수림 느낌"을 바닥으로 표현. 장식은 모두 0.2 이하라 여우와 보석을 가리지 않음, 충돌 없음
+          <ul>
+            <li>3층: 보라·빨강 열매가 달린 관목 덤불(들쭉·철쭉 느낌), 적갈색 바늘잎 낙엽, 짧고 짙은 풀</li>
+            <li>4층(수목한계선): 바람 방향으로 길게 누운 크룸홀츠 매트(눈잣나무 느낌), 바위</li>
+            <li>5층: 눈 사이로 이끼 · 지의류 조각, 작은 꽃이 핀 쿠션식물</li>
+            <li>6층: 삐져나온 바위, 바람 자국</li>
+            <li>얼음: 장식 없음</li>
+          </ul>
+        </li>
+        <li>새 <code>TerrainDecor</code>가 코드로 복셀 메시를 만들고 타일 좌표로 seed를 정해 배치. 정점 색 하나의 머티리얼(<code>MyGame/VoxelLit</code>)로 전부 그림</li>
+        <li><code>GrassField</code>는 0~2층에만 기존 풀, 3~4층엔 짙은 <code>Grass_Subalpine</code>를 0.7배 높이로 몇 포기씩. 바람과 밟힘은 그대로</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m11-subalpine.png" alt="아고산대 장식"><figcaption>3~4층: 관목, 열매, 낙엽, 크룸홀츠 매트, 바위</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/TerrainDecor.cs</code>, <code>VoxelMeshBuilder.cs</code>, <code>Unity/Assets/Art/Shaders/VoxelLit.shader</code> (새 파일), <code>Decor_Voxel.mat</code>, <code>Grass_Subalpine.mat</code></li>
+        <li><code>Unity/Assets/Scripts/Map/GrassField.cs</code>, <code>MainSceneSetup.cs</code>, <code>MapToolPreview.cs</code> (미리보기에도 장식 · 눈)</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>문제: 첫 캡처에서 장식 색이 허옇게 뜸. 정점 색은 리니어 색 공간에서 자동 변환이 안 되기 때문 → 메시 만들 때 sRGB를 리니어로 바꿔 넣음</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M11</span></div>
+      <h2>고도별 타일 머티리얼</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>3~4층: 윗면 짙은 청록 침엽수림 바닥(<code>Tile_Subalpine</code>), 옆면 어두운 흙(<code>Tile_DarkEarth</code>)</li>
+        <li>5~6층: 윗면 눈(<code>Tile_Snow</code>) 또는 얼음(<code>Tile_Ice</code>, 매끈함 0.85), 옆면 회색 바위(<code>Tile_Rock</code>)</li>
+        <li><code>MapBuilder</code>가 일반 타일을 만든 뒤 구역에 맞게 <code>Tile.SetMaterials</code>로 바꿈. 0~2층과 무너지는 · 시작 타일은 프리팹 그대로</li>
+      </ul>
+      <div class="gallery">
+        <figure><img src="images/m11-alpine-play.png" alt="0~6층 임시 맵"><figcaption>임시 6×6 맵 (0~6층, 얼음 포함) 플레이 화면</figcaption></figure>
+      </div>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/MapBuilder.cs</code>, <code>Tile.cs</code>, <code>Unity/Assets/Editor/MapAssetBuilder.cs</code>, <code>MainSceneSetup.cs</code>, 머티리얼 5개</li>
+        <li><code>Unity/Assets/Scripts/CameraRig/QuarterViewCamera.cs</code>, <code>WaterSurface.cs</code></li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>문제: 높은 맵에서 화면 맨 위로 호수 끝이 잘려 보임. 카메라가 물을 더 멀리 보게 돼서 원경 클리핑 면에 걸린 것 → 원경 면을 <code>orthographicSize / tan(피치)</code>만큼 더 밀고, 호수도 40 → 60으로 키움</li>
+      </ul>
+    </article>
+
+    <article class="entry">
+      <div class="meta"><time>2026-10-06</time><span class="tag">M11</span></div>
+      <h2>0~6층과 얼음 토큰</h2>
+      <h3>한 일</h3>
+      <ul>
+        <li>고도별 식생을 조사해서 층에 대응: 저지대(0~2) → 아고산대 침엽수림(3) → 수목한계선 크룸홀츠(4) → 고산대 이끼 · 쿠션식물(5) → 설선대(6). 출처:
+          <a href="https://en.wikipedia.com/wiki/Nival_zone">Altitudinal zonation</a>,
+          <a href="https://encyclopedai.stavros.io/entries/treeline">Treeline / krummholz</a>,
+          <a href="https://scholar.kyobobook.co.kr/article/detail/4010020393660">지리산 아고산대 수목</a>,
+          <a href="https://db.koreascholar.com/Article/Detail/262708">설악산 아고산대 식생</a>
+        </li>
+        <li><code>TileSpec</code>: 최대 6층. 얼음은 두 글자 토큰 <code>5i</code>/<code>6i</code>이고 5~6층에서만 파싱됨. <code>Zone</code>(저지대/아고산대/고산대)과 <code>IsSnow</code> 추가</li>
+        <li>카메라 프레이밍은 고정 2층 대신 레이아웃의 최고 층까지라서, Level01은 그대로이고 높은 맵만 위로 넓어짐</li>
+        <li>맵툴: 브러시 구멍 · 0~6 · 얼음 · 무너짐 · 시작 · 아이템 3종, 단축키는 토큰과 같은 글자(H, 0~6, I, C, S, G, A, E). 얼음 브러시는 5~6층 타일을 얼음으로 바꾸고, 층 브러시로 덮으면 다시 눈. 밝은 칸은 글자를 어둡게</li>
+        <li>검증: 파싱 · 왕복 · 두 칸 점프(0→2, 4→6) 등 9개 검사 전부 통과</li>
+      </ul>
+      <h3>변경된 파일</h3>
+      <ul>
+        <li><code>Unity/Assets/Scripts/Map/TileSpec.cs</code>, <code>ElevationZone.cs</code> (새 파일), <code>MapLayout.cs</code> (<code>MaxLevel</code>), <code>MapMetrics.cs</code>, <code>LevelLoader.cs</code></li>
+        <li><code>Unity/Assets/Editor/MapTool/MapToolWindow.cs</code>, <code>MapToolPreview.cs</code>, <code>MainSceneSetup.cs</code></li>
+        <li><code>docs/plan.md</code> — §4.1, §4.4, §4.5(얼음), §4.6, §4.7, §4.8, 새 §4.9 고도 구역, §5</li>
+      </ul>
+      <h3>메모</h3>
+      <ul>
+        <li>얼음 브러시는 계획의 토글 대신 "얼음으로 만들기"로 바꿈. 토글이면 드래그하다 같은 칸을 다시 지날 때 되돌아가서</li>
+        <li>Build All 두 번 돌려 결과 동일, Level01 변경 없음</li>
+      </ul>
+    </article>
+
+    <article class="entry">
       <div class="meta"><time>2026-10-06</time><span class="tag">M10</span></div>
       <h2>맵툴: 씬 뷰 3D 미리보기와 "Play This Level"</h2>
       <h3>한 일</h3>

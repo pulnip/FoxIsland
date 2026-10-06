@@ -80,6 +80,8 @@ MonoBehaviour:
   _gravity: -25
   _coyoteTime: 0.1
   _jumpBufferTime: 0.1
+  _iceAcceleration: 3
+  _iceDeceleration: 2
   _cameraTransform: {fileID: 0}
 --- !u!114 &7335630715606400131
 MonoBehaviour:

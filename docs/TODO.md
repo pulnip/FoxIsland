@@ -127,3 +127,12 @@ Work top to bottom unless the user says otherwise.
 - [x] Map tool window: level list, painting brushes, resize and shift, item mode, checks panel
 - [x] Map tool: Scene view 3D preview (never saved) and Play This Level
 - [ ] Playtest the map tool: painting, resize, undo, preview with scene save, Play This Level; then the level flow in game — **user**
+
+## M11. Heights up to 6 and elevation zones
+
+- [x] Levels 0–6 and ice tokens (`5i`, `6i`), framing by the layout's highest level, map tool brushes and letter keys
+- [x] Zone materials: subalpine forest floor and dark earth, snow / ice tops on rock
+- [x] Subalpine and alpine decorations (`TerrainDecor`, `VoxelLit`), subalpine grass
+- [x] Snow that presses down under paws and landings (`SnowField`, `Snow.shader`)
+- [x] Slippery ice (momentum on ice, idle slide)
+- [ ] Playtest: ice feel, snow prints, decorations never hiding the fox or gems — **user**

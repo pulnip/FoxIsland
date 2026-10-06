@@ -1,7 +1,8 @@
 # MyGame — Fox Island, a voxel animal platformer
 
-Unity 6 3D game: a voxel animal (built with Blender Python) walks and jumps on a 4×4 tile map
-standing in a lake, under a fixed quarter-view camera, collecting random items.
+Unity 6 3D game: a voxel animal (built with Blender Python) walks and jumps on small tile maps
+(levels up to 8×8, heights 0–6 through lowland, subalpine, and alpine snow/ice) standing in a
+lake, under a fixed quarter-view camera, collecting items.
 Falling into the water = game over, all items = clear, R = restart.
 
 ## Key files
@@ -74,6 +75,12 @@ The user may keep the editor open while Claude works. Check with `Get-Process Un
   `targetTexture` (clear to transparent), composite that over a camera render, then
   `EditorApplication.Exit(0)`.
 
+- Play-mode input in batch mode: add a virtual `Keyboard` (`InputSystem.AddDevice<Keyboard>()`,
+  `QueueStateEvent` with a `KeyboardState`) and, in memory only, set
+  `InputSystem.settings.backgroundBehavior = IgnoreFocus` and `editorInputBehaviorInPlayMode =
+  AllDeviceInputAlwaysGoesToGameView`; without focus the keyboard is otherwise ignored.
+- Mesh vertex colors are not converted to linear for us (the project is linear): convert sRGB
+  colors with `Color.linear` when writing them, as `VoxelMeshBuilder` does.
 - Map tool checks run without the window: `MapLayoutValidator.Validate(layout)` is plain C#, so a
   temporary batch script can assert on its `LayoutReport`. The preview objects are `DontSave`;
   a scene saved with the preview on must stay byte-identical.

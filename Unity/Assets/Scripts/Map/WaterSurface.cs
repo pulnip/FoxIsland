@@ -12,7 +12,7 @@ namespace MyGame.Map
     {
         private const float WaveBoundsPadding = 0.1f;
 
-        [SerializeField] private float _size = 40f;
+        [SerializeField] private float _size = 60f;
         [SerializeField] private float _cellSize = 0.5f;
 
         private Mesh _mesh;

@@ -29,6 +29,10 @@ namespace MyGame.Map
 
         [SerializeField] private MapBuilder _mapBuilder;
         [SerializeField] private Material _material;
+
+        [Tooltip("Darker, shorter grass for the subalpine belt (levels 3-4).")]
+        [SerializeField] private Material _subalpineMaterial;
+        [SerializeField] private float _subalpineScale = 0.7f;
         [SerializeField] private Vector2 _bladeHeight = new(0.12f, 0.2f);
 
         [Header("Coverage")]
@@ -80,9 +84,19 @@ namespace MyGame.Map
             var tiles = new List<Tile>();
             foreach (var tile in _mapBuilder.Tiles)
             {
-                if (tile.Spec.Type == TileType.Solid)
+                if (tile.Spec.Type != TileType.Solid)
                 {
-                    tiles.Add(tile);
+                    continue;
+                }
+
+                switch (tile.Spec.Zone)
+                {
+                    case ElevationZone.Lowland:
+                        tiles.Add(tile);
+                        break;
+                    case ElevationZone.Subalpine:
+                        PlaceSubalpine(tile);
+                        break;
                 }
             }
 
@@ -190,6 +204,17 @@ namespace MyGame.Map
             }
         }
 
+        /// <summary>A few short, dark tufts between the shrubs; fewer near the treeline (level 4).</summary>
+        private void PlaceSubalpine(Tile tile)
+        {
+            var random = new System.Random(Seed * 7 + tile.Coordinates.x * 73856093 ^ tile.Coordinates.y * 19349663);
+            var count = tile.Spec.Level == TileSpec.SubalpineMinLevel ? random.Next(2, 5) : random.Next(1, 3);
+            for (var i = 0; i < count; i++)
+            {
+                AddTuft(tile, RandomOnTop(random, EdgeMargin), random, _subalpineMaterial, _subalpineScale);
+            }
+        }
+
         private void PlaceFull(Tile tile, System.Random random)
         {
             var usable = MapMetrics.TileSize - FullEdgeMargin * 2f;
@@ -213,15 +238,19 @@ namespace MyGame.Map
             }
         }
 
-        private void AddTuft(Tile tile, Vector3 localPosition, System.Random random)
+        private void AddTuft(Tile tile, Vector3 localPosition, System.Random random) =>
+            AddTuft(tile, localPosition, random, _material, 1f);
+
+        private void AddTuft(Tile tile, Vector3 localPosition, System.Random random, Material material, float scale)
         {
             var tuft = new GameObject("GrassTuft");
             tuft.transform.SetParent(tile.transform, false);
             tuft.transform.localPosition = localPosition + Vector3.up * tile.TopY;
             tuft.transform.localRotation = Quaternion.Euler(0f, Range(random, 0f, 360f), 0f);
+            tuft.transform.localScale = new Vector3(1f, scale, 1f);
             tuft.AddComponent<MeshFilter>().sharedMesh = _meshes[random.Next(_meshes.Length)];
             var renderer = tuft.AddComponent<MeshRenderer>();
-            renderer.sharedMaterial = _material;
+            renderer.sharedMaterial = material;
             renderer.shadowCastingMode = ShadowCastingMode.Off;
         }
 

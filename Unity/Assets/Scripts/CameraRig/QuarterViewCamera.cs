@@ -69,7 +69,11 @@ namespace MyGame.CameraRig
             camera.orthographic = true;
             camera.orthographicSize = Mathf.Max(halfHeight, halfWidth / camera.aspect) / _screenFill;
             camera.nearClipPlane = Mathf.Max(0.01f, _distance - radius - ClipMargin);
-            camera.farClipPlane = _distance + radius + ClipMargin;
+
+            // The lake stretches past the framed box: the top screen edge looks at water about
+            // orthographicSize / tan(pitch) farther away, which grows with the map's height.
+            var lakeReach = camera.orthographicSize / Mathf.Tan(_pitch * Mathf.Deg2Rad);
+            camera.farClipPlane = _distance + radius + lakeReach + ClipMargin;
 
             _appliedAspect = camera.aspect;
             _isDirty = false;
