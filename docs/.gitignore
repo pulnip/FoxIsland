@@ -1,3 +1,4 @@
 # html for user
 *.html
 !devlog.html
+!privacy.html
